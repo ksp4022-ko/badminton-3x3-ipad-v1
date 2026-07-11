@@ -306,7 +306,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.0-ipad';
+  const APP_VERSION = '1.0.1-ipad';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const DEBUG_MODE = location.search.indexOf('debug=1') >= 0;
@@ -372,6 +372,31 @@
   }
   function dataAttr(el, name){
     return el && el.getAttribute ? el.getAttribute('data-' + name) : null;
+  }
+  function bindTap(el, handler){
+    let lastTouch = 0;
+    function run(e){
+      if(e.type === 'click' && Date.now() - lastTouch < 600) return;
+      if(e.type === 'touchend'){
+        lastTouch = Date.now();
+        if(e.cancelable) e.preventDefault();
+      }
+      handler(e);
+    }
+    el.addEventListener('touchend', run, false);
+    el.addEventListener('click', run, false);
+  }
+  function setTap(el, handler){
+    if(!el) return;
+    el.__tapHandler = handler;
+    if(el.__tapBound) return;
+    bindTap(el, function(e){
+      if(el.__tapHandler) el.__tapHandler(e);
+    });
+    el.__tapBound = true;
+  }
+  function clearTap(el){
+    if(el) el.__tapHandler = null;
   }
   function isOldIosSafari(){
     const ua = navigator.userAgent || '';
@@ -527,6 +552,47 @@
         resolve();
       };
       $('modalOkBtn').onclick = cleanup;
+    });
+  }
+
+  function resetModalButtons(){
+    $('modalCancelBtn').style.display = '';
+    $('modalCancelBtn').textContent = '取消';
+    $('modalOkBtn').textContent = '確認';
+    $('modalOkBtn').onclick = null;
+    $('modalCancelBtn').onclick = null;
+    clearTap($('modalOkBtn'));
+    clearTap($('modalCancelBtn'));
+  }
+
+  function closeModal(){
+    $('modalMask').classList.remove('show');
+    $('modalExtra').innerHTML = '';
+    resetModalButtons();
+  }
+
+  function confirmDialog(title, message, extraHtml=''){
+    return new Promise((resolve) => {
+      resetModalButtons();
+      $('modalTitle').textContent = title;
+      $('modalMessage').textContent = message;
+      $('modalExtra').innerHTML = extraHtml;
+      $('modalMask').classList.add('show');
+      setTap($('modalOkBtn'), () => { closeModal(); resolve(true); });
+      setTap($('modalCancelBtn'), () => { closeModal(); resolve(false); });
+    });
+  }
+
+  function alertDialog(title, message, extraHtml=''){
+    return new Promise((resolve) => {
+      resetModalButtons();
+      $('modalTitle').textContent = title;
+      $('modalMessage').textContent = message;
+      $('modalExtra').innerHTML = extraHtml;
+      $('modalCancelBtn').style.display = 'none';
+      $('modalOkBtn').textContent = '知道了';
+      $('modalMask').classList.add('show');
+      setTap($('modalOkBtn'), () => { closeModal(); resolve(); });
     });
   }
 
@@ -1135,6 +1201,91 @@
     }
   }
 
+  function playerListPayload(){
+    return {
+      app:'badminton-player-list-v1',
+      version:APP_VERSION,
+      exportedAt:nowIso(),
+      players:activePlayers()
+        .slice()
+        .sort((a,b) => (a.sortOrder - b.sortOrder) || String(a.name).localeCompare(String(b.name), 'zh-Hant'))
+        .map((p) => ({
+          name:p.name,
+          color:p.color || COLORS[0]
+        }))
+    };
+  }
+
+  function exportJson(){
+    showExportText('球員名單 JSON', JSON.stringify(playerListPayload(), null, 2));
+  }
+
+  function showExportText(title, text){
+    resetModalButtons();
+    $('modalTitle').textContent = title;
+    $('modalMessage').textContent = '複製後保存。';
+    $('modalExtra').innerHTML = '<textarea id="exportTextArea" style="width:100%;min-height:260px;border:1px solid #cbd5e1;border-radius:12px;padding:10px;font:14px/1.35 monospace;"></textarea>';
+    $('modalCancelBtn').textContent = '複製';
+    $('modalOkBtn').textContent = '關閉';
+    $('modalMask').classList.add('show');
+    const area = $('exportTextArea');
+    area.value = text;
+    setTimeout(function(){ area.focus(); area.select(); }, 0);
+    setTap($('modalCancelBtn'), function(){
+      area.focus();
+      area.select();
+      try{
+        document.execCommand('copy');
+        showToast('已複製');
+      }catch(err){
+        showToast('請手動複製');
+      }
+    });
+    setTap($('modalOkBtn'), closeModal);
+  }
+
+  function showImportPasteDialog(){
+    resetModalButtons();
+    $('modalTitle').textContent = '貼上名單 JSON';
+    $('modalMessage').textContent = '貼上後按匯入。';
+    $('modalExtra').innerHTML = '<textarea id="importPasteTextArea" style="width:100%;min-height:260px;border:1px solid #cbd5e1;border-radius:12px;padding:10px;font:14px/1.35 monospace;" placeholder="{ &quot;players&quot;: [...] }"></textarea>';
+    $('modalCancelBtn').textContent = '取消';
+    $('modalOkBtn').textContent = '匯入';
+    $('modalMask').classList.add('show');
+    const area = $('importPasteTextArea');
+    setTimeout(function(){ area.focus(); }, 0);
+    setTap($('modalCancelBtn'), closeModal);
+    setTap($('modalOkBtn'), function(){
+      importPlayersFromText(area.value);
+    });
+  }
+
+  function importPlayersFromText(text){
+    try{
+      const data = JSON.parse(String(text || '').trim());
+      const source = Array.isArray(data) ? data : data.players;
+      const importedPlayers = normalizeImportedPlayers(source);
+      if(!importedPlayers.length){
+        showToast('沒有球員');
+        return;
+      }
+      const keepSettings = clone(state.settings);
+      state.players = importedPlayers;
+      state.settings = keepSettings;
+      state.settings.lastCallPlayers = [];
+      state.settings.lastCallCourt = null;
+      selectedPlayer = null;
+      logAction('importPlayerList','rest',importedPlayers.map(p=>p.name),'paste JSON');
+      saveState();
+      closeModal();
+      showToast('已匯入');
+      render();
+    }catch(err){
+      console.error(err);
+      showToast('JSON 錯誤');
+    }
+  }
+
   function normalizeImportedPlayers(players){
     if(!Array.isArray(players)) return [];
     return players
@@ -1142,7 +1293,7 @@
       .map((p, index) => ({
         id:uid('P'),
         name:String(p.name || '').trim(),
-        games:Number.isFinite(Number(p.games)) ? Math.max(0, Number(p.games)) : 0,
+        games:0,
         color:p.color || COLORS[index % COLORS.length],
         zone:'rest',
         slot:null,
@@ -1283,7 +1434,8 @@
 
   function bindEvents(){
     document.addEventListener('touchend', async (e) => {
-      if(await handleBoardInteraction(e)) lastTouchHandledAt = Date.now();
+      if(closestByClass(e.target, 'zone-head') || closestByClass(e.target, 'slot') || closestByClass(e.target, 'player-chip')) lastTouchHandledAt = Date.now();
+      await handleBoardInteraction(e);
     }, false);
     document.addEventListener('click', async (e) => {
       if(Date.now() - lastTouchHandledAt < 500) return;
@@ -1354,6 +1506,57 @@
       };
     }
 
+    function overrideTap(id, handler){
+      const el = $(id);
+      if(!el) return;
+      el.onclick = null;
+      setTap(el, handler);
+    }
+    overrideTap('cancelSelectBtn', () => clearSelected('已取消選取'));
+    overrideTap('closePanelBtn', (e) => { e.stopPropagation(); closePanel(); });
+    overrideTap('repeatCallBtn', (e) => { e.stopPropagation(); repeatLastCall(); });
+    overrideTap('moveRestBtn', (e) => {
+      e.stopPropagation();
+      const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
+      if(!p){ showToast('請先選球員'); return; }
+      if(p.zone === 'rest'){ showToast('已在休息區'); return; }
+      if(movePlayer(p.id,'rest',null)){ selectedPlayer = null; showToast('已回休息區'); render(); }
+    });
+    overrideTap('adminLoginBtn', () => {
+      if($('adminPasswordInput').value === state.settings.adminPassword){
+        isAdmin = true;
+        saveAdminUnlock();
+        $('adminPasswordInput').value='';
+        collapsedSections.delete('adminSectionBody');
+        saveCollapsedSections();
+        showToast('已登入');
+        renderPanel();
+      }else{
+        showToast('密碼錯誤');
+      }
+    });
+    overrideTap('freeModeBtn', () => { state.settings.freePlayMode=true; state.settings.autoArrangeMode=false; saveState(); renderPanel(); });
+    overrideTap('autoModeBtn', () => { state.settings.freePlayMode=false; state.settings.autoArrangeMode=true; saveState(); showToast('已切換'); renderPanel(); });
+    overrideTap('randomFillBtn', randomFillCourts);
+    overrideTap('autoCallOffBtn', () => { state.settings.autoCallEnabled=false; saveState(); renderPanel(); });
+    overrideTap('autoCallOnBtn', () => { state.settings.autoCallEnabled=true; saveState(); renderPanel(); });
+    overrideTap('voiceTestBtn', () => callPlayers(['測試','請上場']));
+    overrideTap('saveVoiceBtn', saveVoiceSettings);
+    overrideTap('addPlayerBtn', () => addPlayer($('newPlayerInput').value));
+    overrideTap('renamePlayerBtn', renameSelected);
+    overrideTap('deletePlayerBtn', deleteSelected);
+    overrideTap('plusGameBtn', () => adjustSelectedGames(1));
+    overrideTap('minusGameBtn', () => adjustSelectedGames(-1));
+    overrideTap('zeroPlayerBtn', zeroSelectedGames);
+    overrideTap('resetAllGamesBtn', resetAllGames);
+    overrideTap('resetTodayBtn', resetToday);
+    overrideTap('clearAllBtn', clearAll);
+    overrideTap('use3x3Btn', () => setCourtMode(3));
+    overrideTap('use2x2Btn', () => setCourtMode(2));
+    overrideTap('exportBackupBtn', exportJson);
+    overrideTap('exportLogBtn', exportLogCsv);
+    overrideTap('importBackupBtn', showImportPasteDialog);
+
     let resizeTimer = null;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimer);
@@ -1369,8 +1572,15 @@
     }
   }
 
+  function simplifyLabels(){
+    if($('exportBackupBtn')) $('exportBackupBtn').textContent = '複製名單 JSON';
+    if($('importBackupBtn')) $('importBackupBtn').textContent = '貼上名單 JSON';
+    if($('resetTodayBtn')) $('resetTodayBtn').textContent = '今日重新開始';
+  }
+
   function init(){
     isAdmin = isAdminUnlocked();
+    simplifyLabels();
     bindEvents();
     initFloatingButton();
     render();

@@ -41,6 +41,10 @@ assert('admin unlock persisted', html.includes('saveAdminUnlock()') && html.incl
 assert('debug mode exists', html.includes("location.search.indexOf('debug=1')") && html.includes('function debugLog'));
 assert('debug mode tracks board actions', html.includes("debugLog('zone-head courtDown'") && html.includes("debugLog('slot move success'") && html.includes("debugLog(inRest ? 'chip rest select'"));
 assert('v1 storage key isolated', html.includes("badminton3x3.ipad.v1.state"));
+assert('copy paste player list exists', html.includes('function playerListPayload') && html.includes('function showImportPasteDialog') && html.includes('function importPlayersFromText'));
+assert('player list exports name and color only', html.includes('app:\'badminton-player-list-v1\'') && html.includes('name:p.name') && html.includes('color:p.color || COLORS[0]'));
+assert('import resets games', html.includes('games:0'));
+assert('system buttons use tap override', html.includes("overrideTap('resetTodayBtn', resetToday)") && html.includes("overrideTap('exportBackupBtn', exportJson)") && html.includes("overrideTap('importBackupBtn', showImportPasteDialog)"));
 
 assert('service worker html network first', sw.includes('const isHtml') && sw.includes('fetch(event.request).then'));
 assert('service worker cache scoped', sw.includes("key.startsWith(CACHE_PREFIX)"));
