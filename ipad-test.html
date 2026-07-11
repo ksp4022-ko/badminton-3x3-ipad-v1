@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="iPad診斷">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <title>iPad Air 診斷頁</title>
+  <style>
+    html,body{margin:0;padding:0;background:#ecfeff;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;}
+    body{font-size:16px;line-height:1.45;}
+    .wrap{max-width:1100px;margin:0 auto;padding:14px;}
+    .top{position:sticky;top:0;background:#ecfeff;border-bottom:1px solid #bae6fd;padding:10px 0;z-index:2;}
+    h1{font-size:28px;margin:0 0 4px;font-weight:900;}
+    h2{font-size:22px;margin:20px 0 8px;color:#0f766e;}
+    .meta{font-weight:800;color:#475569;}
+    .grid{display:block;}
+    .card{background:#fff;border:1px solid #cbd5e1;border-radius:12px;margin:10px 0;padding:12px;box-shadow:0 4px 12px rgba(15,23,42,.08);}
+    .row{display:block;border-top:1px solid #e2e8f0;padding:8px 0;}
+    .row:first-child{border-top:0;}
+    .key{font-weight:900;color:#334155;display:block;margin-bottom:2px;}
+    .value{white-space:pre-wrap;word-break:break-word;}
+    .ok{color:#047857;font-weight:900;}
+    .bad{color:#b91c1c;font-weight:900;}
+    .warn{color:#92400e;font-weight:900;}
+    button{border:0;border-radius:10px;padding:10px 12px;margin:4px 4px 4px 0;min-height:42px;background:#0f766e;color:#fff;font-weight:900;font-size:16px;}
+    button.danger{background:#dc2626;}
+    button.warn{background:#f59e0b;color:#422006;}
+    img.test-icon{width:96px;height:96px;border:1px solid #cbd5e1;border-radius:16px;background:#f8fafc;margin:6px 12px 6px 0;vertical-align:middle;}
+    .small{font-size:13px;color:#64748b;}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+    @media (min-width:800px){
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+      .card{margin:0;}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <h1>iPad Air 診斷頁</h1>
+      <div class="meta">診斷頁版本：ipad-test-20260711-1｜不影響主版</div>
+      <div class="small">請用舊 iPad Air 開啟本頁，截圖回傳測試結果。</div>
+    </div>
+
+    <div class="card">
+      <button id="runBtn">重新執行測試</button>
+      <button class="warn" id="reloadBtn">加時間戳重新載入</button>
+      <button class="danger" id="clearAllBtn">清除本站快取 / SW / Storage</button>
+      <button id="speechBtn">語音試播</button>
+      <div class="small">建議網址：/badminton-3x3/ipad-test.html?v=時間戳</div>
+    </div>
+
+    <div id="results"></div>
+  </div>
+
+<script>
+(function(){
+  var TEST_VERSION = 'ipad-test-20260711-1';
+  var RESOURCE_VERSION = String(new Date().getTime());
+  var errors = [];
+  var imageFetchStarted = {};
+
+  window.onerror = function(message, source, line, column, error){
+    errors.push('onerror: ' + message + ' @ ' + source + ':' + line + ':' + column);
+    render();
+    return false;
+  };
+  window.onunhandledrejection = function(event){
+    var reason = event && event.reason ? event.reason : 'unknown';
+    errors.push('unhandledrejection: ' + String(reason));
+    render();
+  };
+
+  function byId(id){ return document.getElementById(id); }
+  function nowText(){ return new Date().toString(); }
+  function yesNo(value){ return value ? 'YES' : 'NO'; }
+  function statusText(value){ return value ? '<span class="ok">OK</span>' : '<span class="bad">FAIL</span>'; }
+  function safeString(value){
+    try{
+      if(value === undefined) return 'undefined';
+      if(value === null) return 'null';
+      return String(value);
+    }catch(e){
+      return '[string error]';
+    }
+  }
+  function escapeHtml(text){
+    return safeString(text).replace(/[&<>"']/g,function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    });
+  }
+  function addRow(rows, key, value){
+    rows.push('<div class="row"><span class="key">' + escapeHtml(key) + '</span><span class="value">' + value + '</span></div>');
+  }
+  function section(title, rows){
+    return '<div class="card"><h2>' + escapeHtml(title) + '</h2>' + rows.join('') + '</div>';
+  }
+  function cacheBust(url){
+    return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'diag=' + RESOURCE_VERSION;
+  }
+
+  var state = {
+    storage: [],
+    resources: [],
+    images: [],
+    manifest: [],
+    sw: [],
+    cache: [],
+    syntax: [],
+    css: [],
+    errors: []
+  };
+
+  function render(){
+    var html = [];
+    var rows;
+
+    rows = [];
+    addRow(rows,'測試時間',escapeHtml(nowText()));
+    addRow(rows,'目前 URL',escapeHtml(location.href));
+    addRow(rows,'診斷頁版本',escapeHtml(TEST_VERSION));
+    addRow(rows,'User Agent',escapeHtml(navigator.userAgent));
+    addRow(rows,'平台',escapeHtml(navigator.platform || ''));
+    addRow(rows,'語言',escapeHtml(navigator.language || navigator.browserLanguage || ''));
+    html.push(section('1. 基本資訊',rows));
+
+    rows = [];
+    addRow(rows,'navigator.standalone',escapeHtml(safeString(navigator.standalone)));
+    addRow(rows,'Web App 模式判斷',navigator.standalone === true ? '<span class="ok">主畫面 Web App</span>' : '<span class="warn">Safari 分頁或不支援</span>');
+    addRow(rows,'window.innerWidth x innerHeight',escapeHtml(window.innerWidth + ' x ' + window.innerHeight));
+    addRow(rows,'documentElement.clientWidth x clientHeight',escapeHtml(document.documentElement.clientWidth + ' x ' + document.documentElement.clientHeight));
+    addRow(rows,'body.clientWidth x clientHeight',escapeHtml(document.body.clientWidth + ' x ' + document.body.clientHeight));
+    addRow(rows,'screen.width x screen.height',escapeHtml(screen.width + ' x ' + screen.height));
+    addRow(rows,'devicePixelRatio',escapeHtml(window.devicePixelRatio));
+    addRow(rows,'orientation',escapeHtml(window.orientation));
+    addRow(rows,'matchMedia landscape',window.matchMedia ? statusText(window.matchMedia('(orientation: landscape)').matches) : '<span class="warn">不支援 matchMedia</span>');
+    addRow(rows,'visualViewport',window.visualViewport ? escapeHtml(window.visualViewport.width + ' x ' + window.visualViewport.height) : '<span class="warn">不支援 visualViewport</span>');
+    html.push(section('2. Viewport / Web App',rows));
+
+    rows = [];
+    addRow(rows,'localStorage',state.storage[0] || '尚未測試');
+    addRow(rows,'sessionStorage',state.storage[1] || '尚未測試');
+    html.push(section('3. Storage',rows));
+
+    rows = [];
+    addRow(rows,'Service Worker 支援',statusText('serviceWorker' in navigator));
+    addRow(rows,'controller',navigator.serviceWorker && navigator.serviceWorker.controller ? escapeHtml(navigator.serviceWorker.controller.scriptURL || 'controller exists') : '<span class="warn">無 controller</span>');
+    for(var i=0;i<state.sw.length;i++) addRow(rows,'SW ' + (i+1),state.sw[i]);
+    html.push(section('4. Service Worker',rows));
+
+    rows = [];
+    addRow(rows,'Cache Storage 支援',statusText('caches' in window));
+    for(var c=0;c<state.cache.length;c++) addRow(rows,'Cache ' + (c+1),state.cache[c]);
+    html.push(section('5. Cache Storage',rows));
+
+    rows = [];
+    for(var r=0;r<state.resources.length;r++) addRow(rows,state.resources[r].name,state.resources[r].value);
+    html.push(section('6. 主版資源 / 版本檢查',rows));
+
+    rows = [];
+    addRow(rows,'icon-192.png','<img class="test-icon" id="icon192" alt="icon 192"> <span id="icon192info">等待載入</span>');
+    addRow(rows,'icon-512.png','<img class="test-icon" id="icon512" alt="icon 512"> <span id="icon512info">等待載入</span>');
+    for(var im=0;im<state.images.length;im++) addRow(rows,state.images[im].name,state.images[im].value);
+    html.push(section('7. Icon 圖示測試',rows));
+
+    rows = [];
+    for(var m=0;m<state.manifest.length;m++) addRow(rows,state.manifest[m].name,state.manifest[m].value);
+    html.push(section('8. Manifest / 加入主畫面',rows));
+
+    rows = [];
+    for(var s=0;s<state.syntax.length;s++) addRow(rows,state.syntax[s].name,state.syntax[s].value);
+    html.push(section('9. JS 語法相容',rows));
+
+    rows = [];
+    for(var cs=0;cs<state.css.length;cs++) addRow(rows,state.css[cs].name,state.css[cs].value);
+    html.push(section('10. CSS / 事件 / 語音能力',rows));
+
+    rows = [];
+    if(errors.length === 0) addRow(rows,'錯誤','<span class="ok">目前未捕捉到錯誤</span>');
+    for(var e=0;e<errors.length;e++) addRow(rows,'Error ' + (e+1),'<span class="bad mono">' + escapeHtml(errors[e]) + '</span>');
+    html.push(section('11. 錯誤捕捉',rows));
+
+    byId('results').innerHTML = '<div class="grid">' + html.join('') + '</div>';
+    attachImageTests();
+  }
+
+  function testStorage(){
+    state.storage = [];
+    try{
+      localStorage.setItem('ipad-test-local','ok-' + RESOURCE_VERSION);
+      state.storage.push(localStorage.getItem('ipad-test-local') ? '<span class="ok">可寫入 / 讀取</span>' : '<span class="bad">讀取失敗</span>');
+      localStorage.removeItem('ipad-test-local');
+    }catch(e){
+      state.storage.push('<span class="bad">' + escapeHtml(e.name + ': ' + e.message) + '</span>');
+    }
+    try{
+      sessionStorage.setItem('ipad-test-session','ok-' + RESOURCE_VERSION);
+      state.storage.push(sessionStorage.getItem('ipad-test-session') ? '<span class="ok">可寫入 / 讀取</span>' : '<span class="bad">讀取失敗</span>');
+      sessionStorage.removeItem('ipad-test-session');
+    }catch(e2){
+      state.storage.push('<span class="bad">' + escapeHtml(e2.name + ': ' + e2.message) + '</span>');
+    }
+  }
+
+  function xhrGet(url, callback){
+    var xhr = new XMLHttpRequest();
+    var done = false;
+    xhr.onreadystatechange = function(){
+      if(xhr.readyState === 4 && !done){
+        done = true;
+        callback(null, xhr);
+      }
+    };
+    xhr.onerror = function(){
+      if(!done){
+        done = true;
+        callback(new Error('XHR error'), xhr);
+      }
+    };
+    try{
+      xhr.open('GET', cacheBust(url), true);
+      xhr.send();
+    }catch(e){
+      callback(e, xhr);
+    }
+  }
+
+  function testResources(){
+    var files = ['index.html','sw.js','manifest.webmanifest','icon-192.png','icon-512.png'];
+    state.resources = [];
+    var remaining = files.length;
+    function finish(){ remaining--; if(remaining <= 0) render(); }
+    for(var i=0;i<files.length;i++){
+      (function(file){
+        xhrGet('./' + file, function(err, xhr){
+          var ct = xhr && xhr.getResponseHeader ? xhr.getResponseHeader('Content-Type') : '';
+          var len = xhr && xhr.responseText ? xhr.responseText.length : 0;
+          var value = err ? '<span class="bad">' + escapeHtml(err.message) + '</span>' : escapeHtml('HTTP ' + xhr.status + '｜' + ct + '｜size/text ' + len);
+          if(file === 'index.html' && xhr && xhr.responseText){
+            value += '<br>包含 1.0.0-ipad：' + statusText(xhr.responseText.indexOf('1.0.0-ipad') >= 0);
+            value += '<br>包含 2.1.0：' + (xhr.responseText.indexOf('2.1.0') >= 0 ? '<span class="bad">YES</span>' : '<span class="ok">NO</span>');
+            value += '<br>包含 APP_VERSION：' + statusText(xhr.responseText.indexOf('APP_VERSION') >= 0);
+          }
+          state.resources.push({name:file,value:value});
+          finish();
+        });
+      })(files[i]);
+    }
+  }
+
+  function attachImageTests(){
+    setImage('icon192','./icon-192.png','icon192info','icon-192.png');
+    setImage('icon512','./icon-512.png','icon512info','icon-512.png');
+  }
+
+  function setImage(id, src, infoId, label){
+    var img = byId(id);
+    var info = byId(infoId);
+    if(!img || !info || img.getAttribute('data-bound') === '1') return;
+    img.setAttribute('data-bound','1');
+    img.onload = function(){
+      info.innerHTML = '<span class="ok">載入成功</span>｜natural ' + img.naturalWidth + ' x ' + img.naturalHeight;
+    };
+    img.onerror = function(){
+      info.innerHTML = '<span class="bad">載入失敗</span>';
+    };
+    img.src = cacheBust(src);
+    if(!imageFetchStarted[label]){
+      imageFetchStarted[label] = true;
+      xhrGet(src, function(err, xhr){
+        var ct = xhr && xhr.getResponseHeader ? xhr.getResponseHeader('Content-Type') : '';
+        var size = xhr && xhr.responseText ? xhr.responseText.length : 0;
+        state.images.push({name:label + ' fetch', value:err ? '<span class="bad">' + escapeHtml(err.message) + '</span>' : escapeHtml('HTTP ' + xhr.status + '｜' + ct + '｜size/text ' + size)});
+        render();
+      });
+    }
+  }
+
+  function testManifest(){
+    state.manifest = [];
+    var links = document.getElementsByTagName('link');
+    var manifestHref = '';
+    var appleIcon = '';
+    for(var i=0;i<links.length;i++){
+      if(links[i].getAttribute('rel') === 'manifest') manifestHref = links[i].getAttribute('href');
+      if(links[i].getAttribute('rel') === 'apple-touch-icon') appleIcon = links[i].getAttribute('href');
+    }
+    state.manifest.push({name:'manifest link',value:escapeHtml(manifestHref || '不存在')});
+    state.manifest.push({name:'apple-touch-icon link',value:escapeHtml(appleIcon || '不存在')});
+    state.manifest.push({name:'apple-mobile-web-app-capable',value:escapeHtml(getMeta('apple-mobile-web-app-capable'))});
+    state.manifest.push({name:'apple-mobile-web-app-title',value:escapeHtml(getMeta('apple-mobile-web-app-title'))});
+    xhrGet('./manifest.webmanifest', function(err, xhr){
+      if(err || !xhr || xhr.status >= 400){
+        state.manifest.push({name:'manifest fetch',value:'<span class="bad">' + escapeHtml(err ? err.message : 'HTTP ' + xhr.status) + '</span>'});
+      }else{
+        try{
+          var json = JSON.parse(xhr.responseText);
+          state.manifest.push({name:'manifest fetch',value:'<span class="ok">OK</span>'});
+          state.manifest.push({name:'name',value:escapeHtml(json.name)});
+          state.manifest.push({name:'short_name',value:escapeHtml(json.short_name)});
+          state.manifest.push({name:'display',value:escapeHtml(json.display)});
+          state.manifest.push({name:'start_url',value:escapeHtml(json.start_url)});
+          state.manifest.push({name:'icons',value:escapeHtml(JSON.stringify(json.icons || []))});
+        }catch(e){
+          state.manifest.push({name:'manifest parse',value:'<span class="bad">' + escapeHtml(e.message) + '</span>'});
+        }
+      }
+      render();
+    });
+  }
+
+  function getMeta(name){
+    var metas = document.getElementsByTagName('meta');
+    for(var i=0;i<metas.length;i++){
+      if(metas[i].getAttribute('name') === name) return metas[i].getAttribute('content') || '';
+    }
+    return '';
+  }
+
+  function testServiceWorker(){
+    state.sw = [];
+    if(!('serviceWorker' in navigator)){
+      state.sw.push('<span class="bad">不支援 serviceWorker</span>');
+      return;
+    }
+    if(navigator.serviceWorker.getRegistrations){
+      navigator.serviceWorker.getRegistrations().then(function(regs){
+        if(!regs || regs.length === 0) state.sw.push('<span class="warn">沒有 registration</span>');
+        for(var i=0;i<regs.length;i++){
+          var reg = regs[i];
+          var msg = 'scope=' + reg.scope;
+          if(reg.active) msg += '｜active=' + reg.active.scriptURL;
+          if(reg.waiting) msg += '｜waiting=' + reg.waiting.scriptURL;
+          if(reg.installing) msg += '｜installing=' + reg.installing.scriptURL;
+          state.sw.push(escapeHtml(msg));
+        }
+        render();
+      }).catch(function(e){
+        state.sw.push('<span class="bad">' + escapeHtml(e.name + ': ' + e.message) + '</span>');
+        render();
+      });
+    }else{
+      state.sw.push('<span class="warn">支援 serviceWorker，但不支援 getRegistrations</span>');
+    }
+  }
+
+  function testCaches(){
+    state.cache = [];
+    if(!('caches' in window)){
+      state.cache.push('<span class="bad">不支援 caches</span>');
+      return;
+    }
+    caches.keys().then(function(keys){
+      if(!keys || keys.length === 0) state.cache.push('<span class="warn">沒有 cache key</span>');
+      for(var i=0;i<keys.length;i++) state.cache.push(escapeHtml(keys[i]));
+      render();
+    }).catch(function(e){
+      state.cache.push('<span class="bad">' + escapeHtml(e.name + ': ' + e.message) + '</span>');
+      render();
+    });
+  }
+
+  function testSyntax(){
+    state.syntax = [];
+    var tests = [
+      ['var / function','var a = 1; function x(){ return a; }'],
+      ['const / let','const a = 1; let b = 2; return a + b;'],
+      ['arrow function','var x = function(){ return 1; }; var y = () => 2; return x()+y();'],
+      ['template literal','var a = 1; return `value ${a}`;'],
+      ['async function','async function x(){ return 1; } return x;'],
+      ['optional chaining','var a = {}; return a && a.b?.c;'],
+      ['nullish coalescing','var a = null; return a ?? 3;'],
+      ['object spread','var a = {x:1}; var b = {...a,y:2}; return b.y;'],
+      ['class','class A { constructor(){ this.x = 1; } } return new A().x;']
+    ];
+    for(var i=0;i<tests.length;i++){
+      try{
+        /* eslint-disable no-new-func */
+        new Function(tests[i][1]);
+        state.syntax.push({name:tests[i][0],value:'<span class="ok">可解析</span>'});
+      }catch(e){
+        state.syntax.push({name:tests[i][0],value:'<span class="bad">不可解析：' + escapeHtml(e.message) + '</span>'});
+      }
+    }
+  }
+
+  function testCssAndEvents(){
+    state.css = [];
+    if(window.CSS && CSS.supports){
+      state.css.push({name:'CSS grid',value:statusText(CSS.supports('display','grid'))});
+      state.css.push({name:'CSS flex',value:statusText(CSS.supports('display','flex'))});
+      state.css.push({name:'CSS 100dvh',value:statusText(CSS.supports('height','100dvh'))});
+      state.css.push({name:'CSS env safe-area',value:statusText(CSS.supports('padding-bottom','env(safe-area-inset-bottom)'))});
+      state.css.push({name:'CSS var',value:statusText(CSS.supports('color','var(--x)'))});
+    }else{
+      state.css.push({name:'CSS.supports',value:'<span class="warn">不支援 CSS.supports</span>'});
+    }
+    state.css.push({name:'PointerEvent',value:statusText('PointerEvent' in window)});
+    state.css.push({name:'TouchEvent',value:statusText('TouchEvent' in window)});
+    state.css.push({name:'ontouchstart',value:statusText('ontouchstart' in window)});
+    state.css.push({name:'setPointerCapture',value:statusText(!!(window.Element && Element.prototype && Element.prototype.setPointerCapture))});
+    state.css.push({name:'fetch',value:statusText('fetch' in window)});
+    state.css.push({name:'Promise',value:statusText('Promise' in window)});
+    state.css.push({name:'Blob',value:statusText('Blob' in window)});
+    state.css.push({name:'URL',value:statusText('URL' in window)});
+    state.css.push({name:'speechSynthesis',value:statusText('speechSynthesis' in window)});
+    state.css.push({name:'SpeechSynthesisUtterance',value:statusText('SpeechSynthesisUtterance' in window)});
+    try{
+      var voices = window.speechSynthesis && window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+      state.css.push({name:'voices count',value:escapeHtml(voices.length)});
+    }catch(e){
+      state.css.push({name:'voices count',value:'<span class="bad">' + escapeHtml(e.message) + '</span>'});
+    }
+  }
+
+  function runAll(){
+    state = {storage:[],resources:[],images:[],manifest:[],sw:[],cache:[],syntax:[],css:[],errors:[]};
+    errors = [];
+    imageFetchStarted = {};
+    RESOURCE_VERSION = String(new Date().getTime());
+    testStorage();
+    testSyntax();
+    testCssAndEvents();
+    render();
+    testResources();
+    testManifest();
+    testServiceWorker();
+    testCaches();
+  }
+
+  function clearAll(){
+    var tasks = [];
+    try{ localStorage.clear(); }catch(e){ errors.push('localStorage.clear: ' + e.message); }
+    try{ sessionStorage.clear(); }catch(e2){ errors.push('sessionStorage.clear: ' + e2.message); }
+    if('caches' in window){
+      tasks.push(caches.keys().then(function(keys){
+        var list = [];
+        for(var i=0;i<keys.length;i++) list.push(caches.delete(keys[i]));
+        return Promise.all(list);
+      }));
+    }
+    if(navigator.serviceWorker && navigator.serviceWorker.getRegistrations){
+      tasks.push(navigator.serviceWorker.getRegistrations().then(function(regs){
+        var list = [];
+        for(var i=0;i<regs.length;i++) list.push(regs[i].unregister());
+        return Promise.all(list);
+      }));
+    }
+    if(window.Promise && tasks.length){
+      Promise.all(tasks).then(function(){
+        alert('已清除，將重新載入');
+        location.href = location.pathname + '?v=' + new Date().getTime();
+      }).catch(function(e3){
+        alert('清除時發生錯誤：' + e3.message);
+        runAll();
+      });
+    }else{
+      alert('已清除可處理項目，將重新載入');
+      location.href = location.pathname + '?v=' + new Date().getTime();
+    }
+  }
+
+  function speechTest(){
+    try{
+      if(!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)){
+        alert('此瀏覽器不支援語音');
+        return;
+      }
+      window.speechSynthesis.cancel();
+      var utter = new SpeechSynthesisUtterance('測試語音，請上一號場');
+      utter.lang = 'zh-TW';
+      window.speechSynthesis.speak(utter);
+    }catch(e){
+      alert('語音測試失敗：' + e.message);
+    }
+  }
+
+  function bind(){
+    byId('runBtn').onclick = runAll;
+    byId('reloadBtn').onclick = function(){ location.href = location.pathname + '?v=' + new Date().getTime(); };
+    byId('clearAllBtn').onclick = clearAll;
+    byId('speechBtn').onclick = speechTest;
+  }
+
+  bind();
+  runAll();
+})();
+</script>
+</body>
+</html>

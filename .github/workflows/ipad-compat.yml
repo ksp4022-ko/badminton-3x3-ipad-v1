@@ -1,0 +1,27 @@
+name: iPad compatibility
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  ipad-compat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Check app syntax
+        run: |
+          node -e "const fs=require('fs'); for (const f of ['index.html','ipad-test.html']) { const html=fs.readFileSync(f,'utf8'); const m=html.match(/<script>([\s\S]*)<\/script>/); if(!m) throw new Error(f + ' script not found'); new Function(m[1]); console.log(f + ' script syntax ok'); }"
+
+      - name: Run iPad compatibility guard
+        run: node tools/ipad-compat-test.js
