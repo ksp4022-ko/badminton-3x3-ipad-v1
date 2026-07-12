@@ -47,6 +47,10 @@ assert('import resets games', html.includes('games:0'));
 assert('system buttons use unified tap handler', html.includes("tap('resetTodayBtn', resetToday)") && html.includes("tap('exportBackupBtn', exportJson)") && html.includes("tap('importBackupBtn', showImportPasteDialog)"));
 assert('partial next up requires confirmation', html.includes('function confirmPartialNextUp') && html.includes('仍要上場嗎？') && html.includes('await confirmPartialNextUp'));
 assert('board touch does not await before click guard', html.includes('function runBoardInteraction') && html.includes('lastTouchHandledAt = Date.now();') && !html.includes('await handleBoardInteraction(e);'));
+assert('roster import button exists', html.includes('id="fetchRosterBtn"') && html.includes("tap('fetchRosterBtn', showRosterImportDialog)"));
+assert('roster api fixed to rian', html.includes("const ROSTER_SITE = 'rian'"));
+assert('roster api has fetch and jsonp fallback', html.includes('function requestRosterApi') && html.includes('fetchRosterJson') && html.includes('jsonpRosterJson'));
+assert('roster import clears list into rest', html.includes('function importRosterPlayers') && html.includes('state.players = importedPlayers') && html.includes('function normalizeRosterPlayers'));
 
 assert('service worker html network first', sw.includes('const isHtml') && sw.includes('fetch(event.request).then'));
 assert('service worker cache scoped', sw.includes("key.startsWith(CACHE_PREFIX)"));

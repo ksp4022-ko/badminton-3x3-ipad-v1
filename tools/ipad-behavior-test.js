@@ -170,6 +170,16 @@ function createContext() {
     Blob: function Blob(parts, options) { this.parts = parts; this.options = options; },
     URL: { createObjectURL() { return 'blob:test'; }, revokeObjectURL() {} }
   };
+  context.fetch = function fetch(url) {
+    context.__lastFetchUrl = url;
+    return Promise.resolve({
+      ok: context.__fetchOk !== false,
+      status: context.__fetchStatus || 200,
+      json() {
+        return Promise.resolve(context.__fetchData || { ok: true });
+      }
+    });
+  };
   context.window = context;
   context.window.innerWidth = 768;
   context.window.innerHeight = 922;
@@ -324,6 +334,33 @@ async function run() {
   api.importPlayersFromText(JSON.stringify({ players: [{ name: '匯入A', color: '#fecaca' }, { name: '匯入B', games: 9 }] }));
   assert('paste import replaces list', api.getState().players.length === 2 && api.getState().players[0].name === '匯入A');
   assert('paste import resets games', api.getState().players.every((p) => p.games === 0 && p.zone === 'rest'));
+
+  api.setState(baseState([
+    player('old1', '舊A', 'court1', 1, 7),
+    player('old2', '舊B', 'next1', 1, 2)
+  ], { rosterApiUrl: 'https://script.google.com/macros/s/test/exec' }));
+  context.__fetchData = {
+    ok: true,
+    players: [{ name: '新A' }, { name: '新B' }, { name: '新C' }],
+    event: { title: '測試聚會', date: '2026-07-12' }
+  };
+  const rosterData = await api.requestRosterApi('previewRoster', { eventId: 'E1' });
+  api.importRosterPlayers(rosterData.players, rosterData.event);
+  assert('roster api uses fixed rian site', /site=rian/.test(context.__lastFetchUrl));
+  assert('roster api import clears old list', api.getState().players.length === 3 && api.getState().players[0].name === '新A');
+  assert('roster api import puts all players in rest', api.getState().players.every((p) => p.zone === 'rest' && p.slot === null));
+  assert('roster api import resets games', api.getState().players.every((p) => p.games === 0));
+
+  api.setState(baseState([player('old1', '保留A', 'court1', 1, 4)], { rosterApiUrl: 'https://script.google.com/macros/s/test/exec' }));
+  context.__fetchData = { ok: false, error: 'API failed' };
+  let failed = false;
+  try {
+    await api.requestRosterApi('previewRoster', { eventId: 'E2' });
+  } catch (err) {
+    failed = true;
+  }
+  assert('roster api failure rejects', failed);
+  assert('roster api failure does not overwrite existing players', api.getState().players.length === 1 && api.getState().players[0].name === '保留A' && api.getState().players[0].zone === 'court1');
 
   api.exportJson();
   assert('copy list export opens textarea', /badminton-player-list-v1/.test(context.document.getElementById('exportTextArea').value));

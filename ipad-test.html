@@ -240,7 +240,7 @@
           var len = xhr && xhr.responseText ? xhr.responseText.length : 0;
           var value = err ? '<span class="bad">' + escapeHtml(err.message) + '</span>' : escapeHtml('HTTP ' + xhr.status + '｜' + ct + '｜size/text ' + len);
           if(file === 'index.html' && xhr && xhr.responseText){
-            value += '<br>包含 1.0.3-ipad：' + statusText(xhr.responseText.indexOf('1.0.3-ipad') >= 0);
+            value += '<br>包含 1.0.4-ipad：' + statusText(xhr.responseText.indexOf('1.0.4-ipad') >= 0);
             value += '<br>包含 2.1.0：' + (xhr.responseText.indexOf('2.1.0') >= 0 ? '<span class="bad">YES</span>' : '<span class="ok">NO</span>');
             value += '<br>包含 APP_VERSION：' + statusText(xhr.responseText.indexOf('APP_VERSION') >= 0);
           }
