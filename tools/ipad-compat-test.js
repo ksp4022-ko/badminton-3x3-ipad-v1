@@ -53,6 +53,8 @@ assert('roster api has fetch and jsonp fallback', html.includes('function reques
 assert('roster import clears list into rest', html.includes('function importRosterPlayers') && html.includes('state.players = importedPlayers') && html.includes('function normalizeRosterPlayers'));
 assert('fixed viewport layout exists', html.includes('overflow:hidden') && html.includes('position:fixed;inset:0') && html.includes('height:var(--safe-vh)'));
 assert('legacy ipad classes exist', html.includes('function detectLegacyIpad') && html.includes('legacyIpadLandscape') && html.includes('html.legacyIpadLandscape'));
+assert('legacy ipad measured viewport height exists', html.includes('function measuredLegacyViewportHeight') && html.includes('--legacy-vh') && html.includes('height:var(--legacy-vh)'));
+assert('legacy ipad safari compact layout exists', html.includes('legacyIpadSafari') && html.includes('html.legacyIpadSafari.legacyIpadLandscape'));
 assert('selected player storage fallback exists', html.includes('SELECTED_PLAYER_KEY') && html.includes('sessionStorage') && html.includes('localStorage') && html.includes('function loadSelectedPlayer'));
 
 assert('service worker html network first', sw.includes('const isHtml') && sw.includes('fetch(event.request).then'));

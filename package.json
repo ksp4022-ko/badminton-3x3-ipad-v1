@@ -1,8 +1,12 @@
 {
   "name": "badminton-3x3-ipad-v1",
-  "version": "1.0.5-ipad",
+  "version": "1.0.7-ipad",
   "private": true,
   "scripts": {
-    "test": "node tools/ipad-compat-test.js && node tools/ipad-behavior-test.js"
+    "test": "node tools/ipad-compat-test.js && node tools/ipad-layout-test.js && node tools/ipad-behavior-test.js",
+    "test:visual": "node tools/ipad-visual-test.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1"
   }
 }
