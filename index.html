@@ -306,7 +306,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.2-ipad';
+  const APP_VERSION = '1.0.3-ipad';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const DEBUG_MODE = location.search.indexOf('debug=1') >= 0;
@@ -838,13 +838,14 @@
     return activeCourts().find(z => zonePlayers(z).length === 0) || null;
   }
 
+  async function confirmPartialNextUp(nextZone, count){
+    if(count >= 4) return true;
+    return await confirmDialog('Next 未滿 4 人', `${zoneLabel(nextZone)} 目前只有 ${count}/4 人，仍要上場嗎？`, '');
+  }
+
   async function nextUp(nextZone){
     const players = zonePlayers(nextZone);
     if(players.length === 0){ showToast('這組 Next 沒有人'); return; }
-    if(players.length !== 4){
-      await alertDialog('Next 未滿 4 人', `${zoneLabel(nextZone)} 目前只有 ${players.length}/4 人，必須滿 4 人才能上場。`);
-      return;
-    }
     const court = firstEmptyCourt();
     if(!court){ await alertDialog('目前沒有空球場', '沒有完全空的 Court，所有位置不動。'); return; }
     if(state.settings.autoArrangeMode){
@@ -853,6 +854,7 @@
       render();
       return;
     }
+    if(!(await confirmPartialNextUp(nextZone, players.length))) return;
     const sorted = players.sort((a,b)=>(a.slot||99)-(b.slot||99));
     sorted.forEach((p,i) => { p.zone = court; p.slot = i+1; p.updatedAt = nowIso(); });
     const names = sorted.map(p=>p.name);
@@ -869,12 +871,9 @@
     const players = zonePlayers(nextZone);
     if(players.length === 0){
       if(fromCourtDown) await alertDialog('Next 1 無人上場', '下場後 Next 1 沒有人可自動上場，剛空出的 Court 保持空場。');
-      return;
+      return false;
     }
-    if(players.length !== 4){
-      await alertDialog('Next 未滿 4 人', `${zoneLabel(nextZone)} 目前只有 ${players.length}/4 人，必須滿 4 人才能上場。`);
-      return;
-    }
+    if(!(await confirmPartialNextUp(nextZone, players.length))) return false;
     const sorted = players.sort((a,b)=>(a.slot||99)-(b.slot||99));
     sorted.forEach((p,i) => { p.zone = court; p.slot = i+1; p.updatedAt = nowIso(); });
     const names = sorted.map(p=>p.name);
@@ -884,6 +883,7 @@
     logAction('autoNextUp',court,names,`${zoneLabel(nextZone)} 上場到 ${zoneLabel(court)}，Next 向前遞補`);
     showToast(`${zoneLabel(nextZone)} 已上場`);
     if(state.settings.autoCallEnabled) callPlayers(names, court);
+    return true;
   }
 
   function shiftNextForwardAfter(nextZone){

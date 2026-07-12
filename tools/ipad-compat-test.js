@@ -45,7 +45,7 @@ assert('copy paste player list exists', html.includes('function playerListPayloa
 assert('player list exports name and color only', html.includes('app:\'badminton-player-list-v1\'') && html.includes('name:p.name') && html.includes('color:p.color || COLORS[0]'));
 assert('import resets games', html.includes('games:0'));
 assert('system buttons use unified tap handler', html.includes("tap('resetTodayBtn', resetToday)") && html.includes("tap('exportBackupBtn', exportJson)") && html.includes("tap('importBackupBtn', showImportPasteDialog)"));
-assert('next up requires 4 players', html.includes('players.length !== 4') && html.includes('必須滿 4 人才能上場'));
+assert('partial next up requires confirmation', html.includes('function confirmPartialNextUp') && html.includes('仍要上場嗎？') && html.includes('await confirmPartialNextUp'));
 assert('board touch does not await before click guard', html.includes('function runBoardInteraction') && html.includes('lastTouchHandledAt = Date.now();') && !html.includes('await handleBoardInteraction(e);'));
 
 assert('service worker html network first', sw.includes('const isHtml') && sw.includes('fetch(event.request).then'));

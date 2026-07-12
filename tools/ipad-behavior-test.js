@@ -251,10 +251,15 @@ async function run() {
     player('p2', 'B', 'next1', 2),
     player('p3', 'C', 'next1', 3)
   ]));
-  const incompleteUp = api.nextUp('next1');
+  const incompleteCancel = api.nextUp('next1');
+  api.tap('modalCancelBtn');
+  await incompleteCancel;
+  assert('next with 3 players cancel does not move', api.getState().players.every((p) => p.zone === 'next1'));
+
+  const incompleteConfirm = api.nextUp('next1');
   api.tap('modalOkBtn');
-  await incompleteUp;
-  assert('next with 3 players does not move', api.getState().players.every((p) => p.zone === 'next1'));
+  await incompleteConfirm;
+  assert('next with 3 players confirm moves to court1', api.getState().players.every((p) => p.zone === 'court1'));
 
   api.setState(baseState([
     player('p1', 'A', 'next1', 1),
@@ -264,6 +269,16 @@ async function run() {
   ]));
   await api.nextUp('next1');
   assert('next with 4 players moves to court1', api.getState().players.every((p) => p.zone === 'court1'));
+
+  api.setState(baseState([
+    player('p1', 'A', 'next1', 1),
+    player('p2', 'B', 'next1', 2),
+    player('p3', 'C', 'next1', 3)
+  ], { freePlayMode: false, autoArrangeMode: true }));
+  const autoPartial = api.nextUp('next1');
+  api.tap('modalOkBtn');
+  await autoPartial;
+  assert('auto arrange next with 3 players confirm moves', api.getState().players.every((p) => p.zone === 'court1'));
 
   api.setState(baseState([
     player('p1', 'A', 'court1', 1),
