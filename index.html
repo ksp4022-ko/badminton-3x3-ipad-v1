@@ -306,7 +306,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.1-ipad';
+  const APP_VERSION = '1.0.2-ipad';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const DEBUG_MODE = location.search.indexOf('debug=1') >= 0;
@@ -381,6 +381,7 @@
         lastTouch = Date.now();
         if(e.cancelable) e.preventDefault();
       }
+      if(e.stopPropagation) e.stopPropagation();
       handler(e);
     }
     el.addEventListener('touchend', run, false);
@@ -840,6 +841,10 @@
   async function nextUp(nextZone){
     const players = zonePlayers(nextZone);
     if(players.length === 0){ showToast('這組 Next 沒有人'); return; }
+    if(players.length !== 4){
+      await alertDialog('Next 未滿 4 人', `${zoneLabel(nextZone)} 目前只有 ${players.length}/4 人，必須滿 4 人才能上場。`);
+      return;
+    }
     const court = firstEmptyCourt();
     if(!court){ await alertDialog('目前沒有空球場', '沒有完全空的 Court，所有位置不動。'); return; }
     if(state.settings.autoArrangeMode){
@@ -866,8 +871,9 @@
       if(fromCourtDown) await alertDialog('Next 1 無人上場', '下場後 Next 1 沒有人可自動上場，剛空出的 Court 保持空場。');
       return;
     }
-    if(players.length < 4){
-      await alertDialog(`${zoneLabel(nextZone)} 未滿 4 人`, `${zoneLabel(nextZone)} 目前只有 ${players.length}/4 人，仍照樣上場。`);
+    if(players.length !== 4){
+      await alertDialog('Next 未滿 4 人', `${zoneLabel(nextZone)} 目前只有 ${players.length}/4 人，必須滿 4 人才能上場。`);
+      return;
     }
     const sorted = players.sort((a,b)=>(a.slot||99)-(b.slot||99));
     sorted.forEach((p,i) => { p.zone = court; p.slot = i+1; p.updatedAt = nowIso(); });
@@ -1433,129 +1439,95 @@
   }
 
   function bindEvents(){
-    document.addEventListener('touchend', async (e) => {
-      if(closestByClass(e.target, 'zone-head') || closestByClass(e.target, 'slot') || closestByClass(e.target, 'player-chip')) lastTouchHandledAt = Date.now();
-      await handleBoardInteraction(e);
-    }, false);
-    document.addEventListener('click', async (e) => {
+    function isBoardTarget(target){
+      return !!(closestByClass(target, 'zone-head') || closestByClass(target, 'slot') || closestByClass(target, 'player-chip'));
+    }
+    function runBoardInteraction(e){
+      if(e.type === 'touchend' && isBoardTarget(e.target)){
+        lastTouchHandledAt = Date.now();
+        if(e.cancelable) e.preventDefault();
+      }
+      handleBoardInteraction(e).catch(function(err){
+        console.error(err);
+        debugLog('board action error', err && err.message ? err.message : String(err));
+        showToast('操作失敗，請重試');
+      });
+    }
+    document.addEventListener('touchend', runBoardInteraction, false);
+    document.addEventListener('click', (e) => {
       if(Date.now() - lastTouchHandledAt < 500) return;
-      await handleBoardInteraction(e);
+      runBoardInteraction(e);
     });
 
-    $('cancelSelectBtn').onclick = () => clearSelected('已取消選取');
-    $('closePanelBtn').onclick = (e) => { e.stopPropagation(); closePanel(); };
-    $('repeatCallBtn').onclick = (e) => { e.stopPropagation(); repeatLastCall(); };
-    $('moveRestBtn').onclick = (e) => {
-      e.stopPropagation();
+    function moveSelectedToRest(){
       const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
-      if(!p){ showToast('請先選取球員'); return; }
-      if(p.zone === 'rest'){ showToast('此球員已在休息區'); return; }
-      if(movePlayer(p.id,'rest',null)){ selectedPlayer = null; showToast('已回到休息區'); render(); }
-    };
-    $('adminLoginBtn').onclick = () => {
-      if($('adminPasswordInput').value === state.settings.adminPassword){
-        isAdmin = true;
-        saveAdminUnlock();
-        $('adminPasswordInput').value='';
-        collapsedSections.delete('adminSectionBody');
-        saveCollapsedSections();
-        showToast('管理員模式已開啟');
-        renderPanel();
+      if(!p){ showToast('請先選球員'); return; }
+      if(p.zone === 'rest'){ showToast('已在休息區'); return; }
+      if(movePlayer(p.id,'rest',null)){ selectedPlayer = null; showToast('已回休息區'); render(); }
+    }
+    function adminLogin(){
+      if($('adminPasswordInput').value !== state.settings.adminPassword){
+        showToast('密碼錯誤');
+        return;
       }
-      else showToast('密碼錯誤');
-    };
-    $('freeModeBtn').onclick = () => { state.settings.freePlayMode=true; state.settings.autoArrangeMode=false; saveState(); renderPanel(); };
-    $('autoModeBtn').onclick = () => { state.settings.freePlayMode=false; state.settings.autoArrangeMode=true; saveState(); showToast('已切換自動排場設定'); renderPanel(); };
-    $('randomFillBtn').onclick = randomFillCourts;
-    $('autoCallOffBtn').onclick = () => { state.settings.autoCallEnabled=false; saveState(); renderPanel(); };
-    $('autoCallOnBtn').onclick = () => { state.settings.autoCallEnabled=true; saveState(); renderPanel(); };
-    $('voiceTestBtn').onclick = () => callPlayers(['測試','請上場']);
-    $('saveVoiceBtn').onclick = saveVoiceSettings;
-    $('addPlayerBtn').onclick = () => addPlayer($('newPlayerInput').value);
+      isAdmin = true;
+      saveAdminUnlock();
+      $('adminPasswordInput').value='';
+      collapsedSections.delete('adminSectionBody');
+      saveCollapsedSections();
+      showToast('已登入');
+      renderPanel();
+    }
+    function tap(id, handler){
+      const el = $(id);
+      if(el) setTap(el, handler);
+    }
+
+    tap('cancelSelectBtn', () => clearSelected('已取消選取'));
+    tap('closePanelBtn', closePanel);
+    tap('repeatCallBtn', repeatLastCall);
+    tap('moveRestBtn', moveSelectedToRest);
+    tap('adminLoginBtn', adminLogin);
+    tap('freeModeBtn', () => { state.settings.freePlayMode=true; state.settings.autoArrangeMode=false; saveState(); renderPanel(); });
+    tap('autoModeBtn', () => { state.settings.freePlayMode=false; state.settings.autoArrangeMode=true; saveState(); showToast('已切換'); renderPanel(); });
+    tap('randomFillBtn', randomFillCourts);
+    tap('autoCallOffBtn', () => { state.settings.autoCallEnabled=false; saveState(); renderPanel(); });
+    tap('autoCallOnBtn', () => { state.settings.autoCallEnabled=true; saveState(); renderPanel(); });
+    tap('voiceTestBtn', () => callPlayers(['測試','請上場']));
+    tap('saveVoiceBtn', saveVoiceSettings);
+    tap('addPlayerBtn', () => addPlayer($('newPlayerInput').value));
     $('newPlayerInput').addEventListener('keydown', e => { if(e.key==='Enter') addPlayer($('newPlayerInput').value); });
-    $('renamePlayerBtn').onclick = renameSelected;
-    $('deletePlayerBtn').onclick = deleteSelected;
-    $('plusGameBtn').onclick = () => adjustSelectedGames(1);
-    $('minusGameBtn').onclick = () => adjustSelectedGames(-1);
-    $('zeroPlayerBtn').onclick = zeroSelectedGames;
-    $('resetAllGamesBtn').onclick = resetAllGames;
-    $('resetTodayBtn').onclick = resetToday;
-    $('clearAllBtn').onclick = clearAll;
-    $('use3x3Btn').onclick = () => setCourtMode(3);
-    $('use2x2Btn').onclick = () => setCourtMode(2);
-    $('exportBackupBtn').onclick = exportJson;
-    $('exportLogBtn').onclick = exportLogCsv;
-    $('importBackupBtn').onclick = () => $('importFileInput').click();
-    $('importFileInput').onchange = function(e){ handleImportFile(e.target.files && e.target.files[0] ? e.target.files[0] : null); };
-    $('newPlayerColorGrid').onclick = (e) => {
+    tap('renamePlayerBtn', renameSelected);
+    tap('deletePlayerBtn', deleteSelected);
+    tap('plusGameBtn', () => adjustSelectedGames(1));
+    tap('minusGameBtn', () => adjustSelectedGames(-1));
+    tap('zeroPlayerBtn', zeroSelectedGames);
+    tap('resetAllGamesBtn', resetAllGames);
+    tap('resetTodayBtn', resetToday);
+    tap('clearAllBtn', clearAll);
+    tap('use3x3Btn', () => setCourtMode(3));
+    tap('use2x2Btn', () => setCourtMode(2));
+    tap('exportBackupBtn', exportJson);
+    tap('exportLogBtn', exportLogCsv);
+    tap('importBackupBtn', showImportPasteDialog);
+    $('importFileInput').addEventListener('change', function(e){ handleImportFile(e.target.files && e.target.files[0] ? e.target.files[0] : null); });
+    setTap($('newPlayerColorGrid'), (e) => {
       const swatch = closestByClass(e.target, 'color-swatch');
       if(!swatch) return;
       selectedNewPlayerColor = dataAttr(swatch, 'color') || COLORS[0];
       renderColorPicker();
-    };
+    });
     const collapseButtons = document.querySelectorAll('[data-collapse-target]');
     for(let i = 0; i < collapseButtons.length; i += 1){
       const btn = collapseButtons[i];
-      btn.onclick = (e) => {
-        e.stopPropagation();
+      setTap(btn, () => {
         const target = dataAttr(btn, 'collapse-target');
         if(collapsedSections.has(target)) collapsedSections.delete(target);
         else collapsedSections.add(target);
         saveCollapsedSections();
         renderCollapsedSections();
-      };
+      });
     }
-
-    function overrideTap(id, handler){
-      const el = $(id);
-      if(!el) return;
-      el.onclick = null;
-      setTap(el, handler);
-    }
-    overrideTap('cancelSelectBtn', () => clearSelected('已取消選取'));
-    overrideTap('closePanelBtn', (e) => { e.stopPropagation(); closePanel(); });
-    overrideTap('repeatCallBtn', (e) => { e.stopPropagation(); repeatLastCall(); });
-    overrideTap('moveRestBtn', (e) => {
-      e.stopPropagation();
-      const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
-      if(!p){ showToast('請先選球員'); return; }
-      if(p.zone === 'rest'){ showToast('已在休息區'); return; }
-      if(movePlayer(p.id,'rest',null)){ selectedPlayer = null; showToast('已回休息區'); render(); }
-    });
-    overrideTap('adminLoginBtn', () => {
-      if($('adminPasswordInput').value === state.settings.adminPassword){
-        isAdmin = true;
-        saveAdminUnlock();
-        $('adminPasswordInput').value='';
-        collapsedSections.delete('adminSectionBody');
-        saveCollapsedSections();
-        showToast('已登入');
-        renderPanel();
-      }else{
-        showToast('密碼錯誤');
-      }
-    });
-    overrideTap('freeModeBtn', () => { state.settings.freePlayMode=true; state.settings.autoArrangeMode=false; saveState(); renderPanel(); });
-    overrideTap('autoModeBtn', () => { state.settings.freePlayMode=false; state.settings.autoArrangeMode=true; saveState(); showToast('已切換'); renderPanel(); });
-    overrideTap('randomFillBtn', randomFillCourts);
-    overrideTap('autoCallOffBtn', () => { state.settings.autoCallEnabled=false; saveState(); renderPanel(); });
-    overrideTap('autoCallOnBtn', () => { state.settings.autoCallEnabled=true; saveState(); renderPanel(); });
-    overrideTap('voiceTestBtn', () => callPlayers(['測試','請上場']));
-    overrideTap('saveVoiceBtn', saveVoiceSettings);
-    overrideTap('addPlayerBtn', () => addPlayer($('newPlayerInput').value));
-    overrideTap('renamePlayerBtn', renameSelected);
-    overrideTap('deletePlayerBtn', deleteSelected);
-    overrideTap('plusGameBtn', () => adjustSelectedGames(1));
-    overrideTap('minusGameBtn', () => adjustSelectedGames(-1));
-    overrideTap('zeroPlayerBtn', zeroSelectedGames);
-    overrideTap('resetAllGamesBtn', resetAllGames);
-    overrideTap('resetTodayBtn', resetToday);
-    overrideTap('clearAllBtn', clearAll);
-    overrideTap('use3x3Btn', () => setCourtMode(3));
-    overrideTap('use2x2Btn', () => setCourtMode(2));
-    overrideTap('exportBackupBtn', exportJson);
-    overrideTap('exportLogBtn', exportLogCsv);
-    overrideTap('importBackupBtn', showImportPasteDialog);
 
     let resizeTimer = null;
     window.addEventListener('resize', () => {
@@ -1578,12 +1550,46 @@
     if($('resetTodayBtn')) $('resetTodayBtn').textContent = '今日重新開始';
   }
 
+  function exposeDebugApi(){
+    if(!DEBUG_MODE) return;
+    window.__badmintonIpadV1 = {
+      getState:function(){ return clone(state); },
+      setState:function(nextState){
+        state = normalizeState(nextState || {});
+        selectedPlayer = null;
+        saveState();
+        render();
+      },
+      tap:function(id){
+        const el = $(id);
+        if(!el) throw new Error('missing element ' + id);
+        const event = {
+          type:'touchend',
+          target:el,
+          cancelable:true,
+          preventDefault:function(){},
+          stopPropagation:function(){}
+        };
+        el.dispatchEvent(event);
+      },
+      handleBoardInteraction:handleBoardInteraction,
+      courtDown:courtDown,
+      nextUp:nextUp,
+      resetToday:resetToday,
+      clearAll:clearAll,
+      importPlayersFromText:importPlayersFromText,
+      exportJson:exportJson,
+      exportLogCsv:exportLogCsv
+    };
+  }
+
   function init(){
     isAdmin = isAdminUnlocked();
     simplifyLabels();
     bindEvents();
     initFloatingButton();
     render();
+    exposeDebugApi();
     registerServiceWorker();
   }
 
