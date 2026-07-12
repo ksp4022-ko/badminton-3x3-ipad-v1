@@ -51,6 +51,9 @@ assert('roster import button exists', html.includes('id="fetchRosterBtn"') && ht
 assert('roster api fixed to rian', html.includes("const ROSTER_SITE = 'rian'"));
 assert('roster api has fetch and jsonp fallback', html.includes('function requestRosterApi') && html.includes('fetchRosterJson') && html.includes('jsonpRosterJson'));
 assert('roster import clears list into rest', html.includes('function importRosterPlayers') && html.includes('state.players = importedPlayers') && html.includes('function normalizeRosterPlayers'));
+assert('fixed viewport layout exists', html.includes('overflow:hidden') && html.includes('position:fixed;inset:0') && html.includes('height:var(--safe-vh)'));
+assert('legacy ipad classes exist', html.includes('function detectLegacyIpad') && html.includes('legacyIpadLandscape') && html.includes('html.legacyIpadLandscape'));
+assert('selected player storage fallback exists', html.includes('SELECTED_PLAYER_KEY') && html.includes('sessionStorage') && html.includes('localStorage') && html.includes('function loadSelectedPlayer'));
 
 assert('service worker html network first', sw.includes('const isHtml') && sw.includes('fetch(event.request).then'));
 assert('service worker cache scoped', sw.includes("key.startsWith(CACHE_PREFIX)"));

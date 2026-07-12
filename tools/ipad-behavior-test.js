@@ -2,8 +2,9 @@ const fs = require('fs');
 const vm = require('vm');
 
 const html = fs.readFileSync('index.html', 'utf8');
-const scriptMatch = html.match(/<script>([\s\S]*)<\/script>/);
-if (!scriptMatch) throw new Error('script not found');
+const scriptMatches = Array.from(html.matchAll(/<script>([\s\S]*?)<\/script>/g));
+if (!scriptMatches.length) throw new Error('script not found');
+const mainScript = scriptMatches[scriptMatches.length - 1][1];
 
 function assert(name, condition) {
   if (!condition) throw new Error('FAIL: ' + name);
@@ -140,6 +141,7 @@ function createContext() {
   while ((match = idRegex.exec(html))) document.getElementById(match[1]);
 
   const store = {};
+  const sessionStore = {};
   const context = {
     console,
     setTimeout,
@@ -163,6 +165,11 @@ function createContext() {
       getItem(key) { return Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null; },
       setItem(key, value) { store[key] = String(value); },
       removeItem(key) { delete store[key]; }
+    },
+    sessionStorage: {
+      getItem(key) { return Object.prototype.hasOwnProperty.call(sessionStore, key) ? sessionStore[key] : null; },
+      setItem(key, value) { sessionStore[key] = String(value); },
+      removeItem(key) { delete sessionStore[key]; }
     },
     window: null,
     speechSynthesis: { speak() {}, getVoices() { return []; } },
@@ -252,9 +259,22 @@ function withTimeout(promise, label) {
 async function run() {
   const context = createContext();
   vm.createContext(context);
-  vm.runInContext(scriptMatch[1], context);
+  vm.runInContext(mainScript, context);
   const api = context.window.__badmintonIpadV1;
   assert('debug api exposed', !!api);
+
+  const restoredContext = createContext();
+  restoredContext.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(baseState([player('p1', 'A', 'court1', 1)])));
+  restoredContext.localStorage.setItem('badminton3x3.ipad.v1.state.selectedPlayer', JSON.stringify({ playerId: 'p1', name: 'A', fromZone: 'court1', fromSlot: 1 }));
+  vm.createContext(restoredContext);
+  vm.runInContext(mainScript, restoredContext);
+  const restoredApi = restoredContext.window.__badmintonIpadV1;
+  const restoredTargetSlot = new FakeElement('div');
+  restoredTargetSlot.classList.add('slot');
+  restoredTargetSlot.setAttribute('data-zone', 'court2');
+  restoredTargetSlot.setAttribute('data-slot', '1');
+  await restoredApi.handleBoardInteraction(eventFor(restoredTargetSlot));
+  assert('selected player restores from local storage after reload', restoredApi.getState().players[0].zone === 'court2');
 
   api.setState(baseState([
     player('p1', 'A', 'next1', 1),
@@ -315,12 +335,14 @@ async function run() {
   sourceChip.setAttribute('data-player-id', 'p1');
   sourceChip.parentNode = sourceSlot;
   await api.handleBoardInteraction(eventFor(sourceChip));
+  assert('selected player saved to session storage', /"playerId":"p1"/.test(context.sessionStorage.getItem('badminton3x3.ipad.v1.state.selectedPlayer') || ''));
   const targetSlot = new FakeElement('div');
   targetSlot.classList.add('slot');
   targetSlot.setAttribute('data-zone', 'court2');
   targetSlot.setAttribute('data-slot', '1');
   await api.handleBoardInteraction(eventFor(targetSlot));
   assert('selected board player moves to tapped empty slot', api.getState().players[0].zone === 'court2' && api.getState().players[0].slot === 1);
+  assert('selected player cleared from session storage after move', !context.sessionStorage.getItem('badminton3x3.ipad.v1.state.selectedPlayer'));
 
   api.setState(baseState([
     player('p1', 'A', 'court1', 1, 5),

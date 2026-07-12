@@ -10,8 +10,43 @@
   <title>羽球排場 2x2 / 3x3</title>
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./icon-192.png" />
+  <script>
+    (function(){
+      function detectLegacyIpad(){
+        var ua = navigator.userAgent || '';
+        var match = ua.match(/OS (\d+)[_.]/);
+        var major = match ? Number(match[1]) : 0;
+        return /iPad/i.test(ua) && major > 0 && major <= 12;
+      }
+      function legacyIpadIsLandscape(){
+        if(window.orientation === 90 || window.orientation === -90) return true;
+        var doc = document.documentElement || {};
+        var cw = doc.clientWidth || 0;
+        var ch = doc.clientHeight || 0;
+        var iw = window.innerWidth || 0;
+        var ih = window.innerHeight || 0;
+        if(cw && ch && cw > ch) return true;
+        if(iw && ih && iw > ih) return true;
+        return false;
+      }
+      function updateLegacyIpadClass(){
+        var isLegacy = !!window.__legacyIpad;
+        var isLandscape = isLegacy && legacyIpadIsLandscape();
+        document.documentElement.classList.toggle('legacyIpad', isLegacy);
+        document.documentElement.classList.toggle('legacyIpadLandscape', isLandscape);
+      }
+      window.__legacyIpad = detectLegacyIpad();
+      window.__updateLegacyIpadClass = updateLegacyIpadClass;
+      updateLegacyIpadClass();
+      window.addEventListener('resize', updateLegacyIpadClass);
+      window.addEventListener('orientationchange', function(){ setTimeout(updateLegacyIpadClass, 260); });
+    })();
+  </script>
   <style>
     :root{
+      --safe-vh:100dvh;
+      --safe-top:env(safe-area-inset-top,0px);
+      --safe-right:env(safe-area-inset-right,0px);
       --bg:#ecfeff;
       --panel:#ffffff;
       --ink:#0f172a;
@@ -26,10 +61,12 @@
       --shadow:0 12px 32px rgba(15,23,42,.18);
       --radius:18px;
       --safe-bottom:env(safe-area-inset-bottom,0px);
+      --safe-left:env(safe-area-inset-left,0px);
     }
+    @supports not (height:100dvh){:root{--safe-vh:100vh;}}
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{height:100%;margin:0;overscroll-behavior:none;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;}
-    body{min-height:100vh;min-height:100dvh;touch-action:manipulation;}
+    html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;}
+    body{min-height:100vh;min-height:var(--safe-vh);touch-action:manipulation;-webkit-text-size-adjust:100%;}
     button,input,select{font:inherit}
     button{cursor:pointer;border:0;border-radius:14px;min-height:48px;font-weight:800;background:#e2e8f0;color:#0f172a;padding:10px 14px;}
     button:active{transform:translateY(1px)}
@@ -41,7 +78,7 @@
     button.cancel-select-strong{background:#dc2626;color:#fff;border:2px solid #991b1b;}
     input,select{width:100%;min-height:48px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:#fff;color:var(--ink);font-size:18px;}
     label{font-weight:800;font-size:16px;color:#334155;display:block;margin:6px 0 4px}
-    .app-shell{min-height:100vh;min-height:100dvh;max-width:1366px;margin:0 auto;padding:8px 12px calc(12px + var(--safe-bottom));}
+    .app-shell{position:fixed;inset:0;width:100vw;height:var(--safe-vh);max-height:var(--safe-vh);max-width:1366px;margin:0 auto;padding:8px max(12px,var(--safe-right)) calc(12px + var(--safe-bottom)) max(12px,var(--safe-left));display:grid;grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:8px;overflow:hidden;}
     .app-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px 10px;position:sticky;top:0;background:linear-gradient(180deg,rgba(236,254,255,.98),rgba(236,254,255,.86));z-index:10;backdrop-filter:blur(8px)}
     .title-wrap{display:flex;align-items:baseline;gap:10px;min-width:0;}
     .app-title{font-size:clamp(23px,2.4vw,34px);font-weight:950;letter-spacing:.02em;white-space:nowrap;}
@@ -52,18 +89,18 @@
     .selected-banner #selectedText{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .selected-banner button{flex:0 0 auto;}
     .app-header,.section-title{display:none;}
-    .board-section{margin:0 0 8px;}
+    .board-section{margin:0;min-width:0;min-height:0;}
     .section-title{display:none;}
-    .zone-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+    .zone-row{height:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;min-width:0;min-height:0;}
     .zone-row.mode-2{grid-template-columns:repeat(2,minmax(0,1fr));}
-    .zone-card{background:rgba(255,255,255,.96);border:1px solid #bae6fd;border-radius:var(--radius);box-shadow:0 10px 22px rgba(15,23,42,.1);padding:8px;min-width:0;}
+    .zone-card{background:rgba(255,255,255,.96);border:1px solid #bae6fd;border-radius:var(--radius);box-shadow:0 10px 22px rgba(15,23,42,.1);padding:8px;min-width:0;min-height:0;display:flex;flex-direction:column;}
     .zone-head{width:100%;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;border:1px solid #99f6e4;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border-radius:14px;min-height:44px;padding:8px 10px;text-align:left;}
     .zone-head.warn{background:linear-gradient(135deg,#92400e,#f59e0b);border-color:#facc15;}
     .zone-head:active{transform:translateY(1px)}
     .zone-title{font-size:clamp(18px,2vw,25px);font-weight:950;color:#0f172a;white-space:nowrap;}
     .zone-head .zone-title,.zone-head .zone-count{color:#fff;}
     .zone-count{font-size:15px;color:#64748b;font-weight:800;white-space:nowrap;}
-    .slot-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,1fr);gap:8px;min-height:132px;min-height:clamp(132px,21vh,214px);min-height:clamp(132px,21dvh,214px);}
+    .slot-grid{flex:1 1 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:8px;min-height:0;}
     .slot{border:2px dashed #94a3b8;border-radius:16px;background:#f8fafc;min-height:54px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
     .slot.empty::after{content:"點此放入";color:#94a3b8;font-weight:900;font-size:clamp(14px,1.5vw,20px)}
     .zone-action{display:none;}
@@ -148,6 +185,26 @@
     @media (min-width:1367px){
       .app-shell{max-width:1500px}.slot-grid{min-height:196px}.float-panel{width:460px}
     }
+    html.legacyIpadLandscape .app-shell{max-width:none;padding:3px max(5px,var(--safe-right)) max(5px,var(--safe-bottom)) max(5px,var(--safe-left));gap:5px;}
+    html.legacyIpadLandscape .zone-row{gap:5px;}
+    html.legacyIpadLandscape .zone-card{padding:5px;border-radius:13px;box-shadow:0 4px 12px rgba(15,23,42,.12);}
+    html.legacyIpadLandscape .zone-head{min-height:36px;margin-bottom:5px;padding:5px 8px;border-radius:11px;}
+    html.legacyIpadLandscape .zone-title{font-size:19px;}
+    html.legacyIpadLandscape .zone-count{font-size:13px;}
+    html.legacyIpadLandscape .slot-grid{gap:5px;}
+    html.legacyIpadLandscape .slot{min-height:0;border-width:2px;border-radius:12px;}
+    html.legacyIpadLandscape .slot.empty::after{font-size:15px;}
+    html.legacyIpadLandscape .player-chip{min-height:0;border-width:2px;border-radius:12px;padding:5px 6px 4px;}
+    html.legacyIpadLandscape .player-chip .name{font-size:clamp(18px,4.2vh,28px);}
+    html.legacyIpadLandscape .player-chip .games{min-width:24px;height:22px;font-size:15px;top:3px;left:4px;}
+    html.legacyIpadLandscape .selected-banner{left:6px;right:6px;min-height:42px;padding:5px 8px;border-radius:12px;font-size:15px;}
+    html.legacyIpadLandscape .selected-banner #selectedText{white-space:normal;line-height:1.18;}
+    html.legacyIpadLandscape .selected-banner button{min-height:34px;font-size:13px;padding:4px 8px;}
+    html.legacyIpadLandscape .floating-button{width:56px;height:56px;font-size:24px;}
+    html.legacyIpadLandscape .float-panel{left:8px;right:8px;top:auto;bottom:calc(8px + var(--safe-bottom));width:auto;max-height:86vh;border-radius:18px;}
+    html.legacyIpadLandscape .panel-head{padding:9px 10px;}
+    html.legacyIpadLandscape .panel-title{font-size:20px;}
+    html.legacyIpadLandscape .panel-body{padding:10px;padding-bottom:calc(16px + var(--safe-bottom));}
   </style>
 </head>
 <body>
@@ -307,9 +364,10 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.4-ipad';
+  const APP_VERSION = '1.0.5-ipad';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
+  const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
   const ROSTER_SITE = 'rian';
   const DEBUG_MODE = location.search.indexOf('debug=1') >= 0;
   const COURTS = ['court1','court2','court3'];
@@ -319,7 +377,7 @@
   const DEFAULT_COLLAPSED_SECTIONS = ['restSectionBody','adminSectionBody','autoCallBody','playerManageBody','gamesManageBody','systemOpsBody'];
 
   let state = loadState();
-  let selectedPlayer = null;
+  let selectedPlayer = loadSelectedPlayer();
   let isAdmin = false;
   let panelOpen = false;
   let collapsedSections = new Set(state.settings.collapsedSections || DEFAULT_COLLAPSED_SECTIONS);
@@ -417,6 +475,34 @@
   function clearAdminUnlock(){
     try{ localStorage.removeItem(ADMIN_UNLOCK_KEY); }
     catch(err){}
+  }
+  function loadSelectedPlayer(){
+    let raw = '';
+    try{ raw = sessionStorage.getItem(SELECTED_PLAYER_KEY) || ''; }catch(err){}
+    if(!raw){
+      try{ raw = localStorage.getItem(SELECTED_PLAYER_KEY) || ''; }catch(err){}
+    }
+    if(!raw) return null;
+    try{
+      const saved = JSON.parse(raw);
+      if(saved && saved.playerId && getPlayer(saved.playerId)) return saved;
+    }catch(err){}
+    clearStoredSelectedPlayer();
+    return null;
+  }
+  function saveSelectedPlayer(){
+    const raw = selectedPlayer ? JSON.stringify(selectedPlayer) : '';
+    try{ if(raw) sessionStorage.setItem(SELECTED_PLAYER_KEY, raw); else sessionStorage.removeItem(SELECTED_PLAYER_KEY); }catch(err){}
+    try{ if(raw) localStorage.setItem(SELECTED_PLAYER_KEY, raw); else localStorage.removeItem(SELECTED_PLAYER_KEY); }catch(err){}
+  }
+  function clearStoredSelectedPlayer(){
+    try{ sessionStorage.removeItem(SELECTED_PLAYER_KEY); }catch(err){}
+    try{ localStorage.removeItem(SELECTED_PLAYER_KEY); }catch(err){}
+  }
+  function setSelectedPlayer(record){
+    selectedPlayer = record || null;
+    if(selectedPlayer) saveSelectedPlayer();
+    else clearStoredSelectedPlayer();
   }
 
   function defaultState(){
@@ -644,7 +730,7 @@
     const btn = $('floatButton');
     if(selectedPlayer){
       const p = getPlayer(selectedPlayer.playerId);
-      if(!p){ selectedPlayer = null; renderSelectedBanner(); return; }
+      if(!p){ setSelectedPlayer(null); renderSelectedBanner(); return; }
       banner.classList.add('show');
       $('selectedText').textContent = `已選取：${p.name}｜目前位置：${zoneLabel(p.zone)}${p.slot ? ' 第 '+p.slot+' 格' : ''}｜請點選場地空格放入`;
       btn.classList.add('has-selected');
@@ -731,14 +817,14 @@
     }
     const p = getPlayer(playerId);
     if(!p) return;
-    selectedPlayer = { playerId:p.id, name:p.name, fromZone:p.zone, fromSlot:p.slot == null ? null : p.slot };
+    setSelectedPlayer({ playerId:p.id, name:p.name, fromZone:p.zone, fromSlot:p.slot == null ? null : p.slot });
     showToast(`已選取：${p.name}`);
     if(options.closePanelAfterSelect){ closePanel(); }
     render();
   }
 
   function clearSelected(reason){
-    selectedPlayer = null;
+    setSelectedPlayer(null);
     if(reason) showToast(reason);
     render();
   }
@@ -790,7 +876,7 @@
       players.forEach(p => { p.zone='rest'; p.slot=null; p.updatedAt=nowIso(); });
       logAction('courtDown',courtZone,players.map(p=>p.name),'下場並場次 +1');
     }
-    if(selectedPlayer && players.some(p => p.id === selectedPlayer.playerId)) selectedPlayer = null;
+    if(selectedPlayer && players.some(p => p.id === selectedPlayer.playerId)) setSelectedPlayer(null);
     saveState();
     showToast(`${zoneLabel(courtZone)} 已下場`);
     render();
@@ -924,6 +1010,7 @@
     p.name = name;
     p.updatedAt = nowIso();
     selectedPlayer.name = name;
+    saveSelectedPlayer();
     logAction('renamePlayer',p.zone,[name],`${old} → ${name}`);
     saveState();
     showToast('已修改姓名');
@@ -938,7 +1025,7 @@
     p.isActive = false;
     p.updatedAt = nowIso();
     logAction('deletePlayer',p.zone,[p.name],'刪除球員');
-    selectedPlayer = null;
+    setSelectedPlayer(null);
     saveState();
     showToast('已刪除');
     render();
@@ -978,7 +1065,7 @@
     const ok = await confirmDialog('今日重新開始','所有人會回到休息區，場次歸零，Court / Next 清空。是否繼續？','');
     if(!ok) return;
     activePlayers().forEach(p => { p.zone='rest'; p.slot=null; p.games=0; p.updatedAt=nowIso(); });
-    selectedPlayer = null;
+    setSelectedPlayer(null);
     state.settings.lastCallPlayers = [];
     state.settings.lastCallCourt = null;
     logAction('resetToday','all',[], '今日重新開始');
@@ -993,7 +1080,7 @@
     const ok2 = await confirmDialog('再次確認','真的要清空全部資料？此動作無法復原。','');
     if(!ok2) return;
     state = defaultState();
-    selectedPlayer = null;
+    setSelectedPlayer(null);
     isAdmin = false;
     clearAdminUnlock();
     saveState();
@@ -1197,7 +1284,7 @@
       state.settings = keepSettings;
       state.settings.lastCallPlayers = [];
       state.settings.lastCallCourt = null;
-      selectedPlayer = null;
+      setSelectedPlayer(null);
       logAction('importPlayerList','rest',importedPlayers.map(p=>p.name),'匯入球員名單，所有人回休息區');
       saveState();
       showToast('匯入完成');
@@ -1283,7 +1370,7 @@
       state.settings = keepSettings;
       state.settings.lastCallPlayers = [];
       state.settings.lastCallCourt = null;
-      selectedPlayer = null;
+      setSelectedPlayer(null);
       logAction('importPlayerList','rest',importedPlayers.map(p=>p.name),'paste JSON');
       saveState();
       closeModal();
@@ -1472,7 +1559,7 @@
     state.settings = keepSettings;
     state.settings.lastCallPlayers = [];
     state.settings.lastCallCourt = null;
-    selectedPlayer = null;
+    setSelectedPlayer(null);
     logAction('importRoster','rest',importedPlayers.map(function(p){ return p.name; }), 'roster API ' + (event && event.title ? event.title : ''));
     saveState();
     closeModal();
@@ -1627,7 +1714,7 @@
       const moved = movePlayer(selectedPlayer.playerId, targetZone, targetSlot);
       if(moved){
         debugLog('slot move success', selectedPlayer.playerId + ' -> ' + targetZone + ':' + targetSlot);
-        selectedPlayer = null;
+        setSelectedPlayer(null);
         showToast('已移動');
         render();
       }else{
@@ -1674,7 +1761,7 @@
       const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
       if(!p){ showToast('請先選球員'); return; }
       if(p.zone === 'rest'){ showToast('已在休息區'); return; }
-      if(movePlayer(p.id,'rest',null)){ selectedPlayer = null; showToast('已回休息區'); render(); }
+      if(movePlayer(p.id,'rest',null)){ setSelectedPlayer(null); showToast('已回休息區'); render(); }
     }
     function adminLogin(){
       if($('adminPasswordInput').value !== state.settings.adminPassword){
@@ -1768,7 +1855,7 @@
       getState:function(){ return clone(state); },
       setState:function(nextState){
         state = normalizeState(nextState || {});
-        selectedPlayer = null;
+        setSelectedPlayer(null);
         saveState();
         render();
       },
