@@ -42,6 +42,7 @@
         document.documentElement.classList.toggle('legacyIpad', isLegacy);
         document.documentElement.classList.toggle('legacyIpadLandscape', isLandscape);
         document.documentElement.classList.toggle('legacyIpadSafari', isLegacy && !isStandalone);
+        document.documentElement.classList.toggle('legacyIpadStandalone', isLegacy && isStandalone);
         if(isLegacy){
           document.documentElement.style.setProperty('--legacy-vh', measuredLegacyViewportHeight() + 'px');
         }
@@ -205,14 +206,14 @@
     html.legacyIpadLandscape .board-section{min-height:0;overflow:hidden;}
     html.legacyIpadLandscape .zone-row{gap:4px;min-height:0;}
     html.legacyIpadLandscape .zone-card{padding:4px;border-radius:12px;box-shadow:0 3px 10px rgba(15,23,42,.12);overflow:hidden;}
-    html.legacyIpadLandscape .zone-head{min-height:30px;margin-bottom:4px;padding:3px 7px;border-radius:10px;}
-    html.legacyIpadLandscape .zone-title{font-size:18px;line-height:1;}
-    html.legacyIpadLandscape .zone-count{font-size:12px;line-height:1;}
+    html.legacyIpadLandscape .zone-head{min-height:40px;margin-bottom:3px;padding:6px 8px;border-radius:10px;}
+    html.legacyIpadLandscape .zone-title{font-size:23px;line-height:1;}
+    html.legacyIpadLandscape .zone-count{font-size:17px;line-height:1;}
     html.legacyIpadLandscape .slot-grid{gap:4px;min-height:0;overflow:hidden;}
     html.legacyIpadLandscape .slot{min-height:0;border-width:2px;border-radius:10px;}
     html.legacyIpadLandscape .slot.empty::after{font-size:14px;}
     html.legacyIpadLandscape .player-chip{min-height:0;border-width:2px;border-radius:10px;padding:4px 5px 3px;}
-    html.legacyIpadLandscape .player-chip .name{font-size:clamp(20px,4vh,28px);}
+    html.legacyIpadLandscape .player-chip .name{font-size:28px;}
     html.legacyIpadLandscape .player-chip .games{min-width:22px;height:20px;font-size:14px;top:2px;left:3px;}
     html.legacyIpadLandscape .selected-banner{left:6px;right:6px;min-height:42px;padding:5px 8px;border-radius:12px;font-size:15px;}
     html.legacyIpadLandscape .selected-banner #selectedText{white-space:normal;line-height:1.18;}
@@ -225,8 +226,12 @@
     html.legacyIpadSafari.legacyIpadLandscape .app-shell{padding-top:2px;padding-bottom:3px;gap:3px;}
     html.legacyIpadSafari.legacyIpadLandscape .zone-row{gap:3px;}
     html.legacyIpadSafari.legacyIpadLandscape .zone-card{padding:3px;}
-    html.legacyIpadSafari.legacyIpadLandscape .zone-head{min-height:28px;margin-bottom:3px;}
-    html.legacyIpadSafari.legacyIpadLandscape .player-chip .name{font-size:clamp(19px,3.8vh,26px);}
+    html.legacyIpadSafari.legacyIpadLandscape .zone-head{min-height:38px;margin-bottom:3px;}
+    html.legacyIpadSafari.legacyIpadLandscape .zone-title{font-size:22px;}
+    html.legacyIpadSafari.legacyIpadLandscape .zone-count{font-size:16px;}
+    html.legacyIpadSafari.legacyIpadLandscape .player-chip .name{font-size:28px;}
+    html.legacyIpadStandalone.legacyIpadLandscape .app-shell{padding-top:22px;}
+    html.legacyIpadStandalone.legacyIpadLandscape .floating-button{top:58vh;top:58dvh;}
   </style>
 </head>
 <body>
@@ -386,7 +391,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.7-ipad';
+  const APP_VERSION = '1.0.8-ipad';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -719,8 +724,54 @@
     renderZones();
     renderSelectedBanner();
     renderPanel();
+    scheduleFitPlayerNames();
     saveState();
     if(console.timeEnd) console.timeEnd('render');
+  }
+
+  let fitPlayerNameTimer = null;
+
+  function scheduleFitPlayerNames(){
+    if(fitPlayerNameTimer) return;
+    const run = function(){
+      fitPlayerNameTimer = null;
+      fitPlayerNameText();
+    };
+    if(window.requestAnimationFrame){
+      fitPlayerNameTimer = window.requestAnimationFrame(run);
+    }else{
+      fitPlayerNameTimer = setTimeout(run, 0);
+    }
+  }
+
+  function fitPlayerNameText(){
+    const names = document.querySelectorAll('.player-chip .name');
+    for(let i=0;i<names.length;i+=1){
+      fitOnePlayerName(names[i]);
+    }
+  }
+
+  function fitOnePlayerName(nameEl){
+    if(!nameEl || !nameEl.parentNode) return;
+    const chip = nameEl.parentNode;
+    const chipWidth = chip.clientWidth || chip.offsetWidth || 0;
+    const chipHeight = chip.clientHeight || chip.offsetHeight || 0;
+    if(chipWidth < 24 || chipHeight < 24) return;
+    const text = String(nameEl.textContent || '');
+    let maxSize = text.length <= 2 ? 36 : 34;
+    let minSize = 22;
+    if(document.documentElement.classList.contains('legacyIpad')){
+      minSize = 24;
+    }
+    nameEl.style.fontSize = maxSize + 'px';
+    nameEl.style.lineHeight = '1.05';
+    const maxWidth = Math.max(24, chipWidth - 18);
+    const maxHeight = Math.max(20, chipHeight - 12);
+    let size = maxSize;
+    while(size > minSize && (nameEl.scrollWidth > maxWidth || nameEl.scrollHeight > maxHeight)){
+      size -= 1;
+      nameEl.style.fontSize = size + 'px';
+    }
   }
 
   function renderHeader(){
