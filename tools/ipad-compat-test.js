@@ -74,7 +74,8 @@ assert('selected floating button still turns yellow', html.includes('.floating-b
 assert('admin nested section titles are blue', html.includes('#adminTools .panel-section .collapse-head') && html.includes('color:#1d4ed8'));
 assert('player name fit cache exists', html.includes('playerNameFitCache') && html.includes('playerNameFitKey'));
 assert('panel scroll tap guard exists', html.includes('function initPanelScrollGuard') && html.includes('panelTouch.blockUntil') && html.includes('isPanelScrollBlocked(el)'));
-assert('floating tap uses drag threshold', html.includes('const FLOAT_DRAG_THRESHOLD = 8') && html.includes('startX:point.x') && html.includes('floatingTapHandledAt'));
+assert('floating tap uses drag threshold', html.includes('const FLOAT_DRAG_THRESHOLD = 8') && html.includes('const LEGACY_FLOAT_DRAG_THRESHOLD = 20') && html.includes('function floatingDragThreshold') && html.includes('startX:point.x') && html.includes('floatingTapHandledAt'));
+assert('floating toggle uses lock', html.includes('floatingToggleLockedUntil') && html.includes('function toggleFloatingPanel') && html.includes('now + 300'));
 assert('floating pointer and touch are not both bound on modern browsers', html.includes('if(window.PointerEvent)') && html.includes('}else{') && html.includes("btn.addEventListener('touchstart'"));
 assert('roster import button exists', html.includes('id="fetchRosterBtn"') && html.includes("tap('fetchRosterBtn', showRosterImportDialog)"));
 assert('roster api fixed to rian', html.includes("const ROSTER_SITE = 'rian'"));

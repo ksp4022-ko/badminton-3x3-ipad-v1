@@ -270,6 +270,16 @@ async function run() {
   assert('floating button small touch move still opens panel', context.document.getElementById('floatPanel').classList.contains('open'));
   context.document.getElementById('closePanelBtn').dispatchEvent({ type: 'touchend', target: context.document.getElementById('closePanelBtn'), cancelable: true, preventDefault() {}, stopPropagation() {} });
 
+  const mediumContext = createContext();
+  vm.createContext(mediumContext);
+  vm.runInContext(mainScript, mediumContext);
+  mediumContext.document.documentElement.classList.add('legacyIpad');
+  const mediumFloatBtn = mediumContext.document.getElementById('floatButton');
+  mediumFloatBtn.dispatchEvent({ type: 'touchstart', target: mediumFloatBtn, touches: [{ clientX: 20, clientY: 120 }], cancelable: true, preventDefault() {}, stopPropagation() {} });
+  mediumFloatBtn.dispatchEvent({ type: 'touchmove', target: mediumFloatBtn, touches: [{ clientX: 34, clientY: 132 }], cancelable: true, preventDefault() {}, stopPropagation() {} });
+  mediumFloatBtn.dispatchEvent({ type: 'touchend', target: mediumFloatBtn, changedTouches: [{ clientX: 34, clientY: 132 }], cancelable: true, preventDefault() {}, stopPropagation() {} });
+  assert('legacy floating medium touch move still opens panel', mediumContext.document.getElementById('floatPanel').classList.contains('open'));
+
   const restoredContext = createContext();
   restoredContext.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(baseState([player('p1', 'A', 'court1', 1)])));
   restoredContext.localStorage.setItem('badminton3x3.ipad.v1.state.selectedPlayer', JSON.stringify({ playerId: 'p1', name: 'A', fromZone: 'court1', fromSlot: 1 }));

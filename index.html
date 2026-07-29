@@ -408,7 +408,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.17-ipad';
+  const APP_VERSION = '1.0.18-ipad';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -429,7 +429,9 @@
   let floatingDrag = { active:false, moved:false, dx:0, dy:0 };
   let lastTouchHandledAt = 0;
   let floatingTapHandledAt = 0;
+  let floatingToggleLockedUntil = 0;
   const FLOAT_DRAG_THRESHOLD = 8;
+  const LEGACY_FLOAT_DRAG_THRESHOLD = 20;
   let courtHighlightZone = null;
   let courtHighlightTimer = null;
   let panelTouch = { active:false, moved:false, x:0, y:0, blockUntil:0 };
@@ -1865,6 +1867,15 @@
   }
   function openPanel(){ setPanel(true); renderPanel(); }
   function closePanel(){ setPanel(false); }
+  function floatingDragThreshold(){
+    return document.documentElement.classList.contains('legacyIpad') ? LEGACY_FLOAT_DRAG_THRESHOLD : FLOAT_DRAG_THRESHOLD;
+  }
+  function toggleFloatingPanel(){
+    const now = Date.now();
+    if(now < floatingToggleLockedUntil) return;
+    floatingToggleLockedUntil = now + 300;
+    panelOpen ? closePanel() : openPanel();
+  }
 
   function initPanelScrollGuard(){
     const panel = $('floatPanel');
@@ -1916,7 +1927,8 @@
       const point = pointFromEvent(e);
       const moveX = Math.abs(point.x - floatingDrag.startX);
       const moveY = Math.abs(point.y - floatingDrag.startY);
-      if(!floatingDrag.moved && moveX < FLOAT_DRAG_THRESHOLD && moveY < FLOAT_DRAG_THRESHOLD) return;
+      const threshold = floatingDragThreshold();
+      if(!floatingDrag.moved && moveX < threshold && moveY < threshold) return;
       floatingDrag.moved = true;
       const x = Math.max(4, Math.min(window.innerWidth - btn.offsetWidth - 4, point.x - floatingDrag.dx));
       const y2 = Math.max(54, Math.min(floatingMaxTop(btn), point.y - floatingDrag.dy));
@@ -1935,7 +1947,7 @@
         return;
       }
       floatingTapHandledAt = Date.now();
-      panelOpen ? closePanel() : openPanel();
+      toggleFloatingPanel();
     }
     if(window.PointerEvent){
       btn.addEventListener('pointerdown', startDrag);
@@ -1953,7 +1965,7 @@
       e.stopPropagation();
       if(Date.now() - floatingTapHandledAt < 500) return;
       if(floatingDrag.moved) return;
-      panelOpen ? closePanel() : openPanel();
+      toggleFloatingPanel();
     });
   }
 
