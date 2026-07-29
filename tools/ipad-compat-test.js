@@ -54,11 +54,13 @@ assert('select player uses local UI refresh', selectBlock.includes('refreshSelec
 assert('select player does not rerender board', !selectBlock.includes('render();'));
 assert('court call target highlight exists', html.includes('function markCourtCallTarget') && html.includes('zone-card.call-target') && html.includes('data-zone-card'));
 assert('court call target lasts five seconds', html.includes('}, 5000);'));
+assert('court call target rerenders after timeout', html.includes('courtHighlightZone = null;') && html.includes('renderZones();') && html.includes('fitPlayerNameText();'));
 assert('court down pill exists', html.includes('court-down-pill') && html.includes('<span class="arrow">'));
 assert('court down pill expanded', html.includes('min-width:136px'));
 assert('court header uses flex layout', html.includes('.zone-head{width:100%;display:flex;'));
-assert('court call prompt uses simple text', html.includes('call-marquee') && html.includes('isCallTarget ?'));
+assert('court call prompt includes court label', html.includes('call-marquee') && html.includes("zoneLabel(zone) + ' >>> 請上場…'"));
 assert('shared player color editor exists', html.includes('id="newPlayerColorGrid"') && html.includes('id="sharedColorLabel"') && !html.includes('id="selectedPlayerColorGrid"') && html.includes('function setSelectedPlayerColor'));
+assert('selected banner highlights player name', html.includes('selected-name') && html.includes('id="selectedText"') && html.includes('.selected-banner .selected-name'));
 assert('admin enabled line removed', !html.includes('管理員模式已開啟'));
 assert('panel repeat call button removed', !html.includes('id="repeatCallBtn"'));
 assert('speaker repeat floating button exists', html.includes('id="speakerButton"') && html.includes("tap('speakerButton', repeatLastCall)") && html.includes('function positionSpeakerButton'));
@@ -71,7 +73,8 @@ assert('roster import button exists', html.includes('id="fetchRosterBtn"') && ht
 assert('roster api fixed to rian', html.includes("const ROSTER_SITE = 'rian'"));
 assert('roster api has fetch and jsonp fallback', html.includes('function requestRosterApi') && html.includes('fetchRosterJson') && html.includes('jsonpRosterJson'));
 assert('roster import clears list into rest', html.includes('function importRosterPlayers') && html.includes('state.players = importedPlayers') && html.includes('function normalizeRosterPlayers'));
-assert('fixed viewport layout exists', html.includes('overflow:hidden') && html.includes('position:fixed;inset:0') && html.includes('height:var(--safe-vh)'));
+assert('fixed viewport layout exists', html.includes('overflow:hidden') && html.includes('position:fixed;top:0;right:0;bottom:0;left:0;inset:0') && html.includes('height:var(--safe-vh)'));
+assert('modal mask has old safari fixed fallback', html.includes('.modal-mask{position:fixed;top:0;right:0;bottom:0;left:0;inset:0'));
 assert('legacy ipad classes exist', html.includes('function detectLegacyIpad') && html.includes('legacyIpadLandscape') && html.includes('html.legacyIpadLandscape'));
 assert('legacy ipad measured viewport height exists', html.includes('function measuredLegacyViewportHeight') && html.includes('--legacy-vh') && html.includes('height:var(--legacy-vh)'));
 assert('legacy ipad safari compact layout exists', html.includes('legacyIpadSafari') && html.includes('html.legacyIpadSafari.legacyIpadLandscape'));

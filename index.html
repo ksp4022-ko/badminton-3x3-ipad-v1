@@ -91,16 +91,17 @@
     button.cancel-select-strong{background:#dc2626;color:#fff;border:2px solid #991b1b;}
     input,select{width:100%;min-height:48px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:#fff;color:var(--ink);font-size:18px;}
     label{font-weight:800;font-size:16px;color:#334155;display:block;margin:6px 0 4px}
-    .app-shell{position:fixed;inset:0;width:100vw;height:var(--safe-vh);max-height:var(--safe-vh);max-width:1366px;margin:0 auto;padding:8px max(12px,var(--safe-right)) calc(12px + var(--safe-bottom)) max(12px,var(--safe-left));display:grid;grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:8px;overflow:hidden;}
+    .app-shell{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;width:100vw;height:var(--safe-vh);max-height:var(--safe-vh);max-width:1366px;margin:0 auto;padding:8px max(12px,var(--safe-right)) calc(12px + var(--safe-bottom)) max(12px,var(--safe-left));display:grid;grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:8px;overflow:hidden;}
     .app-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px 10px;position:sticky;top:0;background:linear-gradient(180deg,rgba(236,254,255,.98),rgba(236,254,255,.86));z-index:10;backdrop-filter:blur(8px)}
     .title-wrap{display:flex;align-items:baseline;gap:10px;min-width:0;}
     .app-title{font-size:clamp(23px,2.4vw,34px);font-weight:950;letter-spacing:.02em;white-space:nowrap;}
     .version{font-size:clamp(15px,1.4vw,20px);font-weight:900;color:#0f766e;white-space:nowrap;}
     .status-line{font-size:clamp(14px,1.2vw,18px);font-weight:800;color:#475569;text-align:right;}
-    .selected-banner{display:none;position:fixed;left:12px;right:12px;top:max(8px,env(safe-area-inset-top,0px));align-items:center;justify-content:space-between;gap:10px;min-height:54px;padding:8px 12px;border:2px solid #facc15;background:rgba(254,249,195,.98);border-radius:16px;font-size:18px;font-weight:900;box-shadow:0 8px 18px rgba(250,204,21,.2);z-index:48;backdrop-filter:blur(8px)}
+    .selected-banner{display:none;position:fixed;left:12px;right:12px;top:max(8px,env(safe-area-inset-top,0px));align-items:center;justify-content:space-between;gap:12px;min-height:64px;padding:9px 12px;border:3px solid #facc15;background:linear-gradient(135deg,#172554,#1e3a8a);color:#fff;border-radius:16px;font-size:22px;font-weight:1000;box-shadow:0 10px 24px rgba(15,23,42,.26);z-index:48;backdrop-filter:blur(8px)}
     .selected-banner.show{display:flex}
-    .selected-banner #selectedText{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .selected-banner button{flex:0 0 auto;}
+    .selected-banner #selectedText{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff;line-height:1.12;}
+    .selected-banner .selected-name{color:#fde047;font-size:1.16em;font-weight:1000;}
+    .selected-banner button{flex:0 0 auto;min-width:132px;min-height:48px;font-size:20px;border-radius:14px;}
     .app-header,.section-title{display:none;}
     .board-section{margin:0;min-width:0;min-height:0;}
     .section-title{display:none;}
@@ -173,13 +174,13 @@
     .toast{position:fixed;left:50%;bottom:calc(18px + var(--safe-bottom));transform:translateX(-50%) translateY(120px);opacity:0;background:#0f172a;color:#fff;border-radius:999px;padding:12px 18px;font-weight:900;font-size:17px;z-index:80;box-shadow:var(--shadow);max-width:calc(100vw - 24px);text-align:center;transition:.25s ease;}
     .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
     .debug-panel{display:none;position:fixed;left:8px;right:8px;bottom:calc(8px + var(--safe-bottom));z-index:95;background:#111827;color:#fff;border:2px solid #facc15;border-radius:12px;padding:8px 10px;font:700 13px/1.35 monospace;white-space:pre-wrap;box-shadow:var(--shadow);}
-    .modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:70;display:none;align-items:center;justify-content:center;padding:18px;}
+    .modal-mask{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;background:rgba(15,23,42,.45);z-index:70;display:none;align-items:center;justify-content:center;padding:18px;}
     .modal-mask.show{display:flex;}
     .modal-card{width:min(520px,100%);background:#fff;border-radius:22px;padding:18px;box-shadow:var(--shadow);}
     .modal-card h3{margin:0 0 10px;font-size:24px;}
     .modal-card p{margin:8px 0;color:#475569;font-weight:750;line-height:1.45;}
     .modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
-    .portrait-warning{display:none;position:fixed;inset:0;z-index:100;background:linear-gradient(135deg,#0f766e,#0f172a);color:#fff;align-items:center;justify-content:center;padding:26px;text-align:center;}
+    .portrait-warning{display:none;position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:100;background:linear-gradient(135deg,#0f766e,#0f172a);color:#fff;align-items:center;justify-content:center;padding:26px;text-align:center;}
     .portrait-card{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.35);border-radius:26px;padding:28px;box-shadow:var(--shadow);}
     .portrait-card .big{font-size:34px;font-weight:1000;margin-bottom:12px;}
     .portrait-card .small{font-size:20px;font-weight:800;line-height:1.4;opacity:.95;}
@@ -233,9 +234,9 @@
     html.legacyIpadLandscape .player-chip{min-height:0;border-width:2px;border-radius:9px;padding:3px 4px 2px;}
     html.legacyIpadLandscape .player-chip .name{font-size:40px;}
     html.legacyIpadLandscape .player-chip .games{min-width:42px;height:38px;font-size:26px;top:4px;left:5px;padding:0 8px;z-index:3;}
-    html.legacyIpadLandscape .selected-banner{left:6px;right:6px;min-height:42px;padding:5px 8px;border-radius:12px;font-size:15px;}
-    html.legacyIpadLandscape .selected-banner #selectedText{white-space:normal;line-height:1.18;}
-    html.legacyIpadLandscape .selected-banner button{min-height:34px;font-size:13px;padding:4px 8px;}
+    html.legacyIpadLandscape .selected-banner{left:6px;right:6px;min-height:58px;padding:7px 9px;border-radius:12px;font-size:21px;}
+    html.legacyIpadLandscape .selected-banner #selectedText{white-space:nowrap;line-height:1.12;}
+    html.legacyIpadLandscape .selected-banner button{min-width:128px;min-height:46px;font-size:20px;padding:5px 10px;}
     html.legacyIpadLandscape .floating-button{width:52px;height:52px;font-size:22px;left:8px;}
     html.legacyIpadLandscape .float-panel{left:8px;right:8px;top:auto;bottom:calc(8px + var(--safe-bottom));width:auto;max-height:calc(var(--legacy-vh) - 16px);border-radius:18px;}
     html.legacyIpadLandscape .panel-head{padding:9px 10px;}
@@ -407,7 +408,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.14-ipad';
+  const APP_VERSION = '1.0.15-ipad';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -586,9 +587,9 @@
     courtHighlightZone = zone || null;
     if(courtHighlightTimer) clearTimeout(courtHighlightTimer);
     courtHighlightTimer = setTimeout(function(){
-      const oldZone = courtHighlightZone;
       courtHighlightZone = null;
-      removeCourtCallTarget(oldZone);
+      renderZones();
+      fitPlayerNameText();
     }, 5000);
   }
 
@@ -870,7 +871,7 @@
   function renderZoneCard(zone, isCourt){
     const players = zonePlayers(zone);
     const isCallTarget = courtHighlightZone === zone;
-    const title = isCallTarget ? '請上場…' : zoneLabel(zone);
+    const title = isCallTarget ? zoneLabel(zone) + ' >>> 請上場…' : zoneLabel(zone);
     const slots = SLOTS.map(slot => {
       const p = occupant(zone, slot);
       const content = p ? playerChipHtml(p) : '';
@@ -892,7 +893,7 @@
       const p = getPlayer(selectedPlayer.playerId);
       if(!p){ setSelectedPlayer(null); renderSelectedBanner(); return; }
       banner.classList.add('show');
-      $('selectedText').textContent = `已選取：${p.name}｜目前位置：${zoneLabel(p.zone)}${p.slot ? ' 第 '+p.slot+' 格' : ''}｜請點選場地空格放入`;
+      $('selectedText').innerHTML = `已選取：<span class="selected-name">${escapeHtml(p.name)}</span>｜目前位置：${escapeHtml(zoneLabel(p.zone))}${p.slot ? ' 第 '+p.slot+' 格' : ''}｜請點選場地空格放入`;
       btn.classList.add('has-selected');
     }else{
       banner.classList.remove('show');

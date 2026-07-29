@@ -336,6 +336,7 @@ async function run() {
   sourceChip.parentNode = sourceSlot;
   await api.handleBoardInteraction(eventFor(sourceChip));
   assert('selected player saved to session storage', /"playerId":"p1"/.test(context.sessionStorage.getItem('badminton3x3.ipad.v1.state.selectedPlayer') || ''));
+  assert('selected banner highlights player name', /class="selected-name">A<\/span>/.test(context.document.getElementById('selectedText').innerHTML || ''));
   api.setSelectedPlayerColor('#fecaca');
   assert('selected player color can be changed', api.getState().players[0].color === '#fecaca');
   const targetSlot = new FakeElement('div');

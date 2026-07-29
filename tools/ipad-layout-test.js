@@ -31,5 +31,6 @@ assert('legacy standalone avoids status bar', cssRuleIncludes('html.legacyIpadSt
 assert('player name auto fit exists', html.includes('function fitPlayerNameText') && html.includes('function fitOnePlayerName') && html.includes('scheduleFitPlayerNames()'));
 assert('player name fit cache exists', html.includes('const playerNameFitCache') && html.includes('function playerNameFitKey'));
 assert('legacy court down pill stays wide', cssRuleIncludes('html.legacyIpadLandscape .court-down-pill', 'min-width:136px'));
+assert('legacy selected banner is enlarged', cssRuleIncludes('html.legacyIpadLandscape .selected-banner', 'min-height:58px') && cssRuleIncludes('html.legacyIpadLandscape .selected-banner button', 'min-width:128px'));
 assert('zone labels are localized', html.includes("return '場地 '") && html.includes("return '預備區 '"));
 assert('roster import defaults to blue', html.includes('color:COLORS[0]'));
