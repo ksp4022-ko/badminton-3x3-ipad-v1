@@ -113,16 +113,16 @@
       0%,100%{transform:scale(1);box-shadow:0 0 0 4px rgba(250,204,21,.35),0 10px 22px rgba(15,23,42,.16);}
       45%{transform:scale(.985);box-shadow:0 0 0 8px rgba(250,204,21,.75),0 12px 26px rgba(15,23,42,.22);}
     }
-    .zone-head{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;border:1px solid #99f6e4;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border-radius:14px;min-height:44px;padding:8px 10px;text-align:left;overflow:hidden;}
+    .zone-head{width:100%;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;border:1px solid #99f6e4;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border-radius:14px;min-height:44px;padding:8px 10px;text-align:left;}
     .zone-head.warn{background:linear-gradient(135deg,#92400e,#f59e0b);border-color:#facc15;}
     .zone-head:active{transform:translateY(1px)}
-    .zone-title{font-size:clamp(18px,2vw,25px);font-weight:950;color:#0f172a;white-space:nowrap;}
+    .zone-title{font-size:clamp(18px,2vw,25px);font-weight:950;color:#0f172a;white-space:nowrap;min-width:0;flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;}
     .zone-head .zone-title,.zone-head .zone-count{color:#fff;}
-    .zone-count{font-size:15px;color:#64748b;font-weight:800;white-space:nowrap;}
-    .court-down-pill{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:86px;min-height:34px;padding:4px 12px;border-radius:999px;background:#fef3c7;color:#92400e;border:2px solid rgba(146,64,14,.25);font-weight:1000;font-size:20px;line-height:1;box-shadow:inset 0 -2px 0 rgba(146,64,14,.12);}
+    .zone-count{font-size:15px;color:#64748b;font-weight:800;white-space:nowrap;flex:0 0 auto;}
+    .court-down-pill{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:86px;min-height:34px;padding:4px 12px;border-radius:999px;background:#fef3c7;color:#92400e;border:2px solid rgba(146,64,14,.25);font-weight:1000;font-size:20px;line-height:1;box-shadow:inset 0 -2px 0 rgba(146,64,14,.12);flex:0 0 auto;}
     .court-down-pill .arrow{display:inline-block;animation:downArrowBounce .9s ease-in-out infinite;}
     @keyframes downArrowBounce{0%,100%{transform:translateY(-1px)}50%{transform:translateY(3px)}}
-    .call-marquee{grid-column:1 / 3;min-width:0;overflow:hidden;white-space:nowrap;font-size:30px;font-weight:1000;color:#fff;}
+    .call-marquee{min-width:0;flex:1 1 auto;overflow:hidden;white-space:nowrap;font-size:30px;font-weight:1000;color:#fff;}
     .call-marquee span{display:inline-block;min-width:100%;animation:callMarquee 1.4s ease-in-out infinite alternate;}
     @keyframes callMarquee{0%{transform:translateX(0)}100%{transform:translateX(18px)}}
     .slot-grid{flex:1 1 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:8px;min-height:0;}
@@ -139,6 +139,8 @@
     .rest-list .player-chip .name{font-size:22px;}
     .floating-button{position:fixed;left:12px;top:45vh;top:45dvh;width:64px;height:64px;border-radius:999px;background:linear-gradient(135deg,#0f766e,#06b6d4);color:#fff;font-size:28px;font-weight:1000;display:flex;align-items:center;justify-content:center;z-index:50;box-shadow:var(--shadow);touch-action:none;user-select:none;}
     .floating-button.has-selected{background:linear-gradient(135deg,#f59e0b,#facc15);color:#422006;}
+    .floating-button.speaker-button{display:none;background:linear-gradient(135deg,#f59e0b,#facc15);color:#422006;font-size:30px;}
+    .floating-button.speaker-button.show{display:flex;}
     .float-panel{position:fixed;z-index:49;top:12px;right:12px;width:420px;width:min(420px,calc(100vw - 24px));max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);background:#ffffff;border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);display:none;overflow:hidden;}
     .float-panel.open{display:flex;flex-direction:column;}
     .panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 12px;border-bottom:1px solid var(--line);background:#f8fafc;}
@@ -272,6 +274,7 @@
   </main>
 
   <button class="floating-button" id="floatButton" aria-label="管理員工具">•••</button>
+  <button class="floating-button speaker-button" id="speakerButton" aria-label="再叫一次">📢</button>
 
   <aside class="float-panel" id="floatPanel" aria-label="浮點管理員面板">
     <div class="panel-head">
@@ -303,8 +306,6 @@
             <button class="primary" id="adminLoginBtn" style="width:100%;margin-top:8px">登入</button>
           </div>
           <div id="adminTools" style="display:none">
-            <div class="backup-summary">管理員模式已開啟</div>
-
             <div class="panel-section">
               <button class="collapse-head" data-collapse-target="autoCallBody" type="button">自動呼叫</button>
               <div class="collapsible-body" id="autoCallBody">
@@ -330,13 +331,11 @@
             <div class="collapsible-body" id="playerManageBody">
               <label>新增球員</label>
               <input id="newPlayerInput" type="text" placeholder="輸入姓名" />
-              <label>貼紙底色</label>
+              <label id="sharedColorLabel">貼紙底色</label>
               <div class="color-grid" id="newPlayerColorGrid" aria-label="新增球員貼紙底色"></div>
               <button class="primary" id="addPlayerBtn" style="width:100%;margin-top:8px">新增球員</button>
               <label>修改選取球員姓名</label>
               <input id="renamePlayerInput" type="text" placeholder="先選取球員" />
-              <label>已選球員貼紙顏色</label>
-              <div class="color-grid" id="selectedPlayerColorGrid" aria-label="已選球員貼紙顏色"></div>
               <div class="button-grid" style="margin-top:8px">
                 <button id="renamePlayerBtn">修改姓名</button>
                 <button class="danger" id="deletePlayerBtn">刪除球員</button>
@@ -407,7 +406,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.12-ipad';
+  const APP_VERSION = '1.0.13-ipad';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -791,6 +790,7 @@
     renderZones();
     renderSelectedBanner();
     renderPanel();
+    renderSpeakerButton();
     scheduleFitPlayerNames();
     saveState();
     if(console.timeEnd) console.timeEnd('render');
@@ -902,6 +902,27 @@
     renderAdminUi();
     renderColorPicker();
     renderCollapsedSections();
+    renderSpeakerButton();
+  }
+
+  function renderSpeakerButton(){
+    const speaker = $('speakerButton');
+    if(!speaker) return;
+    const show = !!state.settings.autoCallEnabled;
+    speaker.classList.toggle('show', show);
+    if(show){
+      const btn = $('floatButton');
+      if(btn){
+        const rect = btn.getBoundingClientRect();
+        const y = Math.max(54, Math.min(floatingMaxTop(btn), rect.top));
+        if(Math.abs(y - rect.top) > 1){
+          btn.style.top = y + 'px';
+          state.settings.floating = Object.assign(state.settings.floating || {}, {y: y / window.innerHeight});
+          saveState();
+        }
+      }
+    }
+    positionSpeakerButton();
   }
 
   function renderRestList(){
@@ -932,11 +953,12 @@
 
   function renderColorPicker(){
     const newGrid = $('newPlayerColorGrid');
-    if(newGrid) newGrid.innerHTML = colorSwatchesHtml(selectedNewPlayerColor, '新增球員顏色');
-    const selectedGrid = $('selectedPlayerColorGrid');
-    if(selectedGrid){
-      const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
-      selectedGrid.innerHTML = colorSwatchesHtml(p ? p.color : '', '已選球員顏色');
+    const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
+    if($('sharedColorLabel')) $('sharedColorLabel').textContent = p ? '已選球員貼紙顏色' : '貼紙底色';
+    if(newGrid){
+      const activeColor = p ? p.color : selectedNewPlayerColor;
+      const label = p ? '已選球員顏色' : '新增球員顏色';
+      newGrid.innerHTML = colorSwatchesHtml(activeColor, label);
     }
   }
 
@@ -1815,10 +1837,11 @@
   function initFloatingButton(){
     const btn = $('floatButton');
     const pos = state.settings.floating || {side:'left', y:0.45};
-    const y = Math.max(74, Math.min(window.innerHeight - 82, window.innerHeight * (Number(pos.y)||0.45)));
+    const y = Math.max(74, Math.min(floatingMaxTop(btn), window.innerHeight * (Number(pos.y)||0.45)));
     btn.style.top = y + 'px';
     btn.style.left = pos.side === 'right' ? 'auto' : '12px';
     btn.style.right = pos.side === 'right' ? '12px' : 'auto';
+    positionSpeakerButton();
 
     function pointFromEvent(e){
       const touch = e.touches && e.touches.length ? e.touches[0] : (e.changedTouches && e.changedTouches.length ? e.changedTouches[0] : e);
@@ -1834,8 +1857,9 @@
       const point = pointFromEvent(e);
       floatingDrag.moved = true;
       const x = Math.max(4, Math.min(window.innerWidth - btn.offsetWidth - 4, point.x - floatingDrag.dx));
-      const y2 = Math.max(54, Math.min(window.innerHeight - btn.offsetHeight - 8, point.y - floatingDrag.dy));
+      const y2 = Math.max(54, Math.min(floatingMaxTop(btn), point.y - floatingDrag.dy));
       btn.style.left = x + 'px'; btn.style.right = 'auto'; btn.style.top = y2 + 'px';
+      positionSpeakerButton();
       if(e.cancelable) e.preventDefault();
     }
     function endDrag(e){
@@ -1867,10 +1891,30 @@
     const side = rect.left + rect.width/2 < window.innerWidth/2 ? 'left' : 'right';
     btn.style.left = side === 'left' ? '12px' : 'auto';
     btn.style.right = side === 'right' ? '12px' : 'auto';
-    const y = Math.max(54, Math.min(window.innerHeight - rect.height - 8, rect.top));
+    const y = Math.max(54, Math.min(floatingMaxTop(btn), rect.top));
     btn.style.top = y + 'px';
     state.settings.floating = {side, y: y / window.innerHeight};
+    positionSpeakerButton();
     saveState();
+  }
+
+  function positionSpeakerButton(){
+    const btn = $('floatButton');
+    const speaker = $('speakerButton');
+    if(!btn || !speaker) return;
+    const rect = btn.getBoundingClientRect();
+    const side = rect.left + rect.width/2 < window.innerWidth/2 ? 'left' : 'right';
+    const gap = 8;
+    const top = Math.max(54, Math.min(window.innerHeight - rect.height - 8, rect.top + rect.height + gap));
+    speaker.style.top = top + 'px';
+    speaker.style.left = side === 'left' ? (btn.style.left || '12px') : 'auto';
+    speaker.style.right = side === 'right' ? (btn.style.right || '12px') : 'auto';
+  }
+
+  function floatingMaxTop(btn){
+    const height = (btn && (btn.offsetHeight || btn.getBoundingClientRect().height)) || 64;
+    const reserve = state.settings.autoCallEnabled ? height + 16 : 8;
+    return window.innerHeight - height - reserve;
   }
 
   async function handleBoardInteraction(e){
@@ -1980,6 +2024,7 @@
     tap('cancelSelectBtn', () => clearSelected('已取消選取'));
     tap('closePanelBtn', closePanel);
     tap('repeatCallBtn', repeatLastCall);
+    tap('speakerButton', repeatLastCall);
     tap('moveRestBtn', moveSelectedToRest);
     tap('adminLoginBtn', adminLogin);
     tap('freeModeBtn', () => { state.settings.freePlayMode=true; state.settings.autoArrangeMode=false; saveState(); renderPanel(); });
@@ -2009,13 +2054,12 @@
     setTap($('newPlayerColorGrid'), (e) => {
       const swatch = closestByClass(e.target, 'color-swatch');
       if(!swatch) return;
-      selectedNewPlayerColor = dataAttr(swatch, 'color') || COLORS[0];
-      renderColorPicker();
-    });
-    setTap($('selectedPlayerColorGrid'), (e) => {
-      const swatch = closestByClass(e.target, 'color-swatch');
-      if(!swatch) return;
-      setSelectedPlayerColor(dataAttr(swatch, 'color') || COLORS[0]);
+      const color = dataAttr(swatch, 'color') || COLORS[0];
+      if(selectedPlayer && getPlayer(selectedPlayer.playerId)) setSelectedPlayerColor(color);
+      else{
+        selectedNewPlayerColor = color;
+        renderColorPicker();
+      }
     });
     const collapseButtons = document.querySelectorAll('[data-collapse-target]');
     for(let i = 0; i < collapseButtons.length; i += 1){

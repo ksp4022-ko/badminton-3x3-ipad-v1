@@ -54,9 +54,12 @@ assert('select player uses local UI refresh', selectBlock.includes('refreshSelec
 assert('select player does not rerender board', !selectBlock.includes('render();'));
 assert('court call target highlight exists', html.includes('function markCourtCallTarget') && html.includes('zone-card.call-target') && html.includes('data-zone-card'));
 assert('court call target lasts five seconds', html.includes('}, 5000);'));
-assert('court down pill exists', html.includes('court-down-pill') && html.includes('下場 <span class="arrow">↓</span>'));
-assert('court call prompt uses simple text', html.includes("const title = isCallTarget ? '請上場…' : zoneLabel(zone);"));
-assert('selected player color editor exists', html.includes('id="selectedPlayerColorGrid"') && html.includes('function setSelectedPlayerColor') && html.includes('setSelectedPlayerColor:setSelectedPlayerColor'));
+assert('court down pill exists', html.includes('court-down-pill') && html.includes('<span class="arrow">'));
+assert('court header uses flex layout', html.includes('.zone-head{width:100%;display:flex;'));
+assert('court call prompt uses simple text', html.includes('call-marquee') && html.includes('isCallTarget ?'));
+assert('shared player color editor exists', html.includes('id="newPlayerColorGrid"') && html.includes('id="sharedColorLabel"') && !html.includes('id="selectedPlayerColorGrid"') && html.includes('function setSelectedPlayerColor'));
+assert('admin enabled line removed', !html.includes('管理員模式已開啟'));
+assert('speaker repeat floating button exists', html.includes('id="speakerButton"') && html.includes("tap('speakerButton', repeatLastCall)") && html.includes('function positionSpeakerButton'));
 assert('panel scroll tap guard exists', html.includes('function initPanelScrollGuard') && html.includes('panelTouch.blockUntil') && html.includes('isPanelScrollBlocked(el)'));
 assert('roster import button exists', html.includes('id="fetchRosterBtn"') && html.includes("tap('fetchRosterBtn', showRosterImportDialog)"));
 assert('roster api fixed to rian', html.includes("const ROSTER_SITE = 'rian'"));
