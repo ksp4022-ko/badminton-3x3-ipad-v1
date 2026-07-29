@@ -202,7 +202,7 @@
       .player-chip .name{font-size:clamp(17px,3vw,25px)}
       .player-chip .games{min-width:22px;height:22px;font-size:15px;top:3px;left:4px;}
       .floating-button{width:56px;height:56px;font-size:24px;}
-      .float-panel{left:8px;right:8px;top:72px;bottom:auto;width:auto;max-height:calc(100vh - 84px);max-height:calc(100dvh - 84px);border-radius:20px;}
+      .float-panel{left:8px;right:8px;top:36px;bottom:auto;width:auto;max-height:calc(100vh - 46px);max-height:calc(100dvh - 46px);border-radius:20px;}
       .panel-body{padding-bottom:calc(16px + var(--safe-bottom));}
     }
     @media (max-width:700px) and (orientation:portrait){
@@ -238,7 +238,7 @@
     html.legacyIpadLandscape .selected-banner #selectedText{white-space:nowrap;line-height:1.12;}
     html.legacyIpadLandscape .selected-banner button{min-width:128px;min-height:46px;font-size:20px;padding:5px 10px;}
     html.legacyIpadLandscape .floating-button{width:52px;height:52px;font-size:22px;left:8px;}
-    html.legacyIpadLandscape .float-panel{left:8px;right:8px;top:72px;bottom:auto;width:auto;max-height:calc(var(--legacy-vh) - 86px);border-radius:18px;}
+    html.legacyIpadLandscape .float-panel{left:8px;right:8px;top:36px;bottom:auto;width:auto;max-height:calc(var(--legacy-vh) - 46px);border-radius:18px;}
     html.legacyIpadLandscape .panel-head{padding:9px 10px;}
     html.legacyIpadLandscape .panel-title{font-size:20px;}
     html.legacyIpadLandscape .panel-body{padding:10px;padding-bottom:calc(16px + var(--safe-bottom));}
@@ -408,7 +408,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.16-ipad';
+  const APP_VERSION = '1.0.17-ipad';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';

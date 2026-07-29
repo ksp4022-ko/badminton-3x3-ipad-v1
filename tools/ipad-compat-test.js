@@ -82,7 +82,7 @@ assert('roster api has fetch and jsonp fallback', html.includes('function reques
 assert('roster import clears list into rest', html.includes('function importRosterPlayers') && html.includes('state.players = importedPlayers') && html.includes('function normalizeRosterPlayers'));
 assert('fixed viewport layout exists', html.includes('overflow:hidden') && html.includes('position:fixed;top:0;right:0;bottom:0;left:0;inset:0') && html.includes('height:var(--safe-vh)'));
 assert('modal mask has old safari fixed fallback', html.includes('.modal-mask{position:fixed;top:0;right:0;bottom:0;left:0;inset:0'));
-assert('landscape panel opens near top', html.includes('.float-panel{left:8px;right:8px;top:72px;bottom:auto'));
+assert('landscape panel opens near top', html.includes('.float-panel{left:8px;right:8px;top:36px;bottom:auto'));
 assert('legacy ipad classes exist', html.includes('function detectLegacyIpad') && html.includes('legacyIpadLandscape') && html.includes('html.legacyIpadLandscape'));
 assert('legacy ipad measured viewport height exists', html.includes('function measuredLegacyViewportHeight') && html.includes('--legacy-vh') && html.includes('height:var(--legacy-vh)'));
 assert('legacy ipad safari compact layout exists', html.includes('legacyIpadSafari') && html.includes('html.legacyIpadSafari.legacyIpadLandscape'));
