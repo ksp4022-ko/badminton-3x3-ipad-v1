@@ -107,6 +107,12 @@
     .zone-row{height:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;min-width:0;min-height:0;}
     .zone-row.mode-2{grid-template-columns:repeat(2,minmax(0,1fr));}
     .zone-card{background:rgba(255,255,255,.96);border:1px solid #bae6fd;border-radius:var(--radius);box-shadow:0 10px 22px rgba(15,23,42,.1);padding:8px;min-width:0;min-height:0;display:flex;flex-direction:column;}
+    .zone-card.call-target{animation:courtCallPulse 1.6s ease-in-out 0s 2;border-color:#facc15;box-shadow:0 0 0 4px rgba(250,204,21,.45),0 10px 22px rgba(15,23,42,.16);}
+    .zone-card.call-target .zone-head{box-shadow:inset 0 0 0 3px rgba(255,255,255,.85);}
+    @keyframes courtCallPulse{
+      0%,100%{transform:scale(1);box-shadow:0 0 0 4px rgba(250,204,21,.35),0 10px 22px rgba(15,23,42,.16);}
+      45%{transform:scale(.985);box-shadow:0 0 0 8px rgba(250,204,21,.75),0 12px 26px rgba(15,23,42,.22);}
+    }
     .zone-head{width:100%;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;border:1px solid #99f6e4;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border-radius:14px;min-height:44px;padding:8px 10px;text-align:left;}
     .zone-head.warn{background:linear-gradient(135deg,#92400e,#f59e0b);border-color:#facc15;}
     .zone-head:active{transform:translateY(1px)}
@@ -391,7 +397,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.9-ipad';
+  const APP_VERSION = '1.0.10-ipad';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -411,6 +417,8 @@
   let selectedNewPlayerColor = COLORS[0];
   let floatingDrag = { active:false, moved:false, dx:0, dy:0 };
   let lastTouchHandledAt = 0;
+  let courtHighlightZone = null;
+  let courtHighlightTimer = null;
 
   const $ = (id) => document.getElementById(id);
 
@@ -530,6 +538,39 @@
     selectedPlayer = record || null;
     if(selectedPlayer) saveSelectedPlayer();
     else clearStoredSelectedPlayer();
+  }
+
+  function updateSelectedChipClasses(previousId, nextId){
+    const chips = document.querySelectorAll('.player-chip');
+    for(let i = 0; i < chips.length; i += 1){
+      const chip = chips[i];
+      const id = dataAttr(chip, 'player-id');
+      if(previousId && id === previousId) chip.classList.remove('selected');
+      if(nextId && id === nextId) chip.classList.add('selected');
+    }
+  }
+
+  function refreshSelectionUi(previousId, nextId){
+    updateSelectedChipClasses(previousId, nextId);
+    renderSelectedBanner();
+    renderPanel();
+  }
+
+  function markCourtCallTarget(zone){
+    courtHighlightZone = zone || null;
+    if(courtHighlightTimer) clearTimeout(courtHighlightTimer);
+    courtHighlightTimer = setTimeout(function(){
+      const oldZone = courtHighlightZone;
+      courtHighlightZone = null;
+      removeCourtCallTarget(oldZone);
+    }, 3300);
+  }
+
+  function removeCourtCallTarget(zone){
+    const cards = document.querySelectorAll('.zone-card.call-target');
+    for(let i = 0; i < cards.length; i += 1){
+      if(!zone || dataAttr(cards[i], 'zone-card') === zone) cards[i].classList.remove('call-target');
+    }
   }
 
   function defaultState(){
@@ -795,7 +836,8 @@
     }).join('');
     const actionClass = isCourt ? 'warn' : '';
     const actionData = isCourt ? `data-court="${zone}"` : `data-next="${zone}"`;
-    return `<div class="zone-card"><button class="zone-head ${actionClass}" ${actionData} type="button"><div class="zone-title">${title}</div><div class="zone-count">${players.length}/4</div></button><div class="slot-grid">${slots}</div></div>`;
+    const highlightClass = courtHighlightZone === zone ? ' call-target' : '';
+    return `<div class="zone-card${highlightClass}" data-zone-card="${zone}"><button class="zone-head ${actionClass}" ${actionData} type="button"><div class="zone-title">${title}</div><div class="zone-count">${players.length}/4</div></button><div class="slot-grid">${slots}</div></div>`;
   }
 
   function renderSelectedBanner(){
@@ -888,18 +930,20 @@
       clearSelected('已取消選取');
       return;
     }
+    const previousId = selectedPlayer ? selectedPlayer.playerId : null;
     const p = getPlayer(playerId);
     if(!p) return;
     setSelectedPlayer({ playerId:p.id, name:p.name, fromZone:p.zone, fromSlot:p.slot == null ? null : p.slot });
     showToast(`已選取：${p.name}`);
     if(options.closePanelAfterSelect){ closePanel(); }
-    render();
+    refreshSelectionUi(previousId, p.id);
   }
 
   function clearSelected(reason){
+    const previousId = selectedPlayer ? selectedPlayer.playerId : null;
     setSelectedPlayer(null);
     if(reason) showToast(reason);
-    render();
+    refreshSelectionUi(previousId, null);
   }
 
   function movePlayer(playerId, targetZone, targetSlot){
@@ -1023,6 +1067,7 @@
     state.settings.lastCallPlayers = names;
     state.settings.lastCallCourt = court;
     logAction('nextUp',court,names,`${zoneLabel(nextZone)} 上場到 ${zoneLabel(court)}`);
+    markCourtCallTarget(court);
     saveState();
     showToast(`${zoneLabel(nextZone)} 已上場`);
     render();
@@ -1043,6 +1088,7 @@
     state.settings.lastCallCourt = court;
     shiftNextForwardAfter(nextZone);
     logAction('autoNextUp',court,names,`${zoneLabel(nextZone)} 上場到 ${zoneLabel(court)}，Next 向前遞補`);
+    markCourtCallTarget(court);
     showToast(`${zoneLabel(nextZone)} 已上場`);
     if(state.settings.autoCallEnabled) callPlayers(names, court);
     return true;
