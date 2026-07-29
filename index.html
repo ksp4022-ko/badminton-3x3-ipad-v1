@@ -113,12 +113,18 @@
       0%,100%{transform:scale(1);box-shadow:0 0 0 4px rgba(250,204,21,.35),0 10px 22px rgba(15,23,42,.16);}
       45%{transform:scale(.985);box-shadow:0 0 0 8px rgba(250,204,21,.75),0 12px 26px rgba(15,23,42,.22);}
     }
-    .zone-head{width:100%;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;border:1px solid #99f6e4;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border-radius:14px;min-height:44px;padding:8px 10px;text-align:left;}
+    .zone-head{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;border:1px solid #99f6e4;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border-radius:14px;min-height:44px;padding:8px 10px;text-align:left;overflow:hidden;}
     .zone-head.warn{background:linear-gradient(135deg,#92400e,#f59e0b);border-color:#facc15;}
     .zone-head:active{transform:translateY(1px)}
     .zone-title{font-size:clamp(18px,2vw,25px);font-weight:950;color:#0f172a;white-space:nowrap;}
     .zone-head .zone-title,.zone-head .zone-count{color:#fff;}
     .zone-count{font-size:15px;color:#64748b;font-weight:800;white-space:nowrap;}
+    .court-down-pill{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:86px;min-height:34px;padding:4px 12px;border-radius:999px;background:#fef3c7;color:#92400e;border:2px solid rgba(146,64,14,.25);font-weight:1000;font-size:20px;line-height:1;box-shadow:inset 0 -2px 0 rgba(146,64,14,.12);}
+    .court-down-pill .arrow{display:inline-block;animation:downArrowBounce .9s ease-in-out infinite;}
+    @keyframes downArrowBounce{0%,100%{transform:translateY(-1px)}50%{transform:translateY(3px)}}
+    .call-marquee{grid-column:1 / 3;min-width:0;overflow:hidden;white-space:nowrap;font-size:30px;font-weight:1000;color:#fff;}
+    .call-marquee span{display:inline-block;min-width:100%;animation:callMarquee 1.4s ease-in-out infinite alternate;}
+    @keyframes callMarquee{0%{transform:translateX(0)}100%{transform:translateX(18px)}}
     .slot-grid{flex:1 1 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:8px;min-height:0;}
     .slot{border:2px dashed #94a3b8;border-radius:16px;background:#f8fafc;min-height:54px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
     .slot.empty::after{content:"點此放入";color:#94a3b8;font-weight:900;font-size:clamp(14px,1.5vw,20px)}
@@ -215,6 +221,8 @@
     html.legacyIpadLandscape .zone-head{height:60px;min-height:60px;margin-bottom:0;padding:9px 11px;border-radius:10px;}
     html.legacyIpadLandscape .zone-title{font-size:30px;line-height:1;}
     html.legacyIpadLandscape .zone-count{font-size:24px;line-height:1;}
+    html.legacyIpadLandscape .court-down-pill{min-width:104px;min-height:40px;font-size:24px;padding:4px 14px;}
+    html.legacyIpadLandscape .call-marquee{font-size:30px;}
     html.legacyIpadLandscape .slot-grid{height:100%;gap:3px;min-height:0;overflow:hidden;padding:0 1px 5px;grid-template-rows:repeat(2,minmax(0,1fr));}
     html.legacyIpadLandscape .slot{height:100%;min-height:0;border-width:2px;border-radius:9px;}
     html.legacyIpadLandscape .slot.empty::after{font-size:14px;}
@@ -327,6 +335,8 @@
               <button class="primary" id="addPlayerBtn" style="width:100%;margin-top:8px">新增球員</button>
               <label>修改選取球員姓名</label>
               <input id="renamePlayerInput" type="text" placeholder="先選取球員" />
+              <label>已選球員貼紙顏色</label>
+              <div class="color-grid" id="selectedPlayerColorGrid" aria-label="已選球員貼紙顏色"></div>
               <div class="button-grid" style="margin-top:8px">
                 <button id="renamePlayerBtn">修改姓名</button>
                 <button class="danger" id="deletePlayerBtn">刪除球員</button>
@@ -397,7 +407,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.11-ipad';
+  const APP_VERSION = '1.0.12-ipad';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -419,6 +429,7 @@
   let lastTouchHandledAt = 0;
   let courtHighlightZone = null;
   let courtHighlightTimer = null;
+  let panelTouch = { active:false, moved:false, x:0, y:0, blockUntil:0 };
 
   const $ = (id) => document.getElementById(id);
 
@@ -471,6 +482,11 @@
   function bindTap(el, handler){
     let lastTouch = 0;
     function run(e){
+      if(isPanelScrollBlocked(el)){
+        if(e.cancelable) e.preventDefault();
+        if(e.stopPropagation) e.stopPropagation();
+        return;
+      }
       if(e.type === 'click' && Date.now() - lastTouch < 600) return;
       if(e.type === 'touchend'){
         lastTouch = Date.now();
@@ -493,6 +509,9 @@
   }
   function clearTap(el){
     if(el) el.__tapHandler = null;
+  }
+  function isPanelScrollBlocked(el){
+    return !!(closestById(el, 'floatPanel') && Date.now() < panelTouch.blockUntil);
   }
   function isOldIosSafari(){
     const ua = navigator.userAgent || '';
@@ -556,6 +575,13 @@
     renderPanel();
   }
 
+  function updatePlayerChipColor(playerId, color){
+    const chips = document.querySelectorAll('.player-chip');
+    for(let i = 0; i < chips.length; i += 1){
+      if(dataAttr(chips[i], 'player-id') === playerId) chips[i].style.background = color;
+    }
+  }
+
   function markCourtCallTarget(zone){
     courtHighlightZone = zone || null;
     if(courtHighlightTimer) clearTimeout(courtHighlightTimer);
@@ -563,7 +589,7 @@
       const oldZone = courtHighlightZone;
       courtHighlightZone = null;
       removeCourtCallTarget(oldZone);
-    }, 3300);
+    }, 5000);
   }
 
   function removeCourtCallTarget(zone){
@@ -828,7 +854,8 @@
 
   function renderZoneCard(zone, isCourt){
     const players = zonePlayers(zone);
-    const title = zoneLabel(zone);
+    const isCallTarget = courtHighlightZone === zone;
+    const title = isCallTarget ? '請上場…' : zoneLabel(zone);
     const slots = SLOTS.map(slot => {
       const p = occupant(zone, slot);
       const content = p ? playerChipHtml(p) : '';
@@ -836,8 +863,11 @@
     }).join('');
     const actionClass = isCourt ? 'warn' : '';
     const actionData = isCourt ? `data-court="${zone}"` : `data-next="${zone}"`;
-    const highlightClass = courtHighlightZone === zone ? ' call-target' : '';
-    return `<div class="zone-card${highlightClass}" data-zone-card="${zone}"><button class="zone-head ${actionClass}" ${actionData} type="button"><div class="zone-title">${title}</div><div class="zone-count">${players.length}/4</div></button><div class="slot-grid">${slots}</div></div>`;
+    const highlightClass = isCallTarget ? ' call-target' : '';
+    const titleHtml = isCallTarget
+      ? `<div class="call-marquee"><span>${title}</span></div>`
+      : `<div class="zone-title">${title}</div>${isCourt ? '<div class="court-down-pill">下場 <span class="arrow">↓</span></div>' : '<div></div>'}`;
+    return `<div class="zone-card${highlightClass}" data-zone-card="${zone}"><button class="zone-head ${actionClass}" ${actionData} type="button">${titleHtml}<div class="zone-count">${players.length}/4</div></button><div class="slot-grid">${slots}</div></div>`;
   }
 
   function renderSelectedBanner(){
@@ -901,12 +931,32 @@
   }
 
   function renderColorPicker(){
-    const grid = $('newPlayerColorGrid');
-    if(!grid) return;
-    grid.innerHTML = COLORS.map(color => {
-      const active = color === selectedNewPlayerColor ? ' active' : '';
-      return `<button class="color-swatch${active}" type="button" data-color="${escapeHtml(color)}" style="background:${escapeHtml(color)}" aria-label="選擇顏色 ${escapeHtml(color)}"></button>`;
+    const newGrid = $('newPlayerColorGrid');
+    if(newGrid) newGrid.innerHTML = colorSwatchesHtml(selectedNewPlayerColor, '新增球員顏色');
+    const selectedGrid = $('selectedPlayerColorGrid');
+    if(selectedGrid){
+      const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
+      selectedGrid.innerHTML = colorSwatchesHtml(p ? p.color : '', '已選球員顏色');
+    }
+  }
+
+  function colorSwatchesHtml(activeColor, label){
+    return COLORS.map(color => {
+      const activeClass = color === activeColor ? ' active' : '';
+      return `<button class="color-swatch${activeClass}" type="button" data-color="${escapeHtml(color)}" style="background:${escapeHtml(color)}" aria-label="${escapeHtml(label)} ${escapeHtml(color)}"></button>`;
     }).join('');
+  }
+
+  function setSelectedPlayerColor(color){
+    const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
+    if(!p){ showToast('請先選取球員'); return; }
+    if(COLORS.indexOf(color) < 0) return;
+    p.color = color;
+    p.updatedAt = nowIso();
+    saveState();
+    updatePlayerChipColor(p.id, color);
+    renderColorPicker();
+    showToast('貼紙顏色已更新');
   }
 
   function renderCollapsedSections(){
@@ -1735,6 +1785,33 @@
   function openPanel(){ setPanel(true); renderPanel(); }
   function closePanel(){ setPanel(false); }
 
+  function initPanelScrollGuard(){
+    const panel = $('floatPanel');
+    if(!panel) return;
+    function pointFromTouch(e){
+      const t = e.touches && e.touches.length ? e.touches[0] : (e.changedTouches && e.changedTouches.length ? e.changedTouches[0] : e);
+      return {x:t.clientX || 0, y:t.clientY || 0};
+    }
+    panel.addEventListener('touchstart', function(e){
+      const p = pointFromTouch(e);
+      panelTouch = {active:true, moved:false, x:p.x, y:p.y, blockUntil:0};
+    }, true);
+    panel.addEventListener('touchmove', function(e){
+      if(!panelTouch.active) return;
+      const p = pointFromTouch(e);
+      const dx = Math.abs(p.x - panelTouch.x);
+      const dy = Math.abs(p.y - panelTouch.y);
+      if(dx > 12 || dy > 12){
+        panelTouch.moved = true;
+        panelTouch.blockUntil = Date.now() + 450;
+      }
+    }, true);
+    panel.addEventListener('touchend', function(){
+      if(panelTouch.moved) panelTouch.blockUntil = Date.now() + 450;
+      panelTouch.active = false;
+    }, true);
+  }
+
   function initFloatingButton(){
     const btn = $('floatButton');
     const pos = state.settings.floating || {side:'left', y:0.45};
@@ -1935,6 +2012,11 @@
       selectedNewPlayerColor = dataAttr(swatch, 'color') || COLORS[0];
       renderColorPicker();
     });
+    setTap($('selectedPlayerColorGrid'), (e) => {
+      const swatch = closestByClass(e.target, 'color-swatch');
+      if(!swatch) return;
+      setSelectedPlayerColor(dataAttr(swatch, 'color') || COLORS[0]);
+    });
     const collapseButtons = document.querySelectorAll('[data-collapse-target]');
     for(let i = 0; i < collapseButtons.length; i += 1){
       const btn = collapseButtons[i];
@@ -1997,6 +2079,7 @@
       clearAll:clearAll,
       importPlayersFromText:importPlayersFromText,
       importRosterPlayers:importRosterPlayers,
+      setSelectedPlayerColor:setSelectedPlayerColor,
       requestRosterApi:requestRosterApi,
       showRosterImportDialog:showRosterImportDialog,
       showRosterEventList:showRosterEventList,
@@ -2010,6 +2093,7 @@
     isAdmin = isAdminUnlocked();
     simplifyLabels();
     bindEvents();
+    initPanelScrollGuard();
     initFloatingButton();
     render();
     exposeDebugApi();

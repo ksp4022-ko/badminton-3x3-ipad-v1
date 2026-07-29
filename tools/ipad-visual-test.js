@@ -118,6 +118,8 @@ async function runCase(browser, mode, scenario) {
       slotMinHeight: Math.min.apply(null, Array.prototype.map.call(document.querySelectorAll('.slot'), (slot) => slot.getBoundingClientRect().height)),
       titleTexts: Array.prototype.map.call(document.querySelectorAll('.zone-title'), (title) => title.textContent),
       titleMinFontSize: Math.min.apply(null, Array.prototype.map.call(document.querySelectorAll('.zone-title'), (title) => parseFloat(getComputedStyle(title).fontSize))),
+      courtDownPillCount: document.querySelectorAll('#courtRow .court-down-pill').length,
+      courtDownPillMinHeight: Math.min.apply(null, Array.prototype.map.call(document.querySelectorAll('#courtRow .court-down-pill'), (pill) => pill.getBoundingClientRect().height)),
       gamesMinHeight: Math.min.apply(null, Array.prototype.map.call(document.querySelectorAll('.player-chip .games'), (games) => games.getBoundingClientRect().height)),
       gamesMinFontSize: Math.min.apply(null, Array.prototype.map.call(document.querySelectorAll('.player-chip .games'), (games) => parseFloat(getComputedStyle(games).fontSize))),
       slotBottomClearanceMin: Math.min.apply(null, slotFits.map((item) => item.bottomClearance)),
@@ -141,6 +143,7 @@ async function runCase(browser, mode, scenario) {
   assert(label + ' labels are localized', metrics.titleTexts.indexOf('場地 1') >= 0 && metrics.titleTexts.indexOf('預備區 1') >= 0, JSON.stringify(metrics.titleTexts));
   assert(label + ' title buttons are enlarged and tappable', metrics.titleMinHeight >= 54, String(metrics.titleMinHeight));
   assert(label + ' title text is readable', metrics.titleMinFontSize >= 27, String(metrics.titleMinFontSize));
+  assert(label + ' court down pills are visible', metrics.courtDownPillCount === (mode === '2x2' ? 2 : 3) && metrics.courtDownPillMinHeight >= 34, JSON.stringify({ count: metrics.courtDownPillCount, height: metrics.courtDownPillMinHeight }));
   assert(label + ' game badges are enlarged', metrics.gamesMinHeight >= 34 && metrics.gamesMinFontSize >= 22, JSON.stringify({ height: metrics.gamesMinHeight, fontSize: metrics.gamesMinFontSize }));
   assert(label + ' slots remain tappable', metrics.slotMinHeight >= 48, String(metrics.slotMinHeight));
   assert(label + ' slots do not overflow cards', metrics.slotOverflowCount === 0, String(metrics.slotOverflowCount));
