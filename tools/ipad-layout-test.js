@@ -29,5 +29,7 @@ assert('legacy safari landscape keeps enlarged title buttons', cssRuleIncludes('
 assert('legacy landscape game badge is enlarged', cssRuleIncludes('html.legacyIpadLandscape .player-chip .games', 'height:38px'));
 assert('legacy standalone avoids status bar', cssRuleIncludes('html.legacyIpadStandalone.legacyIpadLandscape .app-shell', 'padding-top:26px'));
 assert('player name auto fit exists', html.includes('function fitPlayerNameText') && html.includes('function fitOnePlayerName') && html.includes('scheduleFitPlayerNames()'));
+assert('player name fit cache exists', html.includes('const playerNameFitCache') && html.includes('function playerNameFitKey'));
+assert('legacy court down pill stays wide', cssRuleIncludes('html.legacyIpadLandscape .court-down-pill', 'min-width:136px'));
 assert('zone labels are localized', html.includes("return '場地 '") && html.includes("return '預備區 '"));
 assert('roster import defaults to blue', html.includes('color:COLORS[0]'));
