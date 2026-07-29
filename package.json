@@ -1,6 +1,6 @@
 {
   "name": "badminton-3x3-ipad-v1",
-  "version": "1.0.8-ipad",
+  "version": "1.0.9-ipad",
   "private": true,
   "scripts": {
     "test": "node tools/ipad-compat-test.js && node tools/ipad-layout-test.js && node tools/ipad-behavior-test.js",

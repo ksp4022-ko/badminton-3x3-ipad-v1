@@ -372,6 +372,7 @@ async function run() {
   assert('roster api import clears old list', api.getState().players.length === 3 && api.getState().players[0].name === '新A');
   assert('roster api import puts all players in rest', api.getState().players.every((p) => p.zone === 'rest' && p.slot === null));
   assert('roster api import resets games', api.getState().players.every((p) => p.games === 0));
+  assert('roster api import defaults all players to blue', api.getState().players.every((p) => p.color === '#bfdbfe'));
 
   api.setState(baseState([player('old1', '保留A', 'court1', 1, 4)], { rosterApiUrl: 'https://script.google.com/macros/s/test/exec' }));
   context.__fetchData = { ok: false, error: 'API failed' };

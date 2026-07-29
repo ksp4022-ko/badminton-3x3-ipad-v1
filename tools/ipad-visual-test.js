@@ -108,6 +108,10 @@ async function runCase(browser, mode, scenario) {
       nextCount: document.querySelectorAll('#nextRow .zone-card').length,
       titleMinHeight: Math.min.apply(null, Array.prototype.map.call(document.querySelectorAll('.zone-head'), (head) => head.getBoundingClientRect().height)),
       slotMinHeight: Math.min.apply(null, Array.prototype.map.call(document.querySelectorAll('.slot'), (slot) => slot.getBoundingClientRect().height)),
+      titleTexts: Array.prototype.map.call(document.querySelectorAll('.zone-title'), (title) => title.textContent),
+      titleMinFontSize: Math.min.apply(null, Array.prototype.map.call(document.querySelectorAll('.zone-title'), (title) => parseFloat(getComputedStyle(title).fontSize))),
+      gamesMinHeight: Math.min.apply(null, Array.prototype.map.call(document.querySelectorAll('.player-chip .games'), (games) => games.getBoundingClientRect().height)),
+      gamesMinFontSize: Math.min.apply(null, Array.prototype.map.call(document.querySelectorAll('.player-chip .games'), (games) => parseFloat(getComputedStyle(games).fontSize))),
       nameMinFontSize: Math.min.apply(null, names.map((name) => name.fontSize)),
       shortNameFontSize: (names.find((name) => name.text === '柯') || { fontSize: 0 }).fontSize,
       normalNameFontSize: (names.find((name) => name.text === 'Chris 哥') || { fontSize: 0 }).fontSize,
@@ -124,11 +128,14 @@ async function runCase(browser, mode, scenario) {
   assert(label + ' rows do not overlap', metrics.courtRow.bottom <= metrics.nextRow.top + 4, JSON.stringify({ courtRow: metrics.courtRow, nextRow: metrics.nextRow }));
   assert(label + ' expected court count', metrics.courtCount === (mode === '2x2' ? 2 : 3), String(metrics.courtCount));
   assert(label + ' expected next count', metrics.nextCount === (mode === '2x2' ? 2 : 3), String(metrics.nextCount));
-  assert(label + ' title buttons are tappable', metrics.titleMinHeight >= 36, String(metrics.titleMinHeight));
+  assert(label + ' labels are localized', metrics.titleTexts.indexOf('場地 1') >= 0 && metrics.titleTexts.indexOf('預備區 1') >= 0, JSON.stringify(metrics.titleTexts));
+  assert(label + ' title buttons are enlarged and tappable', metrics.titleMinHeight >= 54, String(metrics.titleMinHeight));
+  assert(label + ' title text is readable', metrics.titleMinFontSize >= 27, String(metrics.titleMinFontSize));
+  assert(label + ' game badges are enlarged', metrics.gamesMinHeight >= 34 && metrics.gamesMinFontSize >= 22, JSON.stringify({ height: metrics.gamesMinHeight, fontSize: metrics.gamesMinFontSize }));
   assert(label + ' slots remain tappable', metrics.slotMinHeight >= 48, String(metrics.slotMinHeight));
-  assert(label + ' player names are readable', metrics.nameMinFontSize >= 24, String(metrics.nameMinFontSize));
-  assert(label + ' short names are enlarged', metrics.shortNameFontSize >= 32, String(metrics.shortNameFontSize));
-  assert(label + ' normal names are enlarged', metrics.normalNameFontSize >= 26, String(metrics.normalNameFontSize));
+  assert(label + ' player names are readable', metrics.nameMinFontSize >= 28, String(metrics.nameMinFontSize));
+  assert(label + ' short names are enlarged', metrics.shortNameFontSize >= 38, String(metrics.shortNameFontSize));
+  assert(label + ' normal names are enlarged', metrics.normalNameFontSize >= 30, String(metrics.normalNameFontSize));
   assert(label + ' player names do not overflow chip', metrics.nameOverflowCount === 0, String(metrics.nameOverflowCount));
   if(standalone){
     assert(label + ' avoids iOS status bar', metrics.courtRow.top >= 20, JSON.stringify(metrics.courtRow));

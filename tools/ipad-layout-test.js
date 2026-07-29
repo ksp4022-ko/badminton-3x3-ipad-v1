@@ -23,6 +23,9 @@ assert('legacy body is locked to measured height', cssRuleIncludes('html.legacyI
 assert('legacy landscape keeps two rows compressible', cssRuleIncludes('html.legacyIpadLandscape .app-shell', 'grid-template-rows:minmax(0,1fr) minmax(0,1fr)'));
 assert('legacy landscape card clips overflow', cssRuleIncludes('html.legacyIpadLandscape .zone-card', 'overflow:hidden'));
 assert('legacy landscape slots can shrink', cssRuleIncludes('html.legacyIpadLandscape .slot', 'min-height:0'));
-assert('legacy safari landscape keeps usable title buttons', cssRuleIncludes('html.legacyIpadSafari.legacyIpadLandscape .zone-head', 'min-height:38px'));
-assert('legacy standalone avoids status bar', cssRuleIncludes('html.legacyIpadStandalone.legacyIpadLandscape .app-shell', 'padding-top:22px'));
+assert('legacy safari landscape keeps enlarged title buttons', cssRuleIncludes('html.legacyIpadSafari.legacyIpadLandscape .zone-head', 'min-height:58px'));
+assert('legacy landscape game badge is enlarged', cssRuleIncludes('html.legacyIpadLandscape .player-chip .games', 'height:38px'));
+assert('legacy standalone avoids status bar', cssRuleIncludes('html.legacyIpadStandalone.legacyIpadLandscape .app-shell', 'padding-top:26px'));
 assert('player name auto fit exists', html.includes('function fitPlayerNameText') && html.includes('function fitOnePlayerName') && html.includes('scheduleFitPlayerNames()'));
+assert('zone labels are localized', html.includes("return '場地 '") && html.includes("return '預備區 '"));
+assert('roster import defaults to blue', html.includes('color:COLORS[0]'));
