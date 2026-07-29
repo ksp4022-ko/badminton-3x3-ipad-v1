@@ -23,6 +23,8 @@ assert('legacy body is locked to measured height', cssRuleIncludes('html.legacyI
 assert('legacy landscape keeps two rows compressible', cssRuleIncludes('html.legacyIpadLandscape .app-shell', 'grid-template-rows:minmax(0,1fr) minmax(0,1fr)'));
 assert('legacy landscape card clips overflow', cssRuleIncludes('html.legacyIpadLandscape .zone-card', 'overflow:hidden'));
 assert('legacy landscape slots can shrink', cssRuleIncludes('html.legacyIpadLandscape .slot', 'min-height:0'));
+assert('legacy landscape uses fixed card row math', cssRuleIncludes('html.legacyIpadLandscape .zone-card', 'grid-template-rows:60px minmax(0,calc(100% - 62px))'));
+assert('legacy landscape keeps bottom slot padding', cssRuleIncludes('html.legacyIpadLandscape .slot-grid', 'padding:0 1px 5px'));
 assert('legacy safari landscape keeps enlarged title buttons', cssRuleIncludes('html.legacyIpadSafari.legacyIpadLandscape .zone-head', 'min-height:58px'));
 assert('legacy landscape game badge is enlarged', cssRuleIncludes('html.legacyIpadLandscape .player-chip .games', 'height:38px'));
 assert('legacy standalone avoids status bar', cssRuleIncludes('html.legacyIpadStandalone.legacyIpadLandscape .app-shell', 'padding-top:26px'));

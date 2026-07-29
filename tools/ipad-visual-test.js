@@ -98,6 +98,14 @@ async function runCase(browser, mode, scenario) {
         maxHeight
       };
     });
+    const slotFits = Array.prototype.map.call(document.querySelectorAll('.zone-card'), (card) => {
+      const cardRect = card.getBoundingClientRect();
+      const slots = Array.prototype.map.call(card.querySelectorAll('.slot'), (slot) => slot.getBoundingClientRect());
+      return {
+        bottomClearance: Math.min.apply(null, slots.map((slot) => cardRect.bottom - slot.bottom)),
+        overflowCount: slots.filter((slot) => slot.top < cardRect.top - 1 || slot.bottom > cardRect.bottom - 1).length
+      };
+    });
     return {
       innerHeight: window.innerHeight,
       htmlClass: document.documentElement.className,
@@ -112,6 +120,8 @@ async function runCase(browser, mode, scenario) {
       titleMinFontSize: Math.min.apply(null, Array.prototype.map.call(document.querySelectorAll('.zone-title'), (title) => parseFloat(getComputedStyle(title).fontSize))),
       gamesMinHeight: Math.min.apply(null, Array.prototype.map.call(document.querySelectorAll('.player-chip .games'), (games) => games.getBoundingClientRect().height)),
       gamesMinFontSize: Math.min.apply(null, Array.prototype.map.call(document.querySelectorAll('.player-chip .games'), (games) => parseFloat(getComputedStyle(games).fontSize))),
+      slotBottomClearanceMin: Math.min.apply(null, slotFits.map((item) => item.bottomClearance)),
+      slotOverflowCount: slotFits.reduce((total, item) => total + item.overflowCount, 0),
       nameMinFontSize: Math.min.apply(null, names.map((name) => name.fontSize)),
       shortNameFontSize: (names.find((name) => name.text === '柯') || { fontSize: 0 }).fontSize,
       normalNameFontSize: (names.find((name) => name.text === 'Chris 哥') || { fontSize: 0 }).fontSize,
@@ -133,6 +143,8 @@ async function runCase(browser, mode, scenario) {
   assert(label + ' title text is readable', metrics.titleMinFontSize >= 27, String(metrics.titleMinFontSize));
   assert(label + ' game badges are enlarged', metrics.gamesMinHeight >= 34 && metrics.gamesMinFontSize >= 22, JSON.stringify({ height: metrics.gamesMinHeight, fontSize: metrics.gamesMinFontSize }));
   assert(label + ' slots remain tappable', metrics.slotMinHeight >= 48, String(metrics.slotMinHeight));
+  assert(label + ' slots do not overflow cards', metrics.slotOverflowCount === 0, String(metrics.slotOverflowCount));
+  assert(label + ' slot bottoms keep padding', metrics.slotBottomClearanceMin >= 3, String(metrics.slotBottomClearanceMin));
   assert(label + ' player names are readable', metrics.nameMinFontSize >= 28, String(metrics.nameMinFontSize));
   assert(label + ' short names are enlarged', metrics.shortNameFontSize >= 38, String(metrics.shortNameFontSize));
   assert(label + ' normal names are enlarged', metrics.normalNameFontSize >= 30, String(metrics.normalNameFontSize));
