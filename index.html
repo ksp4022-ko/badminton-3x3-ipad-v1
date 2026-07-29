@@ -202,7 +202,7 @@
       .player-chip .name{font-size:clamp(17px,3vw,25px)}
       .player-chip .games{min-width:22px;height:22px;font-size:15px;top:3px;left:4px;}
       .floating-button{width:56px;height:56px;font-size:24px;}
-      .float-panel{left:8px;right:8px;top:auto;bottom:calc(8px + var(--safe-bottom));width:auto;max-height:85vh;max-height:85dvh;border-radius:20px;}
+      .float-panel{left:8px;right:8px;top:72px;bottom:auto;width:auto;max-height:calc(100vh - 84px);max-height:calc(100dvh - 84px);border-radius:20px;}
       .panel-body{padding-bottom:calc(16px + var(--safe-bottom));}
     }
     @media (max-width:700px) and (orientation:portrait){
@@ -238,7 +238,7 @@
     html.legacyIpadLandscape .selected-banner #selectedText{white-space:nowrap;line-height:1.12;}
     html.legacyIpadLandscape .selected-banner button{min-width:128px;min-height:46px;font-size:20px;padding:5px 10px;}
     html.legacyIpadLandscape .floating-button{width:52px;height:52px;font-size:22px;left:8px;}
-    html.legacyIpadLandscape .float-panel{left:8px;right:8px;top:auto;bottom:calc(8px + var(--safe-bottom));width:auto;max-height:calc(var(--legacy-vh) - 16px);border-radius:18px;}
+    html.legacyIpadLandscape .float-panel{left:8px;right:8px;top:72px;bottom:auto;width:auto;max-height:calc(var(--legacy-vh) - 86px);border-radius:18px;}
     html.legacyIpadLandscape .panel-head{padding:9px 10px;}
     html.legacyIpadLandscape .panel-title{font-size:20px;}
     html.legacyIpadLandscape .panel-body{padding:10px;padding-bottom:calc(16px + var(--safe-bottom));}
@@ -408,7 +408,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.15-ipad';
+  const APP_VERSION = '1.0.16-ipad';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -428,6 +428,8 @@
   let selectedNewPlayerColor = COLORS[0];
   let floatingDrag = { active:false, moved:false, dx:0, dy:0 };
   let lastTouchHandledAt = 0;
+  let floatingTapHandledAt = 0;
+  const FLOAT_DRAG_THRESHOLD = 8;
   let courtHighlightZone = null;
   let courtHighlightTimer = null;
   let panelTouch = { active:false, moved:false, x:0, y:0, blockUntil:0 };
@@ -499,6 +501,38 @@
     el.addEventListener('touchend', run, false);
     el.addEventListener('click', run, false);
   }
+  function bindStableTap(el, handler){
+    let start = null;
+    let moved = false;
+    let lastTouch = 0;
+    function pointFromEvent(e){
+      const touch = e.touches && e.touches.length ? e.touches[0] : (e.changedTouches && e.changedTouches.length ? e.changedTouches[0] : e);
+      return {x:touch.clientX || 0, y:touch.clientY || 0};
+    }
+    el.addEventListener('touchstart', function(e){
+      start = pointFromEvent(e);
+      moved = false;
+    }, {passive:true});
+    el.addEventListener('touchmove', function(e){
+      if(!start) return;
+      const p = pointFromEvent(e);
+      if(Math.abs(p.x - start.x) >= FLOAT_DRAG_THRESHOLD || Math.abs(p.y - start.y) >= FLOAT_DRAG_THRESHOLD) moved = true;
+    }, {passive:true});
+    el.addEventListener('touchend', function(e){
+      lastTouch = Date.now();
+      if(e.cancelable) e.preventDefault();
+      if(e.stopPropagation) e.stopPropagation();
+      const shouldRun = !moved;
+      start = null;
+      moved = false;
+      if(shouldRun) handler(e);
+    }, false);
+    el.addEventListener('click', function(e){
+      if(Date.now() - lastTouch < 600) return;
+      if(e.stopPropagation) e.stopPropagation();
+      handler(e);
+    }, false);
+  }
   function setTap(el, handler){
     if(!el) return;
     el.__tapHandler = handler;
@@ -507,6 +541,15 @@
       if(el.__tapHandler) el.__tapHandler(e);
     });
     el.__tapBound = true;
+  }
+  function setStableTap(el, handler){
+    if(!el) return;
+    el.__stableTapHandler = handler;
+    if(el.__stableTapBound) return;
+    bindStableTap(el, function(e){
+      if(el.__stableTapHandler) el.__stableTapHandler(e);
+    });
+    el.__stableTapBound = true;
   }
   function clearTap(el){
     if(el) el.__tapHandler = null;
@@ -744,6 +787,8 @@
     $('modalCancelBtn').style.display = '';
     $('modalCancelBtn').textContent = '取消';
     $('modalOkBtn').textContent = '確認';
+    $('modalCancelBtn').className = 'ghost';
+    $('modalOkBtn').className = 'primary';
     $('modalOkBtn').onclick = null;
     $('modalCancelBtn').onclick = null;
     clearTap($('modalOkBtn'));
@@ -756,12 +801,14 @@
     resetModalButtons();
   }
 
-  function confirmDialog(title, message, extraHtml=''){
+  function confirmDialog(title, message, extraHtml='', okText, okClass){
     return new Promise((resolve) => {
       resetModalButtons();
       $('modalTitle').textContent = title;
       $('modalMessage').textContent = message;
       $('modalExtra').innerHTML = extraHtml;
+      if(okText) $('modalOkBtn').textContent = okText;
+      if(okClass) $('modalOkBtn').className = okClass;
       $('modalMask').classList.add('show');
       setTap($('modalOkBtn'), () => { closeModal(); resolve(true); });
       setTap($('modalCancelBtn'), () => { closeModal(); resolve(false); });
@@ -1068,11 +1115,7 @@
   async function courtDown(courtZone){
     const players = zonePlayers(courtZone);
     if(players.length === 0){ showToast('這個球場目前沒有人'); return; }
-    const modeNote = state.settings.autoArrangeMode
-      ? '自動排場模式：場次 +1 後，Next 1 先上場並向前遞補，下場人員再排入 Next 空格。'
-      : '自由暢打模式：此球場人員場次會 +1 並回到休息區。';
-    const countNote = players.length < 4 ? `<div class="backup-summary">提醒：${zoneLabel(courtZone)} 目前未滿 4 人，仍會照樣下場。</div>` : '';
-    const ok = await confirmDialog('確認下場', `${zoneLabel(courtZone)} 下場？${modeNote}`, `${countNote}<div class="backup-summary">${players.map(p=>escapeHtml(p.name)).join('、')}</div>`);
+    const ok = await confirmDialog('確認下場', `${zoneLabel(courtZone)} 下場？`, `<div class="backup-summary">${players.length}/4｜場次 +1</div>`, '下場', 'warn');
     if(!ok) return;
     players.forEach(p => { p.games = (Number(p.games)||0)+1; p.updatedAt=nowIso(); });
     if(state.settings.autoArrangeMode){
@@ -1865,12 +1908,15 @@
     }
     function startDrag(e){
       const point = pointFromEvent(e);
-      floatingDrag = {active:true, moved:false, dx:point.x - btn.getBoundingClientRect().left, dy:point.y - btn.getBoundingClientRect().top};
+      floatingDrag = {active:true, moved:false, startX:point.x, startY:point.y, dx:point.x - btn.getBoundingClientRect().left, dy:point.y - btn.getBoundingClientRect().top};
       if(btn.setPointerCapture && e.pointerId != null) btn.setPointerCapture(e.pointerId);
     }
     function moveDrag(e){
       if(!floatingDrag.active) return;
       const point = pointFromEvent(e);
+      const moveX = Math.abs(point.x - floatingDrag.startX);
+      const moveY = Math.abs(point.y - floatingDrag.startY);
+      if(!floatingDrag.moved && moveX < FLOAT_DRAG_THRESHOLD && moveY < FLOAT_DRAG_THRESHOLD) return;
       floatingDrag.moved = true;
       const x = Math.max(4, Math.min(window.innerWidth - btn.offsetWidth - 4, point.x - floatingDrag.dx));
       const y2 = Math.max(54, Math.min(floatingMaxTop(btn), point.y - floatingDrag.dy));
@@ -1881,21 +1927,31 @@
     function endDrag(e){
       if(!floatingDrag.active) return;
       if(btn.releasePointerCapture && e.pointerId != null) btn.releasePointerCapture(e.pointerId);
+      const wasMoved = floatingDrag.moved;
       floatingDrag.active = false;
-      snapFloatingButton();
-      setTimeout(function(){ floatingDrag.moved = false; }, 0);
+      if(wasMoved){
+        snapFloatingButton();
+        setTimeout(function(){ floatingDrag.moved = false; }, 0);
+        return;
+      }
+      floatingTapHandledAt = Date.now();
+      panelOpen ? closePanel() : openPanel();
     }
-    btn.addEventListener('pointerdown', startDrag);
-    btn.addEventListener('pointermove', moveDrag);
-    btn.addEventListener('pointerup', endDrag);
-    btn.addEventListener('touchstart', startDrag, {passive:false});
-    btn.addEventListener('touchmove', moveDrag, {passive:false});
-    btn.addEventListener('touchend', endDrag);
-    btn.addEventListener('mousedown', startDrag);
-    document.addEventListener('mousemove', moveDrag);
-    document.addEventListener('mouseup', endDrag);
+    if(window.PointerEvent){
+      btn.addEventListener('pointerdown', startDrag);
+      btn.addEventListener('pointermove', moveDrag);
+      btn.addEventListener('pointerup', endDrag);
+    }else{
+      btn.addEventListener('touchstart', startDrag, {passive:false});
+      btn.addEventListener('touchmove', moveDrag, {passive:false});
+      btn.addEventListener('touchend', endDrag);
+      btn.addEventListener('mousedown', startDrag);
+      document.addEventListener('mousemove', moveDrag);
+      document.addEventListener('mouseup', endDrag);
+    }
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
+      if(Date.now() - floatingTapHandledAt < 500) return;
       if(floatingDrag.moved) return;
       panelOpen ? closePanel() : openPanel();
     });
@@ -2039,7 +2095,7 @@
 
     tap('cancelSelectBtn', () => clearSelected('已取消選取'));
     tap('closePanelBtn', closePanel);
-    tap('speakerButton', repeatLastCall);
+    setStableTap($('speakerButton'), repeatLastCall);
     tap('moveRestBtn', moveSelectedToRest);
     tap('adminLoginBtn', adminLogin);
     tap('freeModeBtn', () => { state.settings.freePlayMode=true; state.settings.autoArrangeMode=false; saveState(); renderPanel(); });

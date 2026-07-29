@@ -263,6 +263,13 @@ async function run() {
   const api = context.window.__badmintonIpadV1;
   assert('debug api exposed', !!api);
 
+  const floatBtn = context.document.getElementById('floatButton');
+  floatBtn.dispatchEvent({ type: 'touchstart', target: floatBtn, touches: [{ clientX: 20, clientY: 120 }], cancelable: true, preventDefault() {}, stopPropagation() {} });
+  floatBtn.dispatchEvent({ type: 'touchmove', target: floatBtn, touches: [{ clientX: 22, clientY: 123 }], cancelable: true, preventDefault() {}, stopPropagation() {} });
+  floatBtn.dispatchEvent({ type: 'touchend', target: floatBtn, changedTouches: [{ clientX: 22, clientY: 123 }], cancelable: true, preventDefault() {}, stopPropagation() {} });
+  assert('floating button small touch move still opens panel', context.document.getElementById('floatPanel').classList.contains('open'));
+  context.document.getElementById('closePanelBtn').dispatchEvent({ type: 'touchend', target: context.document.getElementById('closePanelBtn'), cancelable: true, preventDefault() {}, stopPropagation() {} });
+
   const restoredContext = createContext();
   restoredContext.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(baseState([player('p1', 'A', 'court1', 1)])));
   restoredContext.localStorage.setItem('badminton3x3.ipad.v1.state.selectedPlayer', JSON.stringify({ playerId: 'p1', name: 'A', fromZone: 'court1', fromSlot: 1 }));
@@ -320,6 +327,9 @@ async function run() {
   head.classList.add('zone-head');
   head.setAttribute('data-court', 'court1');
   const down = api.handleBoardInteraction(eventFor(head));
+  assert('court down dialog message is concise', context.document.getElementById('modalMessage').textContent === '場地 1 下場？');
+  assert('court down dialog summary is concise', /4\/4｜場次 \+1/.test(context.document.getElementById('modalExtra').innerHTML || ''));
+  assert('court down dialog ok button is down', context.document.getElementById('modalOkBtn').textContent === '下場');
   api.tap('modalOkBtn');
   await down;
   assert('court head touch moves players to rest', api.getState().players.every((p) => p.zone === 'rest'));
