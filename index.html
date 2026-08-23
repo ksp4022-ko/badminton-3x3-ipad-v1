@@ -408,11 +408,13 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.18-ipad';
+  const APP_VERSION = '1.0.19-ipad';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
   const ROSTER_SITE = 'rian';
+  const ROSTER_SOURCE_PAGE = 'https://ksp4022-ko.github.io/shuttle-burst-dynamic/rian';
+  const SHUTTLE_ROSTER_API_BASE = 'https://badminton-signup-v6-alpha.badminton-signup-v6-worker.workers.dev/api/v7-shuttle';
   const DEBUG_MODE = location.search.indexOf('debug=1') >= 0;
   const COURTS = ['court1','court2','court3'];
   const NEXTS = ['next1','next2','next3'];
@@ -1635,7 +1637,7 @@
   }
 
   function rosterApiUrl(){
-    return String(state.settings.rosterApiUrl || '').trim();
+    return ROSTER_SOURCE_PAGE;
   }
 
   function showRosterApiUrlDialog(nextAction){
@@ -1674,15 +1676,93 @@
   }
 
   function requestRosterApi(action, params){
-    const url = rosterApiUrl();
-    if(!url) return Promise.reject(new Error('尚未設定報名 API URL'));
-    const query = Object.assign({ action:action, site:ROSTER_SITE, _ts:Date.now() }, params || {});
-    return fetchRosterJson(url, query).catch(function(){
-      return jsonpRosterJson(url, query);
-    }).then(function(data){
-      if(!data || data.ok === false) throw new Error(data && data.error ? data.error : '報名 API 回傳失敗');
-      return data;
+    return requestShuttleRosterApi(action, params);
+  }
+
+  function requestShuttleRosterApi(action, params){
+    if(action === 'listEvents'){
+      return fetchRosterJson(SHUTTLE_ROSTER_API_BASE + '/sites/' + encodeURIComponent(ROSTER_SITE) + '/events', {
+        status:'open',
+        from:todayKey(),
+        limit:20,
+        _ts:Date.now()
+      }).then(function(data){
+        const rawEvents = rosterArray(data, 'events');
+        return {
+          ok:true,
+          source:ROSTER_SOURCE_PAGE,
+          events:rawEvents.map(normalizeRosterEvent).filter(function(event){ return !!event.eventId; })
+        };
+      });
+    }
+    if(action === 'previewRoster'){
+      const eventId = params && params.eventId ? String(params.eventId).trim() : '';
+      if(!eventId) return Promise.reject(new Error('缺少聚會 ID'));
+      return fetchRosterJson(SHUTTLE_ROSTER_API_BASE + '/events/' + encodeURIComponent(eventId) + '/roster', {
+        _ts:Date.now()
+      }).then(function(data){
+        const event = normalizeRosterEvent(data && data.event ? data.event : {});
+        if(!event.eventId) event.eventId = eventId;
+        const players = rosterConfirmedPlayers(data);
+        return {
+          ok:true,
+          source:ROSTER_SOURCE_PAGE,
+          event:event,
+          players:players,
+          summary:data && data.summary ? data.summary : {}
+        };
+      });
+    }
+    return Promise.reject(new Error('不支援的報名 API 動作'));
+  }
+
+  function rosterArray(data, key){
+    if(Array.isArray(data)) return data;
+    if(data && Array.isArray(data[key])) return data[key];
+    if(data && data.data) return rosterArray(data.data, key);
+    return [];
+  }
+
+  function normalizeRosterEvent(event){
+    event = event || {};
+    const eventId = event.eventId || event.id || event.event_id || '';
+    const date = event.date || event.eventDate || event.event_date || '';
+    const title = event.title || event.name || event.eventName || event.event_name || '日安';
+    return {
+      eventId:String(eventId),
+      date:String(date),
+      title:String(title),
+      status:String(event.status || ''),
+      confirmedCount:Number(event.confirmedCount || event.confirmed_count || 0),
+      waitingCount:Number(event.waitingCount || event.waiting_count || 0),
+      maxPeople:Number(event.maxPeople || event.max_people || 0)
+    };
+  }
+
+  function rosterConfirmedPlayers(data){
+    const lists = [];
+    if(data && Array.isArray(data.confirmed)) lists.push(data.confirmed);
+    if(data && Array.isArray(data.fixedConfirmed)) lists.push(data.fixedConfirmed);
+    if(data && Array.isArray(data.tempConfirmed)) lists.push(data.tempConfirmed);
+    const players = [];
+    lists.forEach(function(list){
+      list.forEach(function(item){ players.push(item); });
     });
+    return players
+      .filter(function(player){ return player && String(player.name || '').trim(); })
+      .sort(function(a, b){
+        const ao = Number(a.orderNo || a.order || 999999);
+        const bo = Number(b.orderNo || b.order || 999999);
+        if(ao !== bo) return ao - bo;
+        return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant');
+      })
+      .map(function(player){
+        return {
+          name:String(player.name || '').trim(),
+          sourceId:String(player.id || player.memberId || ''),
+          signupType:String(player.signupType || '')
+        };
+      });
   }
 
   function fetchRosterJson(url, params){
@@ -1690,6 +1770,12 @@
     return window.fetch(buildQueryUrl(url, params), { cache:'no-store' }).then(function(response){
       if(!response || !response.ok) throw new Error('HTTP ' + (response ? response.status : ''));
       return response.json();
+    }).then(function(data){
+      if(!data || data.ok === false){
+        const message = data && data.error && data.error.message ? data.error.message : (data && data.error ? data.error : '報名 API 回傳失敗');
+        throw new Error(message);
+      }
+      return data && data.data ? data.data : data;
     });
   }
 
@@ -1722,23 +1808,21 @@
   }
 
   function showRosterImportDialog(){
-    if(!rosterApiUrl()){
-      showRosterApiUrlDialog(showRosterImportDialog);
-      return;
-    }
     resetModalButtons();
     $('modalTitle').textContent = '抓取報名名單';
     $('modalMessage').textContent = '讀取日安目前開放聚會中...';
     $('modalExtra').innerHTML = '';
     $('modalCancelBtn').textContent = '取消';
-    $('modalOkBtn').textContent = '設定 URL';
+    $('modalOkBtn').textContent = '關閉';
     $('modalMask').classList.add('show');
     setTap($('modalCancelBtn'), closeModal);
-    setTap($('modalOkBtn'), function(){ showRosterApiUrlDialog(showRosterImportDialog); });
+    setTap($('modalOkBtn'), closeModal);
     requestRosterApi('listEvents', {}).then(showRosterEventList).catch(function(err){
       console.error(err);
-      $('modalMessage').textContent = '讀取聚會失敗。請確認 Apps Script API URL 或網路狀態。';
+      $('modalMessage').textContent = '讀取聚會失敗。請確認報名頁 API 或網路狀態。';
       $('modalExtra').innerHTML = '<div class="backup-summary">' + escapeHtml(err.message || String(err)) + '</div>';
+      $('modalOkBtn').textContent = '重新讀取';
+      setTap($('modalOkBtn'), showRosterImportDialog);
     });
   }
 
@@ -1747,15 +1831,17 @@
     if(!events.length){
       $('modalMessage').textContent = '目前沒有可匯入聚會。';
       $('modalExtra').innerHTML = '';
-      $('modalOkBtn').textContent = '設定 URL';
+      $('modalOkBtn').textContent = '重新讀取';
+      setTap($('modalOkBtn'), showRosterImportDialog);
       return;
     }
     const options = events.map(function(event){
-      const label = [event.date || '', event.title || '未命名聚會', event.status || ''].filter(Boolean).join('｜');
+      const countText = event.confirmedCount || event.maxPeople ? '正取 ' + event.confirmedCount + (event.maxPeople ? '/' + event.maxPeople : '') : '';
+      const label = [event.date || '', event.title || '未命名聚會', countText, event.status || ''].filter(Boolean).join('｜');
       return '<option value="' + escapeHtml(event.eventId) + '">' + escapeHtml(label) + '</option>';
     }).join('');
     $('modalMessage').textContent = '請選擇要匯入的日安聚會。';
-    $('modalExtra').innerHTML = '<select id="rosterEventSelect" style="width:100%;min-height:46px;border:1px solid #cbd5e1;border-radius:12px;padding:8px 10px;font-size:16px;">' + options + '</select><div class="backup-summary">來源：日安｜共 ' + events.length + ' 場開放聚會</div>';
+    $('modalExtra').innerHTML = '<select id="rosterEventSelect" style="width:100%;min-height:46px;border:1px solid #cbd5e1;border-radius:12px;padding:8px 10px;font-size:16px;">' + options + '</select><div class="backup-summary">來源：日安報名頁｜共 ' + events.length + ' 場開放聚會<br>' + escapeHtml(rosterApiUrl()) + '</div>';
     $('modalOkBtn').textContent = '預覽名單';
     setTap($('modalOkBtn'), previewSelectedRoster);
   }

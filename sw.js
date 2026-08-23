@@ -1,4 +1,4 @@
-const CACHE_NAME = 'badminton-3x3-ipad-v1-v1.0.18-cache-20260730';
+const CACHE_NAME = 'badminton-3x3-ipad-v1-v1.0.19-cache-20260823';
 const CACHE_PREFIX = 'badminton-3x3-ipad-v1-';
 const ASSETS = [
   './',

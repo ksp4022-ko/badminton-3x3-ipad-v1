@@ -383,25 +383,57 @@ async function run() {
   api.setState(baseState([
     player('old1', '舊A', 'court1', 1, 7),
     player('old2', '舊B', 'next1', 1, 2)
-  ], { rosterApiUrl: 'https://script.google.com/macros/s/test/exec' }));
+  ]));
   context.__fetchData = {
     ok: true,
-    players: [{ name: '新A' }, { name: '新B' }, { name: '新C' }],
-    event: { title: '測試聚會', date: '2026-07-12' }
+    data: [
+      {
+        id: 'rian__EVT_TEST_001',
+        eventDate: '2026-08-24',
+        name: '日安',
+        status: 'open',
+        confirmedCount: 3,
+        waitingCount: 1,
+        maxPeople: 14
+      }
+    ]
   };
-  const rosterData = await api.requestRosterApi('previewRoster', { eventId: 'E1' });
+  const eventList = await api.requestRosterApi('listEvents', {});
+  assert('roster api lists shuttle rian open events', /\/sites\/rian\/events/.test(context.__lastFetchUrl) && /status=open/.test(context.__lastFetchUrl) && eventList.events.length === 1);
+  context.__fetchData = {
+    ok: true,
+    data: {
+      event: { id: 'rian__EVT_TEST_001', name: '日安', eventDate: '2026-08-24' },
+      fixedConfirmed: [
+        { id: 'F2', name: '新B', orderNo: 2, signupType: 'fixed' },
+        { id: 'F1', name: '新A', orderNo: 1, signupType: 'fixed' }
+      ],
+      tempConfirmed: [
+        { id: 'T3', name: '新C', orderNo: 3, signupType: 'temp' }
+      ],
+      fixedWaiting: [
+        { id: 'W1', name: '等待A', orderNo: 4, signupType: 'fixed' }
+      ],
+      fixedLeave: [
+        { id: 'L1', name: '請假A', orderNo: 5, signupType: 'fixed' }
+      ],
+      summary: { confirmedCount: 3, waitingCount: 1, leaveCount: 1 }
+    }
+  };
+  const rosterData = await api.requestRosterApi('previewRoster', { eventId: 'rian__EVT_TEST_001' });
   api.importRosterPlayers(rosterData.players, rosterData.event);
-  assert('roster api uses fixed rian site', /site=rian/.test(context.__lastFetchUrl));
+  assert('roster api reads selected shuttle roster', /\/events\/rian__EVT_TEST_001\/roster/.test(context.__lastFetchUrl));
   assert('roster api import clears old list', api.getState().players.length === 3 && api.getState().players[0].name === '新A');
+  assert('roster api import excludes waiting and leave players', !api.getState().players.some((p) => /等待|請假/.test(p.name)));
   assert('roster api import puts all players in rest', api.getState().players.every((p) => p.zone === 'rest' && p.slot === null));
   assert('roster api import resets games', api.getState().players.every((p) => p.games === 0));
   assert('roster api import defaults all players to blue', api.getState().players.every((p) => p.color === '#bfdbfe'));
 
-  api.setState(baseState([player('old1', '保留A', 'court1', 1, 4)], { rosterApiUrl: 'https://script.google.com/macros/s/test/exec' }));
-  context.__fetchData = { ok: false, error: 'API failed' };
+  api.setState(baseState([player('old1', '保留A', 'court1', 1, 4)]));
+  context.__fetchData = { ok: false, error: { message: 'API failed' } };
   let failed = false;
   try {
-    await api.requestRosterApi('previewRoster', { eventId: 'E2' });
+    await api.requestRosterApi('previewRoster', { eventId: 'rian__EVT_TEST_002' });
   } catch (err) {
     failed = true;
   }

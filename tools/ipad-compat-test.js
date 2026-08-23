@@ -79,7 +79,8 @@ assert('floating toggle uses lock', html.includes('floatingToggleLockedUntil') &
 assert('floating pointer and touch are not both bound on modern browsers', html.includes('if(window.PointerEvent)') && html.includes('}else{') && html.includes("btn.addEventListener('touchstart'"));
 assert('roster import button exists', html.includes('id="fetchRosterBtn"') && html.includes("tap('fetchRosterBtn', showRosterImportDialog)"));
 assert('roster api fixed to rian', html.includes("const ROSTER_SITE = 'rian'"));
-assert('roster api has fetch and jsonp fallback', html.includes('function requestRosterApi') && html.includes('fetchRosterJson') && html.includes('jsonpRosterJson'));
+assert('roster api uses shuttle rian source', html.includes('ROSTER_SOURCE_PAGE') && html.includes('shuttle-burst-dynamic/rian') && html.includes('SHUTTLE_ROSTER_API_BASE') && html.includes('function requestShuttleRosterApi'));
+assert('roster api imports confirmed lists only', html.includes('fixedConfirmed') && html.includes('tempConfirmed') && html.includes('function rosterConfirmedPlayers'));
 assert('roster import clears list into rest', html.includes('function importRosterPlayers') && html.includes('state.players = importedPlayers') && html.includes('function normalizeRosterPlayers'));
 assert('fixed viewport layout exists', html.includes('overflow:hidden') && html.includes('position:fixed;top:0;right:0;bottom:0;left:0;inset:0') && html.includes('height:var(--safe-vh)'));
 assert('modal mask has old safari fixed fallback', html.includes('.modal-mask{position:fixed;top:0;right:0;bottom:0;left:0;inset:0'));
