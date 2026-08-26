@@ -165,12 +165,19 @@
     .panel-section.collapsed .collapse-head::after{content:"🔽";}
     #adminTools .panel-section .collapse-head{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe;}
     #adminTools .panel-section .collapse-head::after{color:#1d4ed8;}
+    #adminTools{padding:0 10px;}
     .panel-section.collapsed .collapsible-body{display:none;}
     .button-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
     .button-grid.single{grid-template-columns:1fr;}
     .voice-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:end;margin-top:8px;}
     .voice-grid label{white-space:nowrap;}
     .voice-grid select{min-width:0;font-size:16px;padding-left:8px;padding-right:8px;}
+    .effect-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:end;margin-top:8px;}
+    .effect-grid label{white-space:nowrap;}
+    .effect-grid select{min-width:0;font-size:16px;padding-left:8px;padding-right:8px;}
+    .player-text-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:end;margin-top:8px;}
+    .player-text-grid label{white-space:nowrap;}
+    .player-text-grid select{min-width:0;font-size:16px;padding-left:8px;padding-right:8px;}
     .help{font-size:14px;line-height:1.35;color:#64748b;font-weight:700;margin:6px 0 0;}
     .mode-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
     .mode-row button.active{background:#0f766e;color:#fff}
@@ -217,6 +224,8 @@
     }
     @media (max-width:700px){
       .voice-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+      .effect-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+      .player-text-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     }
     @media (max-width:700px) and (orientation:portrait){
       .portrait-warning.phone{display:flex;}
@@ -255,6 +264,7 @@
     html.legacyIpadLandscape .panel-head{padding:9px 10px;}
     html.legacyIpadLandscape .panel-title{font-size:20px;}
     html.legacyIpadLandscape .panel-body{padding:10px;padding-bottom:calc(16px + var(--safe-bottom));}
+    html.legacyIpadLandscape #adminTools{padding:0 14px;}
     html.legacyIpadSafari.legacyIpadLandscape .app-shell{padding-top:2px;padding-bottom:3px;gap:3px;}
     html.legacyIpadSafari.legacyIpadLandscape .zone-row{gap:3px;}
     html.legacyIpadSafari.legacyIpadLandscape .zone-card{padding:3px;grid-template-rows:58px minmax(0,calc(100% - 60px));row-gap:2px;}
@@ -351,16 +361,34 @@
                 <button id="callEffectOffBtn">關閉</button>
                 <button id="callEffectOnBtn">開啟</button>
               </div>
-              <label>提醒時間</label>
-              <select id="callEffectDurationSelect"><option value="3">3 秒</option><option value="5">5 秒</option><option value="8">8 秒</option><option value="10">10 秒</option></select>
-              <label>特效強度</label>
-              <select id="callEffectIntensitySelect"><option value="low">低</option><option value="medium">中</option><option value="high">高</option></select>
-              <label>提醒顏色</label>
-              <select id="callEffectColorSelect"><option value="yellow">黃</option><option value="green">綠</option><option value="blue">藍</option><option value="red">紅</option></select>
-              <label>跑馬燈</label>
-              <div class="toggle-row">
-                <button id="callMarqueeOffBtn">關閉</button>
-                <button id="callMarqueeOnBtn">開啟</button>
+              <div class="effect-grid">
+                <div>
+                  <label>提醒時間</label>
+                  <select id="callEffectDurationSelect"><option value="3">3 秒</option><option value="5">5 秒</option><option value="8">8 秒</option><option value="10">10 秒</option></select>
+                </div>
+                <div>
+                  <label>特效強度</label>
+                  <select id="callEffectIntensitySelect"><option value="low">低</option><option value="medium">中</option><option value="high">高</option></select>
+                </div>
+                <div>
+                  <label>提醒顏色</label>
+                  <select id="callEffectColorSelect"><option value="yellow">黃</option><option value="green">綠</option><option value="blue">藍</option><option value="red">紅</option></select>
+                </div>
+                <div>
+                  <label>跑馬燈</label>
+                  <select id="callMarqueeSelect"><option value="on">開啟</option><option value="off">關閉</option></select>
+                </div>
+              </div>
+              <label>成員卡片名字</label>
+              <div class="player-text-grid">
+                <div>
+                  <label>字級大小</label>
+                  <select id="playerNameScaleSelect"><option value="90">90%</option><option value="100">100%</option><option value="110">110%</option><option value="120">120%</option><option value="130">130%</option><option value="140">140%</option></select>
+                </div>
+                <div>
+                  <label>字體</label>
+                  <select id="playerNameFontSelect"><option value="system">系統黑體</option><option value="bold">粗黑體</option><option value="serif">明體</option></select>
+                </div>
               </div>
               <div class="button-grid" style="margin-top:8px">
                 <button id="voiceTestBtn">語音設定 / 試播</button>
@@ -711,6 +739,8 @@
         voiceLang:'zh-TW-first',
         zhVoiceId:'',
         enVoiceId:'',
+        playerNameScale:100,
+        playerNameFont:'system',
         callEffectEnabled:true,
         callEffectDuration:5,
         callEffectIntensity:'medium',
@@ -752,6 +782,8 @@
     merged.settings.callEffectIntensity = ['low','medium','high'].indexOf(String(merged.settings.callEffectIntensity)) >= 0 ? String(merged.settings.callEffectIntensity) : 'medium';
     merged.settings.callEffectColor = ['yellow','green','blue','red'].indexOf(String(merged.settings.callEffectColor)) >= 0 ? String(merged.settings.callEffectColor) : 'yellow';
     merged.settings.callEffectMarquee = merged.settings.callEffectMarquee !== false;
+    merged.settings.playerNameScale = [90,100,110,120,130,140].indexOf(Number(merged.settings.playerNameScale)) >= 0 ? Number(merged.settings.playerNameScale) : 100;
+    merged.settings.playerNameFont = ['system','bold','serif'].indexOf(String(merged.settings.playerNameFont)) >= 0 ? String(merged.settings.playerNameFont) : 'system';
     merged.settings.rosterApiUrl = ROSTER_SOURCE_PAGE;
     merged.players = Array.isArray(data && data.players ? data.players : null) ? data.players : [];
     merged.gameLog = Array.isArray(data && data.gameLog ? data.gameLog : null) ? data.gameLog : [];
@@ -891,7 +923,7 @@
 
   function playerChipHtml(p){
     const selected = selectedPlayer && selectedPlayer.playerId === p.id ? ' selected' : '';
-    return `<div class="player-chip${selected}" data-player-id="${escapeHtml(p.id)}" style="background:${escapeHtml(p.color)}"><div class="games">${Number(p.games)||0}</div><div class="name">${escapeHtml(p.name)}</div></div>`;
+    return `<div class="player-chip${selected}" data-player-id="${escapeHtml(p.id)}" style="background:${escapeHtml(p.color)}"><div class="games">${Number(p.games)||0}</div><div class="name" style="font-family:${escapeHtml(playerNameFontFamily())}">${escapeHtml(p.name)}</div></div>`;
   }
 
   function render(){
@@ -932,7 +964,19 @@
 
   function playerNameFitKey(text, chipWidth, chipHeight){
     const legacy = document.documentElement.classList.contains('legacyIpad') ? 'legacy' : 'modern';
-    return legacy + '|' + text + '|' + Math.round(chipWidth) + 'x' + Math.round(chipHeight);
+    return legacy + '|' + playerNameScale() + '|' + state.settings.playerNameFont + '|' + text + '|' + Math.round(chipWidth) + 'x' + Math.round(chipHeight);
+  }
+
+  function playerNameScale(){
+    const scale = Number(state.settings.playerNameScale) || 100;
+    return [90,100,110,120,130,140].indexOf(scale) >= 0 ? scale : 100;
+  }
+
+  function playerNameFontFamily(){
+    const font = state.settings.playerNameFont || 'system';
+    if(font === 'serif') return '"Noto Serif TC","Songti TC","PMingLiU",serif';
+    if(font === 'bold') return '"PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif';
+    return '-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif';
   }
 
   function fitOnePlayerName(nameEl){
@@ -948,10 +992,11 @@
       nameEl.style.lineHeight = '1.05';
       return;
     }
-    let maxSize = text.length <= 2 ? 44 : (text.length <= 4 ? 42 : 40);
-    let minSize = 24;
+    const scale = playerNameScale() / 100;
+    let maxSize = Math.round((text.length <= 2 ? 44 : (text.length <= 4 ? 42 : 40)) * scale);
+    let minSize = Math.round(24 * scale);
     if(document.documentElement.classList.contains('legacyIpad')){
-      minSize = 28;
+      minSize = Math.round(28 * scale);
     }
     nameEl.style.fontSize = maxSize + 'px';
     nameEl.style.lineHeight = '1.05';
@@ -1080,9 +1125,12 @@
     if($('callEffectOnBtn')) $('callEffectOnBtn').classList.toggle('active', state.settings.callEffectEnabled !== false);
     if($('callMarqueeOffBtn')) $('callMarqueeOffBtn').classList.toggle('active', state.settings.callEffectMarquee === false);
     if($('callMarqueeOnBtn')) $('callMarqueeOnBtn').classList.toggle('active', state.settings.callEffectMarquee !== false);
+    if($('callMarqueeSelect')) $('callMarqueeSelect').value = state.settings.callEffectMarquee === false ? 'off' : 'on';
     if($('callEffectDurationSelect')) $('callEffectDurationSelect').value = String(state.settings.callEffectDuration || 5);
     if($('callEffectIntensitySelect')) $('callEffectIntensitySelect').value = state.settings.callEffectIntensity || 'medium';
     if($('callEffectColorSelect')) $('callEffectColorSelect').value = state.settings.callEffectColor || 'yellow';
+    if($('playerNameScaleSelect')) $('playerNameScaleSelect').value = String(state.settings.playerNameScale || 100);
+    if($('playerNameFontSelect')) $('playerNameFontSelect').value = state.settings.playerNameFont || 'system';
     if($('courtModeStatus')) $('courtModeStatus').textContent = `目前模式：${currentMode()}`;
     if($('use3x3Btn')) $('use3x3Btn').classList.toggle('active', currentMode() === '3x3');
     if($('use2x2Btn')) $('use2x2Btn').classList.toggle('active', currentMode() === '2x2');
@@ -1667,9 +1715,20 @@
     state.settings.callEffectDuration = Number($('callEffectDurationSelect').value) || 5;
     state.settings.callEffectIntensity = $('callEffectIntensitySelect').value || 'medium';
     state.settings.callEffectColor = $('callEffectColorSelect').value || 'yellow';
+    state.settings.callEffectMarquee = $('callMarqueeSelect') ? $('callMarqueeSelect').value !== 'off' : state.settings.callEffectMarquee !== false;
+    state.settings.playerNameScale = Number($('playerNameScaleSelect') ? $('playerNameScaleSelect').value : state.settings.playerNameScale) || 100;
+    state.settings.playerNameFont = $('playerNameFontSelect') ? $('playerNameFontSelect').value : state.settings.playerNameFont;
     saveState();
     showToast('語音與提醒設定已儲存');
     render();
+  }
+
+  function savePlayerNameDisplaySettings(){
+    if($('playerNameScaleSelect')) state.settings.playerNameScale = Number($('playerNameScaleSelect').value) || 100;
+    if($('playerNameFontSelect')) state.settings.playerNameFont = $('playerNameFontSelect').value || 'system';
+    saveState();
+    renderZones();
+    fitPlayerNameText();
   }
 
   function exportJson(){
@@ -2474,6 +2533,8 @@
     tap('callMarqueeOnBtn', () => setCallMarqueeEnabled(true));
     tap('voiceTestBtn', () => callPlayers(['雅雯','Kevin'], 'court1'));
     tap('saveVoiceBtn', saveVoiceSettings);
+    if($('playerNameScaleSelect')) $('playerNameScaleSelect').addEventListener('change', savePlayerNameDisplaySettings);
+    if($('playerNameFontSelect')) $('playerNameFontSelect').addEventListener('change', savePlayerNameDisplaySettings);
     tap('addPlayerBtn', () => addPlayer($('newPlayerInput').value));
     $('newPlayerInput').addEventListener('keydown', e => { if(e.key==='Enter') addPlayer($('newPlayerInput').value); });
     tap('renamePlayerBtn', renameSelected);

@@ -60,7 +60,7 @@ assert('select player does not rerender board', !selectBlock.includes('render();
 assert('court call target highlight exists', html.includes('function markCourtCallTarget') && html.includes('zone-card.call-target') && html.includes('data-zone-card'));
 assert('court call target duration is configurable', html.includes('callEffectDuration') && html.includes('duration * 1000'));
 assert('court call target rerenders after timeout', html.includes('courtHighlightZone = null;') && html.includes('renderZones();') && html.includes('fitPlayerNameText();'));
-assert('court call target controls exist', html.includes('callEffectOffBtn') && html.includes('callEffectOnBtn') && html.includes('callEffectDurationSelect') && html.includes('callEffectIntensitySelect') && html.includes('callEffectColorSelect') && html.includes('callMarqueeOnBtn'));
+assert('court call target controls exist', html.includes('callEffectOffBtn') && html.includes('callEffectOnBtn') && html.includes('callEffectDurationSelect') && html.includes('callEffectIntensitySelect') && html.includes('callEffectColorSelect') && html.includes('callMarqueeSelect'));
 assert('court down pill exists', html.includes('court-down-pill') && html.includes('<span class="arrow">'));
 assert('court down pill expanded', html.includes('min-width:136px'));
 assert('court header uses flex layout', html.includes('.zone-head{width:100%;display:flex;'));
@@ -83,6 +83,7 @@ assert('old voice language selector removed from UI', !html.includes('id="voiceL
 assert('voice selectors populate safely', html.includes('function populateVoiceSelects') && html.includes('onvoiceschanged') && html.includes('<option value="">自動推薦</option>'));
 assert('selected voice fallback exists', html.includes('function findSelectedVoice') && html.includes('findVoiceById(id)') && html.includes('return findPreferredVoice(lang);'));
 assert('voice test uses bilingual one-court sample', html.includes("callPlayers(['雅雯','Kevin'], 'court1')"));
+assert('player name display controls exist', html.includes('id="playerNameScaleSelect"') && html.includes('id="playerNameFontSelect"') && html.includes('function savePlayerNameDisplaySettings'));
 assert('player name fit cache exists', html.includes('playerNameFitCache') && html.includes('playerNameFitKey'));
 assert('panel scroll tap guard exists', html.includes('function initPanelScrollGuard') && html.includes('panelTouch.blockUntil') && html.includes('isPanelScrollBlocked(el)'));
 assert('floating tap uses drag threshold', html.includes('const FLOAT_DRAG_THRESHOLD = 8') && html.includes('const LEGACY_FLOAT_DRAG_THRESHOLD = 20') && html.includes('function floatingDragThreshold') && html.includes('startX:point.x') && html.includes('floatingTapHandledAt'));
