@@ -172,10 +172,34 @@ function createContext() {
       removeItem(key) { delete sessionStore[key]; }
     },
     window: null,
-    speechSynthesis: { speak() {}, getVoices() { return []; } },
+    __voices: [],
+    __spokenUtterances: [],
+    __speechCancelCount: 0,
+    speechSynthesis: null,
     SpeechSynthesisUtterance: function SpeechSynthesisUtterance(text) { this.text = text; },
     Blob: function Blob(parts, options) { this.parts = parts; this.options = options; },
     URL: { createObjectURL() { return 'blob:test'; }, revokeObjectURL() {} }
+  };
+  context.speechSynthesis = {
+    cancel() {
+      context.__speechCancelCount += 1;
+    },
+    speak(utter) {
+      context.__spokenUtterances.push({
+        text: utter.text,
+        lang: utter.lang,
+        rate: utter.rate,
+        pitch: utter.pitch,
+        voiceName: utter.voice ? utter.voice.name : null,
+        voiceLang: utter.voice ? utter.voice.lang : null
+      });
+      setTimeout(() => {
+        if (typeof utter.onend === 'function') utter.onend({ type: 'end' });
+      }, 0);
+    },
+    getVoices() {
+      return context.__voices;
+    }
   };
   context.fetch = function fetch(url) {
     context.__lastFetchUrl = url;
@@ -262,6 +286,47 @@ async function run() {
   vm.runInContext(mainScript, context);
   const api = context.window.__badmintonIpadV1;
   assert('debug api exposed', !!api);
+
+  context.__voices = [
+    { name: 'Taiwan Local', lang: 'zh-TW', localService: true },
+    { name: 'US Local', lang: 'en-US', localService: true },
+    { name: 'Mandarin Backup', lang: 'zh-CN', localService: false },
+    { name: 'English Backup', lang: 'en-GB', localService: false }
+  ];
+  api.callPlayers(['雅雯', '承昀'], 'court1');
+  await wait(500);
+  assert('chinese names use zh-TW voice and final court instruction', context.__spokenUtterances.map((u) => u.lang).join(',') === 'zh-TW,zh-TW,zh-TW' && context.__spokenUtterances[2].text === '請上，一號場。');
+  assert('chinese names prefer exact local zh-TW voice', context.__spokenUtterances.every((u) => u.voiceName === 'Taiwan Local'));
+
+  context.__spokenUtterances = [];
+  api.callPlayers(['Kevin', 'Amy'], 'court2');
+  await wait(500);
+  assert('english names use en-US voice and final instruction uses zh-TW', context.__spokenUtterances.map((u) => u.lang).join(',') === 'en-US,en-US,zh-TW' && context.__spokenUtterances[2].text === '請上，二號場。');
+  assert('english names prefer exact local en-US voice', context.__spokenUtterances[0].voiceName === 'US Local' && context.__spokenUtterances[1].voiceName === 'US Local');
+
+  context.__spokenUtterances = [];
+  api.callPlayers(['雅雯', 'Kevin', '承昀', 'Amy'], 'court3');
+  await wait(800);
+  assert('mixed call switches zh en zh en then final zh', context.__spokenUtterances.map((u) => u.lang).join(',') === 'zh-TW,en-US,zh-TW,en-US,zh-TW');
+  assert('mixed Chinese English name prioritizes Chinese', api.detectNameLanguage('Amy王') === 'zh-TW');
+
+  context.__voices = [];
+  context.__spokenUtterances = [];
+  api.callPlayers(['Kevin'], 'court1');
+  await wait(400);
+  assert('empty voices fallback does not crash and still speaks', context.__spokenUtterances.length === 2 && context.__spokenUtterances[0].lang === 'en-US' && context.__spokenUtterances[1].lang === 'zh-TW' && !context.__spokenUtterances[0].voiceName);
+
+  context.__voices = [
+    { name: 'Taiwan Local', lang: 'zh-TW', localService: true },
+    { name: 'US Local', lang: 'en-US', localService: true }
+  ];
+  context.__spokenUtterances = [];
+  api.callPlayers(['雅雯', 'Kevin'], 'court2');
+  await wait(500);
+  context.__spokenUtterances = [];
+  api.repeatLastCall();
+  await wait(500);
+  assert('repeat last call uses bilingual sequence', context.__spokenUtterances.map((u) => u.lang).join(',') === 'zh-TW,en-US,zh-TW' && context.__spokenUtterances[2].text === '請上，二號場。');
 
   const floatBtn = context.document.getElementById('floatButton');
   floatBtn.dispatchEvent({ type: 'touchstart', target: floatBtn, touches: [{ clientX: 20, clientY: 120 }], cancelable: true, preventDefault() {}, stopPropagation() {} });

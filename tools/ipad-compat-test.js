@@ -74,6 +74,10 @@ assert('stable speaker tap exists', html.includes('function bindStableTap') && h
 assert('speaker button uses purple tool color', html.includes('.floating-button.speaker-button{display:none;background:linear-gradient(135deg,#6d28d9,#4f46e5);color:#fff'));
 assert('selected floating button still turns yellow', html.includes('.floating-button.has-selected{background:linear-gradient(135deg,#f59e0b,#facc15);color:#422006;}'));
 assert('admin nested section titles are blue', html.includes('#adminTools .panel-section .collapse-head') && html.includes('color:#1d4ed8'));
+assert('bilingual speech helpers exist', html.includes('function detectNameLanguage') && html.includes('function findPreferredVoice') && html.includes('function speakCallSequence'));
+assert('court call speaks player names sequentially', html.includes('createCallUtterance(parts[index].text, parts[index].lang)') && html.includes('setTimeout(function(){ speakNext(index + 1); }, 110)'));
+assert('court call no longer uses single combined zh sentence', !html.includes("names.join('、')} 請上") && !html.includes("'請上場：' + names.join('、')"));
+assert('repeat call reuses callPlayers path', html.includes('function repeatLastCall') && html.includes('callPlayers(names, state.settings.lastCallCourt || null);'));
 assert('player name fit cache exists', html.includes('playerNameFitCache') && html.includes('playerNameFitKey'));
 assert('panel scroll tap guard exists', html.includes('function initPanelScrollGuard') && html.includes('panelTouch.blockUntil') && html.includes('isPanelScrollBlocked(el)'));
 assert('floating tap uses drag threshold', html.includes('const FLOAT_DRAG_THRESHOLD = 8') && html.includes('const LEGACY_FLOAT_DRAG_THRESHOLD = 20') && html.includes('function floatingDragThreshold') && html.includes('startX:point.x') && html.includes('floatingTapHandledAt'));

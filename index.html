@@ -455,6 +455,7 @@
   let lastTouchHandledAt = 0;
   let floatingTapHandledAt = 0;
   let floatingToggleLockedUntil = 0;
+  let speechCallToken = 0;
   const FLOAT_DRAG_THRESHOLD = 8;
   const LEGACY_FLOAT_DRAG_THRESHOLD = 20;
   let courtHighlightZone = null;
@@ -1443,27 +1444,111 @@
     return map[courtZone] || '';
   }
 
+  function detectNameLanguage(name){
+    const text = String(name || '');
+    if(/[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/.test(text)) return 'zh-TW';
+    if(/[A-Za-z]/.test(text)) return 'en-US';
+    return 'zh-TW';
+  }
+
+  function speechRate(){
+    const rate = state.settings.voiceRate;
+    return rate === 'slow' ? 0.78 : rate === 'fast' ? 1.18 : 0.95;
+  }
+
+  function speechPitch(){
+    const pitch = state.settings.voicePitch;
+    return pitch === 'low' ? 0.82 : pitch === 'high' ? 1.18 : 1;
+  }
+
+  function availableVoices(){
+    try{
+      return window.speechSynthesis && window.speechSynthesis.getVoices ? (window.speechSynthesis.getVoices() || []) : [];
+    }catch(err){
+      return [];
+    }
+  }
+
+  function voiceText(voice){
+    return String((voice && voice.lang ? voice.lang : '') + ' ' + (voice && voice.name ? voice.name : ''));
+  }
+
+  function findPreferredVoice(lang){
+    const voices = availableVoices();
+    if(!voices.length) return null;
+    const exactLang = String(lang || '').toLowerCase();
+    function exact(voice){ return String(voice.lang || '').toLowerCase() === exactLang; }
+    const exactLocal = voices.find(function(voice){ return exact(voice) && voice.localService; });
+    if(exactLocal) return exactLocal;
+    const exactAny = voices.find(exact);
+    if(exactAny) return exactAny;
+
+    const fallbackPattern = lang === 'en-US' ? /(^|\s)en[-_]|english/i : /zh|cmn|mandarin|chinese|taiwan/i;
+    const fallbackLocal = voices.find(function(voice){ return fallbackPattern.test(voiceText(voice)) && voice.localService; });
+    if(fallbackLocal) return fallbackLocal;
+    return voices.find(function(voice){ return fallbackPattern.test(voiceText(voice)); }) || null;
+  }
+
+  function createCallUtterance(text, lang){
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = lang;
+    utter.rate = speechRate();
+    utter.pitch = speechPitch();
+    const voice = findPreferredVoice(lang);
+    if(voice) utter.voice = voice;
+    return utter;
+  }
+
+  function speakCallSequence(names, courtZone){
+    const synth = window.speechSynthesis;
+    if(!synth || !synth.speak || typeof SpeechSynthesisUtterance === 'undefined') return;
+    const token = ++speechCallToken;
+    const courtName = courtVoiceName(courtZone);
+    const parts = names.map(function(name){
+      return {text:String(name || ''), lang:detectNameLanguage(name)};
+    }).filter(function(part){ return part.text.trim(); });
+    parts.push({text:courtName ? '請上，' + courtName + '。' : '請上場。', lang:'zh-TW'});
+    try{
+      if(synth.cancel) synth.cancel();
+    }catch(err){}
+    function speakNext(index){
+      if(token !== speechCallToken || index >= parts.length) return;
+      let utter;
+      try{
+        utter = createCallUtterance(parts[index].text, parts[index].lang);
+      }catch(err){
+        console.error(err);
+        return;
+      }
+      let finished = false;
+      let fallbackTimer = null;
+      const next = function(){
+        if(finished) return;
+        finished = true;
+        if(fallbackTimer) clearTimeout(fallbackTimer);
+        if(token !== speechCallToken) return;
+        setTimeout(function(){ speakNext(index + 1); }, 110);
+      };
+      utter.onend = next;
+      utter.onerror = next;
+      try{
+        synth.speak(utter);
+        fallbackTimer = setTimeout(next, 1500);
+      }catch(err){
+        console.error(err);
+        next();
+      }
+    }
+    speakNext(0);
+  }
+
   function callPlayers(names, courtZone=null){
     if(!Array.isArray(names) || !names.length){ showToast('目前沒有可呼叫的人員'); return; }
     state.settings.lastCallPlayers = names.slice();
     state.settings.lastCallCourt = courtZone || null;
     saveState();
-    const courtName = courtVoiceName(courtZone);
-    const text = courtName ? `${names.join('、')} 請上${courtName}` : '請上場：' + names.join('、');
     try{
-      if(window.speechSynthesis && window.speechSynthesis.cancel) window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(text);
-      const rate = state.settings.voiceRate;
-      const pitch = state.settings.voicePitch;
-      utter.rate = rate === 'slow' ? 0.78 : rate === 'fast' ? 1.18 : 0.95;
-      utter.pitch = pitch === 'low' ? 0.82 : pitch === 'high' ? 1.18 : 1;
-      utter.lang = 'zh-TW';
-      if(state.settings.voiceLang === 'zh-TW-first'){
-        const voices = window.speechSynthesis && window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
-        const zh = voices.find(v => /zh|Chinese|Taiwan|Mandarin/i.test(v.lang + ' ' + v.name));
-        if(zh) utter.voice = zh;
-      }
-      if(window.speechSynthesis && window.speechSynthesis.speak) window.speechSynthesis.speak(utter);
+      speakCallSequence(names, courtZone);
     }catch(err){ console.error(err); }
   }
 
@@ -2399,7 +2484,10 @@
       showRosterEventList:showRosterEventList,
       showRosterPreview:showRosterPreview,
       exportJson:exportJson,
-      exportLogCsv:exportLogCsv
+      exportLogCsv:exportLogCsv,
+      callPlayers:callPlayers,
+      repeatLastCall:repeatLastCall,
+      detectNameLanguage:detectNameLanguage
     };
   }
 
