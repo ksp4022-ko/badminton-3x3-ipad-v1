@@ -194,17 +194,17 @@
     .compact-row-label{font-size:15px;font-weight:1000;color:#334155;white-space:nowrap;}
     .compact-help{font-size:13px;font-weight:800;color:#64748b;margin-top:4px;}
     .player-admin-row{display:grid;gap:8px;align-items:center;margin:5px 0;}
-    .player-add-row{grid-template-columns:auto minmax(140px,1fr) minmax(220px,1.5fr) minmax(62px,.4fr);}
-    .player-edit-row{grid-template-columns:auto minmax(180px,1fr) minmax(62px,.4fr) minmax(72px,.45fr);}
-    #adminTools .compact-colors{display:grid;grid-template-columns:repeat(12,28px);gap:4px;margin:0;align-items:center;justify-content:start;}
-    #adminTools .compact-colors .color-swatch{min-height:28px;width:28px;border-radius:8px;border-width:2px;}
+    .player-add-row{grid-template-columns:56px minmax(160px,1fr) 332px 108px;}
+    .player-edit-row{grid-template-columns:56px minmax(180px,1fr) 88px 108px;}
+    #adminTools .compact-colors{display:grid;grid-template-columns:repeat(12,24px);gap:4px;margin:0;align-items:center;justify-content:start;overflow:hidden;}
+    #adminTools .compact-colors .color-swatch{min-height:24px;width:24px;border-radius:7px;border-width:2px;}
     #adminTools .compact-colors .color-swatch.active{transform:scale(1.05);box-shadow:0 0 0 2px #111827,0 0 0 4px #fff;}
     #adminTools .compact-colors .color-swatch.active::after{top:-7px;right:-7px;width:18px;height:18px;font-size:12px;line-height:18px;}
     .admin-button-row{display:grid;gap:8px;margin:6px 0;}
     .admin-button-row.three{grid-template-columns:repeat(3,minmax(0,1fr));}
     .admin-button-row.four{grid-template-columns:repeat(4,minmax(0,1fr));}
     .system-mode-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end;margin:4px 0 6px;}
-    .segmented-group{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;}
+    .segmented-group{display:grid;grid-template-columns:76px 1fr;gap:8px;align-items:center;}
     #adminTools .mode-row{gap:4px;}
     .help{font-size:14px;line-height:1.35;color:#64748b;font-weight:700;margin:6px 0 0;}
     .mode-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -256,7 +256,7 @@
       .player-text-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
       .player-add-row,.player-edit-row{grid-template-columns:1fr 1fr;}
       .player-add-row .compact-row-label,.player-edit-row .compact-row-label{grid-column:1 / -1;}
-      #adminTools .compact-colors{grid-column:1 / -1;grid-template-columns:repeat(6,28px);}
+      #adminTools .compact-colors{grid-column:1 / -1;grid-template-columns:repeat(6,24px);}
       .system-mode-row,.admin-button-row.three,.admin-button-row.four{grid-template-columns:repeat(2,minmax(0,1fr));}
       .segmented-group{grid-template-columns:1fr;}
     }
@@ -416,7 +416,7 @@
               <div class="player-text-grid">
                 <div>
                   <label>字級大小</label>
-                  <select id="playerNameScaleSelect"><option value="90">90%</option><option value="100">100%</option><option value="110">110%</option><option value="120">120%</option><option value="130">130%</option><option value="140">140%</option></select>
+                  <select id="playerNameScaleSelect"><option value="80">80%</option><option value="100">100%</option><option value="120">120%</option><option value="140">140%</option><option value="160">160%</option><option value="180">180%</option></select>
                 </div>
                 <div>
                   <label>字體</label>
@@ -471,7 +471,7 @@
                   </div>
                 </div>
                 <div class="segmented-group" id="courtModeControls">
-                  <div class="compact-row-label" id="courtModeStatus">場地模式：3x3</div>
+                  <div class="compact-row-label" id="courtModeStatus">場地模式</div>
                   <div class="mode-row">
                     <button id="use3x3Btn">3x3</button>
                     <button id="use2x2Btn">2x2</button>
@@ -490,7 +490,7 @@
                 <button class="danger" id="clearAllBtn">清空全部</button>
               </div>
               <input class="file-input" id="importFileInput" type="file" accept=".json,application/json" />
-              <div class="help">匯入球員名單會清空目前 Court / Next，並把球員放回休息區。</div>
+              <div class="help">貼上名單會清空目前 Court / Next，球員回到休息區。</div>
             </div>
           </div>
         </div>
@@ -822,7 +822,7 @@
     merged.settings.callEffectIntensity = ['low','medium','high'].indexOf(String(merged.settings.callEffectIntensity)) >= 0 ? String(merged.settings.callEffectIntensity) : 'medium';
     merged.settings.callEffectColor = ['yellow','green','blue','red'].indexOf(String(merged.settings.callEffectColor)) >= 0 ? String(merged.settings.callEffectColor) : 'yellow';
     merged.settings.callEffectMarquee = merged.settings.callEffectMarquee !== false;
-    merged.settings.playerNameScale = [90,100,110,120,130,140].indexOf(Number(merged.settings.playerNameScale)) >= 0 ? Number(merged.settings.playerNameScale) : 100;
+    merged.settings.playerNameScale = normalizePlayerNameScale(merged.settings.playerNameScale);
     merged.settings.playerNameFont = ['system','bold','serif'].indexOf(String(merged.settings.playerNameFont)) >= 0 ? String(merged.settings.playerNameFont) : 'system';
     merged.settings.rosterApiUrl = ROSTER_SOURCE_PAGE;
     merged.players = Array.isArray(data && data.players ? data.players : null) ? data.players : [];
@@ -1009,7 +1009,23 @@
 
   function playerNameScale(){
     const scale = Number(state.settings.playerNameScale) || 100;
-    return [90,100,110,120,130,140].indexOf(scale) >= 0 ? scale : 100;
+    return normalizePlayerNameScale(scale);
+  }
+
+  function normalizePlayerNameScale(value){
+    const scale = Number(value);
+    const supported = [80,100,120,140,160,180];
+    if(!Number.isFinite(scale)) return 100;
+    let best = 100;
+    let bestDistance = Math.abs(scale - best);
+    for(let i = 0; i < supported.length; i += 1){
+      const distance = Math.abs(scale - supported[i]);
+      if(distance < bestDistance){
+        best = supported[i];
+        bestDistance = distance;
+      }
+    }
+    return best;
   }
 
   function playerNameFontFamily(){
@@ -1034,9 +1050,9 @@
     }
     const scale = playerNameScale() / 100;
     let maxSize = Math.round((text.length <= 2 ? 44 : (text.length <= 4 ? 42 : 40)) * scale);
-    let minSize = Math.round(24 * scale);
+    let minSize = Math.max(14, Math.round(20 * scale));
     if(document.documentElement.classList.contains('legacyIpad')){
-      minSize = Math.round(28 * scale);
+      minSize = Math.max(18, Math.round(22 * scale));
     }
     nameEl.style.fontSize = maxSize + 'px';
     nameEl.style.lineHeight = '1.05';
@@ -1171,7 +1187,7 @@
     if($('callEffectColorSelect')) $('callEffectColorSelect').value = state.settings.callEffectColor || 'yellow';
     if($('playerNameScaleSelect')) $('playerNameScaleSelect').value = String(state.settings.playerNameScale || 100);
     if($('playerNameFontSelect')) $('playerNameFontSelect').value = state.settings.playerNameFont || 'system';
-    if($('courtModeStatus')) $('courtModeStatus').textContent = `場地模式：${currentMode()}`;
+    if($('courtModeStatus')) $('courtModeStatus').textContent = '場地模式';
     if($('use3x3Btn')) $('use3x3Btn').classList.toggle('active', currentMode() === '3x3');
     if($('use2x2Btn')) $('use2x2Btn').classList.toggle('active', currentMode() === '2x2');
     $('voiceRateSelect').value = state.settings.voiceRate || 'normal';
@@ -1766,6 +1782,7 @@
   function savePlayerNameDisplaySettings(){
     if($('playerNameScaleSelect')) state.settings.playerNameScale = Number($('playerNameScaleSelect').value) || 100;
     if($('playerNameFontSelect')) state.settings.playerNameFont = $('playerNameFontSelect').value || 'system';
+    for(const key in playerNameFitCache) delete playerNameFitCache[key];
     saveState();
     renderZones();
     fitPlayerNameText();

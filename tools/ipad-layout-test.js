@@ -39,5 +39,7 @@ assert('player name settings use compact grid', cssRuleIncludes('.player-text-gr
 assert('narrow screens allow two column voice grid', html.includes('@media (max-width:700px)') && html.includes('.voice-grid{grid-template-columns:repeat(2,minmax(0,1fr));}'));
 assert('admin tools have inner side padding', html.includes('#adminTools{padding:0 10px 8px;background:#f8fafc;}') && html.includes('html.legacyIpadLandscape #adminTools{padding:0 14px;}'));
 assert('compact admin rows exist', html.includes('compact-state-row') && html.includes('player-admin-row') && html.includes('system-mode-row') && html.includes('admin-button-row four'));
+assert('player add row has fixed button and compact swatches', html.includes('.player-add-row{grid-template-columns:56px minmax(160px,1fr) 332px 108px;}') && html.includes('grid-template-columns:repeat(12,24px)') && html.includes('width:24px'));
+assert('system mode status is not duplicated', html.includes("textContent = '場地模式'") && !html.includes('場地模式：${currentMode()}'));
 assert('zone labels are localized', html.includes("return '場地 '") && html.includes("return '預備區 '"));
 assert('roster import defaults to blue', html.includes('color:COLORS[0]'));
