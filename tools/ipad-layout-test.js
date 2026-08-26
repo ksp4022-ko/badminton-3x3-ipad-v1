@@ -35,8 +35,9 @@ assert('legacy court down pill stays wide', cssRuleIncludes('html.legacyIpadLand
 assert('legacy selected banner is enlarged', cssRuleIncludes('html.legacyIpadLandscape .selected-banner', 'min-height:58px') && cssRuleIncludes('html.legacyIpadLandscape .selected-banner button', 'min-width:128px'));
 assert('voice settings use four column compact grid', cssRuleIncludes('.voice-grid', 'grid-template-columns:repeat(4,minmax(0,1fr))'));
 assert('call effect settings use four column compact grid', cssRuleIncludes('.effect-grid', 'grid-template-columns:repeat(4,minmax(0,1fr))'));
-assert('player name settings use compact grid', cssRuleIncludes('.player-text-grid', 'grid-template-columns:repeat(2,minmax(0,1fr))'));
+assert('player name settings use compact grid', cssRuleIncludes('.player-text-grid', 'grid-template-columns:repeat(4,minmax(0,1fr))'));
 assert('narrow screens allow two column voice grid', html.includes('@media (max-width:700px)') && html.includes('.voice-grid{grid-template-columns:repeat(2,minmax(0,1fr));}'));
-assert('admin tools have inner side padding', html.includes('#adminTools{padding:0 10px;}') && html.includes('html.legacyIpadLandscape #adminTools{padding:0 14px;}'));
+assert('admin tools have inner side padding', html.includes('#adminTools{padding:0 10px 8px;background:#f8fafc;}') && html.includes('html.legacyIpadLandscape #adminTools{padding:0 14px;}'));
+assert('compact admin rows exist', html.includes('compact-state-row') && html.includes('player-admin-row') && html.includes('system-mode-row') && html.includes('admin-button-row four'));
 assert('zone labels are localized', html.includes("return '場地 '") && html.includes("return '預備區 '"));
 assert('roster import defaults to blue', html.includes('color:COLORS[0]'));

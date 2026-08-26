@@ -165,19 +165,47 @@
     .panel-section.collapsed .collapse-head::after{content:"🔽";}
     #adminTools .panel-section .collapse-head{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe;}
     #adminTools .panel-section .collapse-head::after{color:#1d4ed8;}
-    #adminTools{padding:0 10px;}
+    #adminTools{padding:0 10px 8px;background:#f8fafc;}
+    #adminTools .panel-section{padding:8px;margin:6px 0;border-color:#cbd5e1;border-radius:10px;background:#fff;}
+    #adminTools .collapse-head{min-height:38px;padding:7px 10px;margin-bottom:7px;border-radius:10px;font-size:18px;background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe;}
+    #adminTools .collapse-head::after{font-size:14px;}
+    #adminTools label{font-size:14px;margin:3px 0 3px;color:#334155;}
+    #adminTools button,#adminTools input,#adminTools select{min-height:40px;border-radius:9px;font-size:15px;padding:7px 9px;}
+    #adminTools button{background:#e2e8f0;color:#0f172a;}
+    #adminTools button.primary{background:#0f766e;color:#fff;border-color:#0f766e;}
+    #adminTools button.active{background:#2563eb;color:#fff;}
+    #adminTools button.warn{background:#fef3c7;color:#92400e;border:1px solid #fde68a;}
+    #adminTools button.strong-warn{font-weight:1000;}
+    #adminTools button.danger{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;}
+    #adminTools .collapsible-body{padding:0 2px;}
     .panel-section.collapsed .collapsible-body{display:none;}
     .button-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
     .button-grid.single{grid-template-columns:1fr;}
-    .voice-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:end;margin-top:8px;}
+    .voice-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:end;margin-top:6px;}
     .voice-grid label{white-space:nowrap;}
     .voice-grid select{min-width:0;font-size:16px;padding-left:8px;padding-right:8px;}
-    .effect-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:end;margin-top:8px;}
+    .effect-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:end;margin-top:6px;}
     .effect-grid label{white-space:nowrap;}
     .effect-grid select{min-width:0;font-size:16px;padding-left:8px;padding-right:8px;}
-    .player-text-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:end;margin-top:8px;}
+    .player-text-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:end;margin-top:6px;}
     .player-text-grid label{white-space:nowrap;}
     .player-text-grid select{min-width:0;font-size:16px;padding-left:8px;padding-right:8px;}
+    .compact-state-row{display:grid;grid-template-columns:auto minmax(72px,110px) minmax(72px,110px);gap:8px;align-items:center;margin:4px 0 6px;}
+    .compact-row-label{font-size:15px;font-weight:1000;color:#334155;white-space:nowrap;}
+    .compact-help{font-size:13px;font-weight:800;color:#64748b;margin-top:4px;}
+    .player-admin-row{display:grid;gap:8px;align-items:center;margin:5px 0;}
+    .player-add-row{grid-template-columns:auto minmax(140px,1fr) minmax(220px,1.5fr) minmax(62px,.4fr);}
+    .player-edit-row{grid-template-columns:auto minmax(180px,1fr) minmax(62px,.4fr) minmax(72px,.45fr);}
+    #adminTools .compact-colors{display:grid;grid-template-columns:repeat(12,28px);gap:4px;margin:0;align-items:center;justify-content:start;}
+    #adminTools .compact-colors .color-swatch{min-height:28px;width:28px;border-radius:8px;border-width:2px;}
+    #adminTools .compact-colors .color-swatch.active{transform:scale(1.05);box-shadow:0 0 0 2px #111827,0 0 0 4px #fff;}
+    #adminTools .compact-colors .color-swatch.active::after{top:-7px;right:-7px;width:18px;height:18px;font-size:12px;line-height:18px;}
+    .admin-button-row{display:grid;gap:8px;margin:6px 0;}
+    .admin-button-row.three{grid-template-columns:repeat(3,minmax(0,1fr));}
+    .admin-button-row.four{grid-template-columns:repeat(4,minmax(0,1fr));}
+    .system-mode-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end;margin:4px 0 6px;}
+    .segmented-group{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;}
+    #adminTools .mode-row{gap:4px;}
     .help{font-size:14px;line-height:1.35;color:#64748b;font-weight:700;margin:6px 0 0;}
     .mode-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
     .mode-row button.active{background:#0f766e;color:#fff}
@@ -226,6 +254,11 @@
       .voice-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
       .effect-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
       .player-text-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+      .player-add-row,.player-edit-row{grid-template-columns:1fr 1fr;}
+      .player-add-row .compact-row-label,.player-edit-row .compact-row-label{grid-column:1 / -1;}
+      #adminTools .compact-colors{grid-column:1 / -1;grid-template-columns:repeat(6,28px);}
+      .system-mode-row,.admin-button-row.three,.admin-button-row.four{grid-template-columns:repeat(2,minmax(0,1fr));}
+      .segmented-group{grid-template-columns:1fr;}
     }
     @media (max-width:700px) and (orientation:portrait){
       .portrait-warning.phone{display:flex;}
@@ -334,10 +367,11 @@
             <div class="panel-section">
               <button class="collapse-head" data-collapse-target="autoCallBody" type="button">自動呼叫</button>
               <div class="collapsible-body" id="autoCallBody">
-            <div class="toggle-row">
-              <button id="autoCallOffBtn">關閉</button>
-              <button id="autoCallOnBtn">開啟</button>
-            </div>
+              <div class="compact-state-row">
+                <div class="compact-row-label">自動呼叫</div>
+                <button id="autoCallOffBtn">關閉</button>
+                <button id="autoCallOnBtn">開啟</button>
+              </div>
               <div class="voice-grid">
                 <div>
                   <label>中文人聲</label>
@@ -356,8 +390,8 @@
                   <select id="voicePitchSelect"><option value="low">低</option><option value="normal">正常</option><option value="high">高</option></select>
                 </div>
               </div>
-              <label>上場提醒特效</label>
-              <div class="toggle-row">
+              <div class="compact-state-row">
+                <div class="compact-row-label">視覺提醒</div>
                 <button id="callEffectOffBtn">關閉</button>
                 <button id="callEffectOnBtn">開啟</button>
               </div>
@@ -379,7 +413,6 @@
                   <select id="callMarqueeSelect"><option value="on">開啟</option><option value="off">關閉</option></select>
                 </div>
               </div>
-              <label>成員卡片名字</label>
               <div class="player-text-grid">
                 <div>
                   <label>字級大小</label>
@@ -389,10 +422,8 @@
                   <label>字體</label>
                   <select id="playerNameFontSelect"><option value="system">系統黑體</option><option value="bold">粗黑體</option><option value="serif">明體</option></select>
                 </div>
-              </div>
-              <div class="button-grid" style="margin-top:8px">
-                <button id="voiceTestBtn">語音設定 / 試播</button>
-                <button id="saveVoiceBtn">儲存設定</button>
+                <button id="voiceTestBtn">試播</button>
+                <button class="primary" id="saveVoiceBtn">儲存</button>
               </div>
               </div>
             </div>
@@ -400,28 +431,30 @@
           <div class="panel-section">
             <button class="collapse-head" data-collapse-target="playerManageBody" type="button">球員管理</button>
             <div class="collapsible-body" id="playerManageBody">
-              <label>新增球員</label>
-              <input id="newPlayerInput" type="text" placeholder="輸入姓名" />
-              <label id="sharedColorLabel">貼紙底色</label>
-              <div class="color-grid" id="newPlayerColorGrid" aria-label="新增球員貼紙底色"></div>
-              <button class="primary" id="addPlayerBtn" style="width:100%;margin-top:8px">新增球員</button>
-              <label>修改選取球員姓名</label>
-              <input id="renamePlayerInput" type="text" placeholder="先選取球員" />
-              <div class="button-grid" style="margin-top:8px">
-                <button id="renamePlayerBtn">修改姓名</button>
+              <div class="player-admin-row player-add-row">
+                <div class="compact-row-label">新增</div>
+                <input id="newPlayerInput" type="text" placeholder="輸入姓名" />
+                <div class="color-grid compact-colors" id="newPlayerColorGrid" aria-label="新增球員貼紙底色"></div>
+                <button class="primary" id="addPlayerBtn">新增</button>
+              </div>
+              <div class="player-admin-row player-edit-row">
+                <div class="compact-row-label">修改</div>
+                <input id="renamePlayerInput" type="text" placeholder="先選取球員" />
+                <button id="renamePlayerBtn">修改</button>
                 <button class="danger" id="deletePlayerBtn">刪除球員</button>
               </div>
+              <div id="sharedColorLabel" class="compact-help">貼紙底色</div>
             </div>
           </div>
 
           <div class="panel-section">
             <button class="collapse-head" data-collapse-target="gamesManageBody" type="button">場次管理</button>
             <div class="collapsible-body" id="gamesManageBody">
-              <div class="button-grid">
-                <button class="warn" id="plusGameBtn">選取 +1</button>
-                <button class="warn" id="minusGameBtn">選取 -1</button>
+              <div class="admin-button-row four">
+                <button id="plusGameBtn">+1</button>
+                <button id="minusGameBtn">-1</button>
                 <button class="warn" id="zeroPlayerBtn">選取歸零</button>
-                <button class="danger" id="resetAllGamesBtn">全部場次歸零</button>
+                <button class="warn strong-warn" id="resetAllGamesBtn">全部場次歸零</button>
               </div>
             </div>
           </div>
@@ -429,25 +462,32 @@
           <div class="panel-section">
             <button class="collapse-head" data-collapse-target="systemOpsBody" type="button">系統操作</button>
             <div class="collapsible-body" id="systemOpsBody">
-              <div class="button-grid single">
-                <div class="mode-row">
-                  <button id="freeModeBtn">自由暢打</button>
-                  <button id="autoModeBtn">自動排場</button>
-                </div>
-                <button class="primary" id="randomFillBtn">隨機填滿場地</button>
-                <button class="primary" id="fetchRosterBtn">更新日安名單</button>
-                <button class="warn" id="resetTodayBtn">今日重新開始</button>
-                <button id="exportBackupBtn">複製名單</button>
-                <button id="importBackupBtn">貼上名單</button>
-                <button id="exportLogBtn">匯出今日紀錄 CSV</button>
-                <button class="danger" id="clearAllBtn">清空全部資料</button>
-                <div id="courtModeControls">
-                  <div class="mode-status" id="courtModeStatus">目前模式：3x3</div>
+              <div class="system-mode-row">
+                <div class="segmented-group">
+                  <div class="compact-row-label">模式</div>
                   <div class="mode-row">
-                    <button id="use3x3Btn">使用 3x3</button>
-                    <button id="use2x2Btn">使用 2x2</button>
+                    <button id="freeModeBtn">自由暢打</button>
+                    <button id="autoModeBtn">自動排場</button>
                   </div>
                 </div>
+                <div class="segmented-group" id="courtModeControls">
+                  <div class="compact-row-label" id="courtModeStatus">場地模式：3x3</div>
+                  <div class="mode-row">
+                    <button id="use3x3Btn">3x3</button>
+                    <button id="use2x2Btn">2x2</button>
+                  </div>
+                </div>
+              </div>
+              <div class="admin-button-row three">
+                <button id="randomFillBtn">隨機填滿</button>
+                <button class="primary" id="fetchRosterBtn">更新日安名單</button>
+                <button class="warn" id="resetTodayBtn">今日重新開始</button>
+              </div>
+              <div class="admin-button-row four">
+                <button id="exportBackupBtn">複製名單</button>
+                <button id="importBackupBtn">貼上名單</button>
+                <button id="exportLogBtn">匯出CSV</button>
+                <button class="danger" id="clearAllBtn">清空全部</button>
               </div>
               <input class="file-input" id="importFileInput" type="file" accept=".json,application/json" />
               <div class="help">匯入球員名單會清空目前 Court / Next，並把球員放回休息區。</div>
@@ -477,7 +517,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.21-ipad';
+  const APP_VERSION = '1.1.0-ipad';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -1131,7 +1171,7 @@
     if($('callEffectColorSelect')) $('callEffectColorSelect').value = state.settings.callEffectColor || 'yellow';
     if($('playerNameScaleSelect')) $('playerNameScaleSelect').value = String(state.settings.playerNameScale || 100);
     if($('playerNameFontSelect')) $('playerNameFontSelect').value = state.settings.playerNameFont || 'system';
-    if($('courtModeStatus')) $('courtModeStatus').textContent = `目前模式：${currentMode()}`;
+    if($('courtModeStatus')) $('courtModeStatus').textContent = `場地模式：${currentMode()}`;
     if($('use3x3Btn')) $('use3x3Btn').classList.toggle('active', currentMode() === '3x3');
     if($('use2x2Btn')) $('use2x2Btn').classList.toggle('active', currentMode() === '2x2');
     $('voiceRateSelect').value = state.settings.voiceRate || 'normal';

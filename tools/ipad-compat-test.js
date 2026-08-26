@@ -2,6 +2,8 @@ const fs = require('fs');
 
 const html = fs.readFileSync('index.html', 'utf8');
 const sw = fs.readFileSync('sw.js', 'utf8');
+const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
 
 function assert(name, condition) {
   if (!condition) throw new Error('FAIL: ' + name);
@@ -41,6 +43,7 @@ assert('admin unlock persisted', html.includes('saveAdminUnlock()') && html.incl
 assert('debug mode exists', html.includes("location.search.indexOf('debug=1')") && html.includes('function debugLog'));
 assert('debug mode tracks board actions', html.includes("debugLog('zone-head courtDown'") && html.includes("debugLog('slot move success'") && html.includes("debugLog(inRest ? 'chip rest select'"));
 assert('v1 storage key isolated', html.includes("badminton3x3.ipad.v1.state"));
+assert('release version synchronized', html.includes("const APP_VERSION = '1.1.0-ipad'") && pkg.version === '1.1.0-ipad' && lock.version === '1.1.0-ipad' && lock.packages[''].version === '1.1.0-ipad');
 assert('copy paste player list exists', html.includes('function playerNamesText') && html.includes('function showImportPasteDialog') && html.includes('function importPlayersFromText'));
 assert('player list exports plain names', html.includes("showExportText('複製名單', playerNamesText())") && html.includes(".join('\\n')"));
 assert('player list import accepts plain lines', html.includes('function parsePlayerListText') && html.includes("placeholder=\"A&#10;B&#10;C\"") && html.includes("replace(/^\\s*\\[(.*)\\]\\s*$/, '$1')"));
