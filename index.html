@@ -108,11 +108,18 @@
     .zone-row{height:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;min-width:0;min-height:0;}
     .zone-row.mode-2{grid-template-columns:repeat(2,minmax(0,1fr));}
     .zone-card{background:rgba(255,255,255,.96);border:1px solid #bae6fd;border-radius:var(--radius);box-shadow:0 10px 22px rgba(15,23,42,.1);padding:8px;min-width:0;min-height:0;display:flex;flex-direction:column;}
-    .zone-card.call-target{animation:courtCallPulse 1.6s ease-in-out 0s 2;border-color:#facc15;box-shadow:0 0 0 4px rgba(250,204,21,.45),0 10px 22px rgba(15,23,42,.16);}
+    .zone-card.call-target{animation:courtCallPulse 1.6s ease-in-out 0s 2;border-color:var(--call-border,#facc15);box-shadow:0 0 0 var(--call-ring,4px) var(--call-soft,rgba(250,204,21,.45)),0 10px 22px rgba(15,23,42,.16);}
     .zone-card.call-target .zone-head{box-shadow:inset 0 0 0 3px rgba(255,255,255,.85);}
+    .zone-card.call-yellow{--call-border:#facc15;--call-soft:rgba(250,204,21,.45);--call-strong:rgba(250,204,21,.75);}
+    .zone-card.call-green{--call-border:#22c55e;--call-soft:rgba(34,197,94,.42);--call-strong:rgba(34,197,94,.72);}
+    .zone-card.call-blue{--call-border:#38bdf8;--call-soft:rgba(56,189,248,.42);--call-strong:rgba(56,189,248,.72);}
+    .zone-card.call-red{--call-border:#fb7185;--call-soft:rgba(251,113,133,.42);--call-strong:rgba(251,113,133,.72);}
+    .zone-card.call-low{--call-ring:3px;--call-ring-strong:5px;--call-scale:.992;}
+    .zone-card.call-medium{--call-ring:4px;--call-ring-strong:8px;--call-scale:.985;}
+    .zone-card.call-high{--call-ring:6px;--call-ring-strong:12px;--call-scale:.975;}
     @keyframes courtCallPulse{
-      0%,100%{transform:scale(1);box-shadow:0 0 0 4px rgba(250,204,21,.35),0 10px 22px rgba(15,23,42,.16);}
-      45%{transform:scale(.985);box-shadow:0 0 0 8px rgba(250,204,21,.75),0 12px 26px rgba(15,23,42,.22);}
+      0%,100%{transform:scale(1);box-shadow:0 0 0 var(--call-ring,4px) var(--call-soft,rgba(250,204,21,.35)),0 10px 22px rgba(15,23,42,.16);}
+      45%{transform:scale(var(--call-scale,.985));box-shadow:0 0 0 var(--call-ring-strong,8px) var(--call-strong,rgba(250,204,21,.75)),0 12px 26px rgba(15,23,42,.22);}
     }
     .zone-head{width:100%;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:14px;border:1px solid #99f6e4;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border-radius:14px;min-height:44px;padding:8px 10px;text-align:left;}
     .zone-head.warn{background:linear-gradient(135deg,#92400e,#f59e0b);border-color:#facc15;}
@@ -142,7 +149,7 @@
     .floating-button.has-selected{background:linear-gradient(135deg,#f59e0b,#facc15);color:#422006;}
     .floating-button.speaker-button{display:none;background:linear-gradient(135deg,#6d28d9,#4f46e5);color:#fff;font-size:30px;}
     .floating-button.speaker-button.show{display:flex;}
-    .float-panel{position:fixed;z-index:49;top:12px;right:12px;width:420px;width:min(420px,calc(100vw - 24px));max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);background:#ffffff;border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);display:none;overflow:hidden;}
+    .float-panel{position:fixed;z-index:49;top:0;right:0;bottom:0;left:0;width:100vw;height:100vh;height:var(--safe-vh);max-height:var(--safe-vh);background:#ffffff;border:0;border-radius:0;box-shadow:var(--shadow);display:none;overflow:hidden;}
     .float-panel.open{display:flex;flex-direction:column;}
     .panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 12px;border-bottom:1px solid var(--line);background:#f8fafc;}
     .panel-title{font-size:22px;font-weight:1000;}
@@ -202,7 +209,7 @@
       .player-chip .name{font-size:clamp(17px,3vw,25px)}
       .player-chip .games{min-width:22px;height:22px;font-size:15px;top:3px;left:4px;}
       .floating-button{width:56px;height:56px;font-size:24px;}
-      .float-panel{left:8px;right:8px;top:36px;bottom:auto;width:auto;max-height:calc(100vh - 46px);max-height:calc(100dvh - 46px);border-radius:20px;}
+      .float-panel{left:0;right:0;top:0;bottom:0;width:100vw;height:100vh;height:var(--safe-vh);max-height:var(--safe-vh);border-radius:0;}
       .panel-body{padding-bottom:calc(16px + var(--safe-bottom));}
     }
     @media (max-width:700px) and (orientation:portrait){
@@ -213,12 +220,12 @@
       .zone-row{grid-template-columns:repeat(3,minmax(0,1fr));}
     }
     @media (min-width:1367px){
-      .app-shell{max-width:1500px}.slot-grid{min-height:196px}.float-panel{width:460px}
+      .app-shell{max-width:1500px}.slot-grid{min-height:196px}
     }
     html.legacyIpad,
     html.legacyIpad body{height:var(--legacy-vh);min-height:var(--legacy-vh);max-height:var(--legacy-vh);overflow:hidden;}
     html.legacyIpad .app-shell{height:var(--legacy-vh);max-height:var(--legacy-vh);}
-    html.legacyIpad .float-panel{max-height:calc(var(--legacy-vh) - 16px);}
+    html.legacyIpad .float-panel{height:var(--legacy-vh);max-height:var(--legacy-vh);}
     html.legacyIpadLandscape .app-shell{max-width:none;padding:2px max(4px,var(--safe-right)) max(4px,var(--safe-bottom)) max(4px,var(--safe-left));gap:3px;grid-template-rows:minmax(0,1fr) minmax(0,1fr);}
     html.legacyIpadLandscape .board-section{min-height:0;overflow:hidden;}
     html.legacyIpadLandscape .zone-row{gap:3px;min-height:0;}
@@ -238,7 +245,7 @@
     html.legacyIpadLandscape .selected-banner #selectedText{white-space:nowrap;line-height:1.12;}
     html.legacyIpadLandscape .selected-banner button{min-width:128px;min-height:46px;font-size:20px;padding:5px 10px;}
     html.legacyIpadLandscape .floating-button{width:52px;height:52px;font-size:22px;left:8px;}
-    html.legacyIpadLandscape .float-panel{left:8px;right:8px;top:36px;bottom:auto;width:auto;max-height:calc(var(--legacy-vh) - 46px);border-radius:18px;}
+    html.legacyIpadLandscape .float-panel{left:0;right:0;top:0;bottom:0;width:100vw;height:var(--legacy-vh);max-height:var(--legacy-vh);border-radius:0;}
     html.legacyIpadLandscape .panel-head{padding:9px 10px;}
     html.legacyIpadLandscape .panel-title{font-size:20px;}
     html.legacyIpadLandscape .panel-body{padding:10px;padding-bottom:calc(16px + var(--safe-bottom));}
@@ -321,6 +328,22 @@
               <select id="voicePitchSelect"><option value="low">低</option><option value="normal">正常</option><option value="high">高</option></select>
               <label>語音</label>
               <select id="voiceLangSelect"><option value="auto">自動</option><option value="zh-TW-first">中文優先</option></select>
+              <label>上場提醒特效</label>
+              <div class="toggle-row">
+                <button id="callEffectOffBtn">關閉</button>
+                <button id="callEffectOnBtn">開啟</button>
+              </div>
+              <label>提醒時間</label>
+              <select id="callEffectDurationSelect"><option value="3">3 秒</option><option value="5">5 秒</option><option value="8">8 秒</option><option value="10">10 秒</option></select>
+              <label>特效強度</label>
+              <select id="callEffectIntensitySelect"><option value="low">低</option><option value="medium">中</option><option value="high">高</option></select>
+              <label>提醒顏色</label>
+              <select id="callEffectColorSelect"><option value="yellow">黃</option><option value="green">綠</option><option value="blue">藍</option><option value="red">紅</option></select>
+              <label>跑馬燈</label>
+              <div class="toggle-row">
+                <button id="callMarqueeOffBtn">關閉</button>
+                <button id="callMarqueeOnBtn">開啟</button>
+              </div>
               <div class="button-grid" style="margin-top:8px">
                 <button id="voiceTestBtn">語音設定 / 試播</button>
                 <button id="saveVoiceBtn">儲存設定</button>
@@ -366,10 +389,10 @@
                   <button id="autoModeBtn">自動排場</button>
                 </div>
                 <button class="primary" id="randomFillBtn">隨機填滿場地</button>
-                <button class="primary" id="fetchRosterBtn">抓取報名名單</button>
+                <button class="primary" id="fetchRosterBtn">更新日安名單</button>
                 <button class="warn" id="resetTodayBtn">今日重新開始</button>
-                <button id="exportBackupBtn">匯出球員名單 JSON</button>
-                <button id="importBackupBtn">匯入球員名單 JSON</button>
+                <button id="exportBackupBtn">複製名單</button>
+                <button id="importBackupBtn">貼上名單</button>
                 <button id="exportLogBtn">匯出今日紀錄 CSV</button>
                 <button class="danger" id="clearAllBtn">清空全部資料</button>
                 <div id="courtModeControls">
@@ -408,7 +431,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.19-ipad';
+  const APP_VERSION = '1.0.20-ipad';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -631,13 +654,15 @@
   }
 
   function markCourtCallTarget(zone){
+    if(!state.settings.callEffectEnabled) return;
     courtHighlightZone = zone || null;
     if(courtHighlightTimer) clearTimeout(courtHighlightTimer);
+    const duration = Number(state.settings.callEffectDuration) || 5;
     courtHighlightTimer = setTimeout(function(){
       courtHighlightZone = null;
       renderZones();
       fitPlayerNameText();
-    }, 5000);
+    }, duration * 1000);
   }
 
   function removeCourtCallTarget(zone){
@@ -665,6 +690,11 @@
         voiceRate:'normal',
         voicePitch:'normal',
         voiceLang:'zh-TW-first',
+        callEffectEnabled:true,
+        callEffectDuration:5,
+        callEffectIntensity:'medium',
+        callEffectColor:'yellow',
+        callEffectMarquee:true,
         rosterApiUrl:'',
         lastCallPlayers:[],
         lastCallCourt:null,
@@ -696,6 +726,11 @@
     merged.settings.collapsedSections = Array.isArray(merged.settings.collapsedSections)
       ? merged.settings.collapsedSections.filter(id => DEFAULT_COLLAPSED_SECTIONS.includes(id))
       : DEFAULT_COLLAPSED_SECTIONS.slice();
+    merged.settings.callEffectEnabled = merged.settings.callEffectEnabled !== false;
+    merged.settings.callEffectDuration = [3,5,8,10].indexOf(Number(merged.settings.callEffectDuration)) >= 0 ? Number(merged.settings.callEffectDuration) : 5;
+    merged.settings.callEffectIntensity = ['low','medium','high'].indexOf(String(merged.settings.callEffectIntensity)) >= 0 ? String(merged.settings.callEffectIntensity) : 'medium';
+    merged.settings.callEffectColor = ['yellow','green','blue','red'].indexOf(String(merged.settings.callEffectColor)) >= 0 ? String(merged.settings.callEffectColor) : 'yellow';
+    merged.settings.callEffectMarquee = merged.settings.callEffectMarquee !== false;
     merged.players = Array.isArray(data && data.players ? data.players : null) ? data.players : [];
     merged.gameLog = Array.isArray(data && data.gameLog ? data.gameLog : null) ? data.gameLog : [];
     merged.players.forEach((p, i) => {
@@ -922,7 +957,8 @@
   function renderZoneCard(zone, isCourt){
     const players = zonePlayers(zone);
     const isCallTarget = courtHighlightZone === zone;
-    const title = isCallTarget ? zoneLabel(zone) + ' >>> 請上場…' : zoneLabel(zone);
+    const useMarquee = isCallTarget && state.settings.callEffectMarquee !== false;
+    const title = useMarquee ? zoneLabel(zone) + ' >>> 請上場…' : zoneLabel(zone);
     const slots = SLOTS.map(slot => {
       const p = occupant(zone, slot);
       const content = p ? playerChipHtml(p) : '';
@@ -930,11 +966,21 @@
     }).join('');
     const actionClass = isCourt ? 'warn' : '';
     const actionData = isCourt ? `data-court="${zone}"` : `data-next="${zone}"`;
-    const highlightClass = isCallTarget ? ' call-target' : '';
-    const titleHtml = isCallTarget
+    const highlightClass = isCallTarget ? ' call-target call-' + callEffectColorClass() + ' call-' + callEffectIntensityClass() : '';
+    const titleHtml = useMarquee
       ? `<div class="call-marquee"><span>${title}</span></div>`
       : `<div class="zone-title">${title}</div>${isCourt ? '<div class="court-down-pill">下場 <span class="arrow">↓</span></div>' : '<div></div>'}`;
     return `<div class="zone-card${highlightClass}" data-zone-card="${zone}"><button class="zone-head ${actionClass}" ${actionData} type="button">${titleHtml}<div class="zone-count">${players.length}/4</div></button><div class="slot-grid">${slots}</div></div>`;
+  }
+
+  function callEffectColorClass(){
+    const value = String(state.settings.callEffectColor || 'yellow');
+    return ['yellow','green','blue','red'].indexOf(value) >= 0 ? value : 'yellow';
+  }
+
+  function callEffectIntensityClass(){
+    const value = String(state.settings.callEffectIntensity || 'medium');
+    return ['low','medium','high'].indexOf(value) >= 0 ? value : 'medium';
   }
 
   function renderSelectedBanner(){
@@ -1008,6 +1054,13 @@
     $('autoModeBtn').classList.toggle('active', !!state.settings.autoArrangeMode);
     $('autoCallOffBtn').classList.toggle('active', !state.settings.autoCallEnabled);
     $('autoCallOnBtn').classList.toggle('active', !!state.settings.autoCallEnabled);
+    if($('callEffectOffBtn')) $('callEffectOffBtn').classList.toggle('active', state.settings.callEffectEnabled === false);
+    if($('callEffectOnBtn')) $('callEffectOnBtn').classList.toggle('active', state.settings.callEffectEnabled !== false);
+    if($('callMarqueeOffBtn')) $('callMarqueeOffBtn').classList.toggle('active', state.settings.callEffectMarquee === false);
+    if($('callMarqueeOnBtn')) $('callMarqueeOnBtn').classList.toggle('active', state.settings.callEffectMarquee !== false);
+    if($('callEffectDurationSelect')) $('callEffectDurationSelect').value = String(state.settings.callEffectDuration || 5);
+    if($('callEffectIntensitySelect')) $('callEffectIntensitySelect').value = state.settings.callEffectIntensity || 'medium';
+    if($('callEffectColorSelect')) $('callEffectColorSelect').value = state.settings.callEffectColor || 'yellow';
     if($('courtModeStatus')) $('courtModeStatus').textContent = `目前模式：${currentMode()}`;
     if($('use3x3Btn')) $('use3x3Btn').classList.toggle('active', currentMode() === '3x3');
     if($('use2x2Btn')) $('use2x2Btn').classList.toggle('active', currentMode() === '2x2');
@@ -1419,12 +1472,32 @@
     callPlayers(names, state.settings.lastCallCourt || null);
   }
 
+  function setCallEffectEnabled(enabled){
+    state.settings.callEffectEnabled = !!enabled;
+    if(!enabled){
+      courtHighlightZone = null;
+      if(courtHighlightTimer) clearTimeout(courtHighlightTimer);
+      courtHighlightTimer = null;
+    }
+    saveState();
+    render();
+  }
+
+  function setCallMarqueeEnabled(enabled){
+    state.settings.callEffectMarquee = !!enabled;
+    saveState();
+    render();
+  }
+
   function saveVoiceSettings(){
     state.settings.voiceRate = $('voiceRateSelect').value;
     state.settings.voicePitch = $('voicePitchSelect').value;
     state.settings.voiceLang = $('voiceLangSelect').value;
+    state.settings.callEffectDuration = Number($('callEffectDurationSelect').value) || 5;
+    state.settings.callEffectIntensity = $('callEffectIntensitySelect').value || 'medium';
+    state.settings.callEffectColor = $('callEffectColorSelect').value || 'yellow';
     saveState();
-    showToast('語音設定已儲存');
+    showToast('語音與提醒設定已儲存');
     render();
   }
 
@@ -1567,13 +1640,21 @@
   }
 
   function exportJson(){
-    showExportText('球員名單 JSON', JSON.stringify(playerListPayload(), null, 2));
+    showExportText('複製名單', playerNamesText());
+  }
+
+  function playerNamesText(){
+    return activePlayers()
+      .slice()
+      .sort(function(a,b){ return (a.sortOrder - b.sortOrder) || String(a.name).localeCompare(String(b.name), 'zh-Hant'); })
+      .map(function(p){ return p.name; })
+      .join('\n');
   }
 
   function showExportText(title, text){
     resetModalButtons();
     $('modalTitle').textContent = title;
-    $('modalMessage').textContent = '複製後保存。';
+    $('modalMessage').textContent = '每行一位球員，複製後保存。';
     $('modalExtra').innerHTML = '<textarea id="exportTextArea" style="width:100%;min-height:260px;border:1px solid #cbd5e1;border-radius:12px;padding:10px;font:14px/1.35 monospace;"></textarea>';
     $('modalCancelBtn').textContent = '複製';
     $('modalOkBtn').textContent = '關閉';
@@ -1596,9 +1677,9 @@
 
   function showImportPasteDialog(){
     resetModalButtons();
-    $('modalTitle').textContent = '貼上名單 JSON';
-    $('modalMessage').textContent = '貼上後按匯入。';
-    $('modalExtra').innerHTML = '<textarea id="importPasteTextArea" style="width:100%;min-height:260px;border:1px solid #cbd5e1;border-radius:12px;padding:10px;font:14px/1.35 monospace;" placeholder="{ &quot;players&quot;: [...] }"></textarea>';
+    $('modalTitle').textContent = '貼上名單';
+    $('modalMessage').textContent = '每行一位球員，可貼 A、B、C 或 [A]、[B]、[C]。';
+    $('modalExtra').innerHTML = '<textarea id="importPasteTextArea" style="width:100%;min-height:260px;border:1px solid #cbd5e1;border-radius:12px;padding:10px;font:18px/1.45 monospace;" placeholder="A&#10;B&#10;C"></textarea>';
     $('modalCancelBtn').textContent = '取消';
     $('modalOkBtn').textContent = '匯入';
     $('modalMask').classList.add('show');
@@ -1612,8 +1693,7 @@
 
   function importPlayersFromText(text){
     try{
-      const data = JSON.parse(String(text || '').trim());
-      const source = Array.isArray(data) ? data : data.players;
+      const source = parsePlayerListText(text);
       const importedPlayers = normalizeImportedPlayers(source);
       if(!importedPlayers.length){
         showToast('沒有球員');
@@ -1632,8 +1712,29 @@
       render();
     }catch(err){
       console.error(err);
-      showToast('JSON 錯誤');
+      showToast('名單格式錯誤');
     }
+  }
+
+  function parsePlayerListText(text){
+    const raw = String(text || '').trim();
+    if(!raw) return [];
+    try{
+      const data = JSON.parse(raw);
+      if(Array.isArray(data)) return data.map(normalizePastedPlayerItem).filter(function(p){ return !!p; });
+      if(data && Array.isArray(data.players)) return data.players;
+    }catch(err){}
+    return raw
+      .split(/\r?\n/)
+      .map(function(line){ return line.replace(/^\s*\[(.*)\]\s*$/, '$1').trim(); })
+      .filter(function(name){ return !!name; })
+      .map(function(name){ return {name:name, color:COLORS[0]}; });
+  }
+
+  function normalizePastedPlayerItem(item){
+    if(typeof item === 'string') return {name:item.trim(), color:COLORS[0]};
+    if(item && item.name) return item;
+    return null;
   }
 
   function rosterApiUrl(){
@@ -1809,7 +1910,7 @@
 
   function showRosterImportDialog(){
     resetModalButtons();
-    $('modalTitle').textContent = '抓取報名名單';
+    $('modalTitle').textContent = '更新日安名單';
     $('modalMessage').textContent = '讀取日安目前開放聚會中...';
     $('modalExtra').innerHTML = '';
     $('modalCancelBtn').textContent = '取消';
@@ -2202,6 +2303,10 @@
     tap('fetchRosterBtn', showRosterImportDialog);
     tap('autoCallOffBtn', () => { state.settings.autoCallEnabled=false; saveState(); renderPanel(); });
     tap('autoCallOnBtn', () => { state.settings.autoCallEnabled=true; saveState(); renderPanel(); });
+    tap('callEffectOffBtn', () => setCallEffectEnabled(false));
+    tap('callEffectOnBtn', () => setCallEffectEnabled(true));
+    tap('callMarqueeOffBtn', () => setCallMarqueeEnabled(false));
+    tap('callMarqueeOnBtn', () => setCallMarqueeEnabled(true));
     tap('voiceTestBtn', () => callPlayers(['測試','請上場']));
     tap('saveVoiceBtn', saveVoiceSettings);
     tap('addPlayerBtn', () => addPlayer($('newPlayerInput').value));
@@ -2258,8 +2363,9 @@
   }
 
   function simplifyLabels(){
-    if($('exportBackupBtn')) $('exportBackupBtn').textContent = '複製名單 JSON';
-    if($('importBackupBtn')) $('importBackupBtn').textContent = '貼上名單 JSON';
+    if($('fetchRosterBtn')) $('fetchRosterBtn').textContent = '更新日安名單';
+    if($('exportBackupBtn')) $('exportBackupBtn').textContent = '複製名單';
+    if($('importBackupBtn')) $('importBackupBtn').textContent = '貼上名單';
     if($('resetTodayBtn')) $('resetTodayBtn').textContent = '今日重新開始';
   }
 

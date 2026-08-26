@@ -379,6 +379,9 @@ async function run() {
   api.importPlayersFromText(JSON.stringify({ players: [{ name: '匯入A', color: '#fecaca' }, { name: '匯入B', games: 9 }] }));
   assert('paste import replaces list', api.getState().players.length === 2 && api.getState().players[0].name === '匯入A');
   assert('paste import resets games', api.getState().players.every((p) => p.games === 0 && p.zone === 'rest'));
+  api.importPlayersFromText('[A]\n[B]\nC');
+  assert('plain pasted names import', api.getState().players.length === 3 && api.getState().players[0].name === 'A' && api.getState().players[1].name === 'B' && api.getState().players[2].name === 'C');
+  assert('plain pasted names default to blue', api.getState().players.every((p) => p.color === '#bfdbfe'));
 
   api.setState(baseState([
     player('old1', '舊A', 'court1', 1, 7),
@@ -441,7 +444,7 @@ async function run() {
   assert('roster api failure does not overwrite existing players', api.getState().players.length === 1 && api.getState().players[0].name === '保留A' && api.getState().players[0].zone === 'court1');
 
   api.exportJson();
-  assert('copy list export opens textarea', /badminton-player-list-v1/.test(context.document.getElementById('exportTextArea').value));
+  assert('copy list export opens plain names textarea', context.document.getElementById('exportTextArea').value.split('\n').length === api.getState().players.length && !/badminton-player-list-v1/.test(context.document.getElementById('exportTextArea').value));
   api.tap('modalOkBtn');
 
   api.exportLogCsv();
