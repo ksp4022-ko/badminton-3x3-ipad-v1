@@ -82,6 +82,8 @@ assert('floating pointer and touch are not both bound on modern browsers', html.
 assert('roster import button exists', html.includes('id="fetchRosterBtn"') && html.includes('更新日安名單') && html.includes("tap('fetchRosterBtn', showRosterImportDialog)"));
 assert('roster api fixed to rian', html.includes("const ROSTER_SITE = 'rian'"));
 assert('roster api uses shuttle rian source', html.includes('ROSTER_SOURCE_PAGE') && html.includes('shuttle-burst-dynamic/rian') && html.includes('SHUTTLE_ROSTER_API_BASE') && html.includes('function requestShuttleRosterApi'));
+assert('roster source is visible and not blank', html.includes('rosterApiUrl:ROSTER_SOURCE_PAGE') && html.includes('merged.settings.rosterApiUrl = ROSTER_SOURCE_PAGE') && html.includes('目前固定使用日安報名頁'));
+assert('roster source dialog no longer asks apps script', !html.includes('請貼上新 Apps Script Web App URL') && !html.includes('請貼上 Apps Script Web App URL'));
 assert('roster api imports confirmed lists only', html.includes('fixedConfirmed') && html.includes('tempConfirmed') && html.includes('function rosterConfirmedPlayers'));
 assert('roster import clears list into rest', html.includes('function importRosterPlayers') && html.includes('state.players = importedPlayers') && html.includes('function normalizeRosterPlayers'));
 assert('fixed viewport layout exists', html.includes('overflow:hidden') && html.includes('position:fixed;top:0;right:0;bottom:0;left:0;inset:0') && html.includes('height:var(--safe-vh)'));

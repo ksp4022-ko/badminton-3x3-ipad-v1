@@ -431,7 +431,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.0.20-ipad';
+  const APP_VERSION = '1.0.21-ipad';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -695,7 +695,7 @@
         callEffectIntensity:'medium',
         callEffectColor:'yellow',
         callEffectMarquee:true,
-        rosterApiUrl:'',
+        rosterApiUrl:ROSTER_SOURCE_PAGE,
         lastCallPlayers:[],
         lastCallCourt:null,
         floating:{ side:'left', y:0.45 },
@@ -731,6 +731,7 @@
     merged.settings.callEffectIntensity = ['low','medium','high'].indexOf(String(merged.settings.callEffectIntensity)) >= 0 ? String(merged.settings.callEffectIntensity) : 'medium';
     merged.settings.callEffectColor = ['yellow','green','blue','red'].indexOf(String(merged.settings.callEffectColor)) >= 0 ? String(merged.settings.callEffectColor) : 'yellow';
     merged.settings.callEffectMarquee = merged.settings.callEffectMarquee !== false;
+    merged.settings.rosterApiUrl = ROSTER_SOURCE_PAGE;
     merged.players = Array.isArray(data && data.players ? data.players : null) ? data.players : [];
     merged.gameLog = Array.isArray(data && data.gameLog ? data.gameLog : null) ? data.gameLog : [];
     merged.players.forEach((p, i) => {
@@ -1743,26 +1744,20 @@
 
   function showRosterApiUrlDialog(nextAction){
     resetModalButtons();
-    $('modalTitle').textContent = '設定報名 API URL';
-    $('modalMessage').textContent = '請貼上新 Apps Script Web App URL。';
-    $('modalExtra').innerHTML = '<input id="rosterApiUrlInput" type="text" style="width:100%;min-height:46px;border:1px solid #cbd5e1;border-radius:12px;padding:8px 10px;font-size:16px;" placeholder="https://script.google.com/macros/s/.../exec">';
+    $('modalTitle').textContent = '日安名單來源';
+    $('modalMessage').textContent = '目前固定使用日安報名頁，不需要手動輸入 API URL。';
+    $('modalExtra').innerHTML = '<input id="rosterApiUrlInput" type="text" readonly style="width:100%;min-height:46px;border:1px solid #cbd5e1;border-radius:12px;padding:8px 10px;font-size:16px;background:#f8fafc;color:#334155;" value="' + escapeHtml(rosterApiUrl()) + '"><div class="backup-summary">更新日安名單會直接讀取正取名單。</div>';
     $('modalCancelBtn').textContent = '取消';
-    $('modalOkBtn').textContent = '儲存';
+    $('modalOkBtn').textContent = '關閉';
     $('modalMask').classList.add('show');
     const input = $('rosterApiUrlInput');
     input.value = rosterApiUrl();
-    setTimeout(function(){ input.focus(); input.select(); }, 0);
     setTap($('modalCancelBtn'), closeModal);
     setTap($('modalOkBtn'), function(){
-      const url = String(input.value || '').trim();
-      if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec/.test(url)){
-        showToast('請貼上 Apps Script Web App URL');
-        return;
-      }
-      state.settings.rosterApiUrl = url;
+      state.settings.rosterApiUrl = ROSTER_SOURCE_PAGE;
       saveState();
       closeModal();
-      showToast('報名 API URL 已儲存');
+      showToast('已使用日安名單來源');
       if(nextAction) setTimeout(nextAction, 30);
     });
   }
