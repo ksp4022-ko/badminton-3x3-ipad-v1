@@ -168,6 +168,9 @@
     .panel-section.collapsed .collapsible-body{display:none;}
     .button-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
     .button-grid.single{grid-template-columns:1fr;}
+    .voice-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:end;margin-top:8px;}
+    .voice-grid label{white-space:nowrap;}
+    .voice-grid select{min-width:0;font-size:16px;padding-left:8px;padding-right:8px;}
     .help{font-size:14px;line-height:1.35;color:#64748b;font-weight:700;margin:6px 0 0;}
     .mode-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
     .mode-row button.active{background:#0f766e;color:#fff}
@@ -211,6 +214,9 @@
       .floating-button{width:56px;height:56px;font-size:24px;}
       .float-panel{left:0;right:0;top:0;bottom:0;width:100vw;height:100vh;height:var(--safe-vh);max-height:var(--safe-vh);border-radius:0;}
       .panel-body{padding-bottom:calc(16px + var(--safe-bottom));}
+    }
+    @media (max-width:700px){
+      .voice-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     }
     @media (max-width:700px) and (orientation:portrait){
       .portrait-warning.phone{display:flex;}
@@ -322,12 +328,24 @@
               <button id="autoCallOffBtn">關閉</button>
               <button id="autoCallOnBtn">開啟</button>
             </div>
-              <label>語速</label>
-              <select id="voiceRateSelect"><option value="slow">慢</option><option value="normal">正常</option><option value="fast">快</option></select>
-              <label>音調</label>
-              <select id="voicePitchSelect"><option value="low">低</option><option value="normal">正常</option><option value="high">高</option></select>
-              <label>語音</label>
-              <select id="voiceLangSelect"><option value="auto">自動</option><option value="zh-TW-first">中文優先</option></select>
+              <div class="voice-grid">
+                <div>
+                  <label>中文人聲</label>
+                  <select id="zhVoiceSelect"><option value="">自動推薦</option></select>
+                </div>
+                <div>
+                  <label>英文人聲</label>
+                  <select id="enVoiceSelect"><option value="">自動推薦</option></select>
+                </div>
+                <div>
+                  <label>語速</label>
+                  <select id="voiceRateSelect"><option value="slow">慢</option><option value="normal">正常</option><option value="fast">快</option></select>
+                </div>
+                <div>
+                  <label>音調</label>
+                  <select id="voicePitchSelect"><option value="low">低</option><option value="normal">正常</option><option value="high">高</option></select>
+                </div>
+              </div>
               <label>上場提醒特效</label>
               <div class="toggle-row">
                 <button id="callEffectOffBtn">關閉</button>
@@ -691,6 +709,8 @@
         voiceRate:'normal',
         voicePitch:'normal',
         voiceLang:'zh-TW-first',
+        zhVoiceId:'',
+        enVoiceId:'',
         callEffectEnabled:true,
         callEffectDuration:5,
         callEffectIntensity:'medium',
@@ -1068,7 +1088,7 @@
     if($('use2x2Btn')) $('use2x2Btn').classList.toggle('active', currentMode() === '2x2');
     $('voiceRateSelect').value = state.settings.voiceRate || 'normal';
     $('voicePitchSelect').value = state.settings.voicePitch || 'normal';
-    $('voiceLangSelect').value = state.settings.voiceLang || 'zh-TW-first';
+    populateVoiceSelects();
     const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
     $('renamePlayerInput').value = p ? p.name : '';
   }
@@ -1473,6 +1493,43 @@
     return String((voice && voice.lang ? voice.lang : '') + ' ' + (voice && voice.name ? voice.name : ''));
   }
 
+  function voiceId(voice){
+    if(!voice) return '';
+    return voice.voiceURI ? String(voice.voiceURI) : String((voice.name || '') + '|' + (voice.lang || ''));
+  }
+
+  function isChineseVoice(voice){
+    return /zh|cmn|mandarin|chinese|taiwan/i.test(voiceText(voice));
+  }
+
+  function isEnglishVoice(voice){
+    return /(^|\s)en[-_]|english/i.test(voiceText(voice));
+  }
+
+  function uniqueVoices(filterFn){
+    const voices = availableVoices();
+    const seen = {};
+    const result = [];
+    for(let i = 0; i < voices.length; i += 1){
+      const voice = voices[i];
+      if(!filterFn(voice)) continue;
+      const id = voiceId(voice);
+      if(!id || seen[id]) continue;
+      seen[id] = true;
+      result.push(voice);
+    }
+    return result;
+  }
+
+  function findVoiceById(id){
+    if(!id) return null;
+    const voices = availableVoices();
+    for(let i = 0; i < voices.length; i += 1){
+      if(voiceId(voices[i]) === id) return voices[i];
+    }
+    return null;
+  }
+
   function findPreferredVoice(lang){
     const voices = availableVoices();
     if(!voices.length) return null;
@@ -1489,14 +1546,41 @@
     return voices.find(function(voice){ return fallbackPattern.test(voiceText(voice)); }) || null;
   }
 
+  function findSelectedVoice(lang){
+    const id = lang === 'en-US' ? state.settings.enVoiceId : state.settings.zhVoiceId;
+    const selected = findVoiceById(id);
+    if(selected) return selected;
+    return findPreferredVoice(lang);
+  }
+
   function createCallUtterance(text, lang){
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = lang;
     utter.rate = speechRate();
     utter.pitch = speechPitch();
-    const voice = findPreferredVoice(lang);
+    const voice = findSelectedVoice(lang);
     if(voice) utter.voice = voice;
     return utter;
+  }
+
+  function populateVoiceSelect(selectId, selectedId, filterFn){
+    const select = $(selectId);
+    if(!select) return;
+    const current = select.value || selectedId || '';
+    const voices = uniqueVoices(filterFn);
+    let html = '<option value="">自動推薦</option>';
+    for(let i = 0; i < voices.length; i += 1){
+      const voice = voices[i];
+      const id = voiceId(voice);
+      html += '<option value="' + escapeHtml(id) + '">' + escapeHtml((voice.name || '未命名') + ' | ' + (voice.lang || '')) + '</option>';
+    }
+    select.innerHTML = html;
+    select.value = voices.some(function(voice){ return voiceId(voice) === current; }) ? current : '';
+  }
+
+  function populateVoiceSelects(){
+    populateVoiceSelect('zhVoiceSelect', state.settings.zhVoiceId || '', isChineseVoice);
+    populateVoiceSelect('enVoiceSelect', state.settings.enVoiceId || '', isEnglishVoice);
   }
 
   function speakCallSequence(names, courtZone){
@@ -1578,7 +1662,8 @@
   function saveVoiceSettings(){
     state.settings.voiceRate = $('voiceRateSelect').value;
     state.settings.voicePitch = $('voicePitchSelect').value;
-    state.settings.voiceLang = $('voiceLangSelect').value;
+    state.settings.zhVoiceId = $('zhVoiceSelect') ? $('zhVoiceSelect').value : '';
+    state.settings.enVoiceId = $('enVoiceSelect') ? $('enVoiceSelect').value : '';
     state.settings.callEffectDuration = Number($('callEffectDurationSelect').value) || 5;
     state.settings.callEffectIntensity = $('callEffectIntensitySelect').value || 'medium';
     state.settings.callEffectColor = $('callEffectColorSelect').value || 'yellow';
@@ -2387,7 +2472,7 @@
     tap('callEffectOnBtn', () => setCallEffectEnabled(true));
     tap('callMarqueeOffBtn', () => setCallMarqueeEnabled(false));
     tap('callMarqueeOnBtn', () => setCallMarqueeEnabled(true));
-    tap('voiceTestBtn', () => callPlayers(['測試','請上場']));
+    tap('voiceTestBtn', () => callPlayers(['雅雯','Kevin'], 'court1'));
     tap('saveVoiceBtn', saveVoiceSettings);
     tap('addPlayerBtn', () => addPlayer($('newPlayerInput').value));
     $('newPlayerInput').addEventListener('keydown', e => { if(e.key==='Enter') addPlayer($('newPlayerInput').value); });
@@ -2425,6 +2510,11 @@
         saveCollapsedSections();
         renderCollapsedSections();
       });
+    }
+
+    if(window.speechSynthesis){
+      if(window.speechSynthesis.addEventListener) window.speechSynthesis.addEventListener('voiceschanged', populateVoiceSelects);
+      window.speechSynthesis.onvoiceschanged = populateVoiceSelects;
     }
 
     let resizeTimer = null;
@@ -2487,7 +2577,8 @@
       exportLogCsv:exportLogCsv,
       callPlayers:callPlayers,
       repeatLastCall:repeatLastCall,
-      detectNameLanguage:detectNameLanguage
+      detectNameLanguage:detectNameLanguage,
+      populateVoiceSelects:populateVoiceSelects
     };
   }
 
@@ -2497,6 +2588,7 @@
     bindEvents();
     initPanelScrollGuard();
     initFloatingButton();
+    populateVoiceSelects();
     render();
     exposeDebugApi();
     registerServiceWorker();

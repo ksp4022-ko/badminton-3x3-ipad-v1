@@ -248,6 +248,8 @@ function baseState(players, extraSettings) {
       voiceRate: 'normal',
       voicePitch: 'normal',
       voiceLang: 'zh-TW-first',
+      zhVoiceId: '',
+      enVoiceId: '',
       lastCallPlayers: [],
       lastCallCourt: null,
       floating: { side: 'left', y: 0.45 },
@@ -327,6 +329,41 @@ async function run() {
   api.repeatLastCall();
   await wait(500);
   assert('repeat last call uses bilingual sequence', context.__spokenUtterances.map((u) => u.lang).join(',') === 'zh-TW,en-US,zh-TW' && context.__spokenUtterances[2].text === '請上，二號場。');
+
+  context.__voices = [
+    { name: 'Taiwan Auto', lang: 'zh-TW', localService: true, voiceURI: 'zh-auto' },
+    { name: 'Chinese Selected', lang: 'zh-TW', localService: false, voiceURI: 'zh-selected' },
+    { name: 'US Auto', lang: 'en-US', localService: true, voiceURI: 'en-auto' },
+    { name: 'English Selected', lang: 'en-GB', localService: false, voiceURI: 'en-selected' }
+  ];
+  api.setState(baseState([], { zhVoiceId: 'zh-selected', enVoiceId: 'en-selected', voiceRate: 'fast', voicePitch: 'high' }));
+  context.__spokenUtterances = [];
+  api.callPlayers(['雅雯', 'Kevin'], 'court1');
+  await wait(500);
+  assert('selected Chinese and English voices are used', context.__spokenUtterances[0].voiceName === 'Chinese Selected' && context.__spokenUtterances[1].voiceName === 'English Selected' && context.__spokenUtterances[2].voiceName === 'Chinese Selected');
+  assert('rate and pitch apply to both selected voices', context.__spokenUtterances.every((u) => u.rate === 1.18 && u.pitch === 1.18));
+
+  api.setState(baseState([], { zhVoiceId: 'missing-zh', enVoiceId: 'missing-en' }));
+  context.__spokenUtterances = [];
+  api.callPlayers(['雅雯', 'Kevin'], 'court1');
+  await wait(500);
+  assert('missing saved voices fall back automatically', context.__spokenUtterances[0].voiceName === 'Taiwan Auto' && context.__spokenUtterances[1].voiceName === 'US Auto');
+
+  const emptyVoiceContext = createContext();
+  vm.createContext(emptyVoiceContext);
+  vm.runInContext(mainScript, emptyVoiceContext);
+  const emptyVoiceApi = emptyVoiceContext.window.__badmintonIpadV1;
+  assert('initial empty voice selectors do not crash', !!emptyVoiceApi && emptyVoiceContext.document.getElementById('zhVoiceSelect').innerHTML.indexOf('自動推薦') >= 0);
+  emptyVoiceContext.__voices = [
+    { name: 'Taiwan Reloaded', lang: 'zh-TW', localService: true, voiceURI: 'zh-reloaded' },
+    { name: 'Taiwan Reloaded Copy', lang: 'zh-TW', localService: true, voiceURI: 'zh-reloaded' },
+    { name: 'English Reloaded', lang: 'en-US', localService: true, voiceURI: 'en-reloaded' }
+  ];
+  emptyVoiceContext.document.getElementById('zhVoiceSelect').value = 'zh-reloaded';
+  emptyVoiceContext.speechSynthesis.onvoiceschanged();
+  assert('voiceschanged populates Chinese and English selectors', emptyVoiceContext.document.getElementById('zhVoiceSelect').innerHTML.indexOf('Taiwan Reloaded | zh-TW') >= 0 && emptyVoiceContext.document.getElementById('enVoiceSelect').innerHTML.indexOf('English Reloaded | en-US') >= 0);
+  assert('voiceschanged preserves current available selection', emptyVoiceContext.document.getElementById('zhVoiceSelect').value === 'zh-reloaded');
+  assert('voice selector avoids duplicate option values', emptyVoiceContext.document.getElementById('zhVoiceSelect').innerHTML.indexOf('zh-reloaded') === emptyVoiceContext.document.getElementById('zhVoiceSelect').innerHTML.lastIndexOf('zh-reloaded'));
 
   const floatBtn = context.document.getElementById('floatButton');
   floatBtn.dispatchEvent({ type: 'touchstart', target: floatBtn, touches: [{ clientX: 20, clientY: 120 }], cancelable: true, preventDefault() {}, stopPropagation() {} });

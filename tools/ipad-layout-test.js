@@ -33,5 +33,7 @@ assert('player name auto fit exists', html.includes('function fitPlayerNameText'
 assert('player name fit cache exists', html.includes('const playerNameFitCache') && html.includes('function playerNameFitKey'));
 assert('legacy court down pill stays wide', cssRuleIncludes('html.legacyIpadLandscape .court-down-pill', 'min-width:136px'));
 assert('legacy selected banner is enlarged', cssRuleIncludes('html.legacyIpadLandscape .selected-banner', 'min-height:58px') && cssRuleIncludes('html.legacyIpadLandscape .selected-banner button', 'min-width:128px'));
+assert('voice settings use four column compact grid', cssRuleIncludes('.voice-grid', 'grid-template-columns:repeat(4,minmax(0,1fr))'));
+assert('narrow screens allow two column voice grid', html.includes('@media (max-width:700px)') && html.includes('.voice-grid{grid-template-columns:repeat(2,minmax(0,1fr));}'));
 assert('zone labels are localized', html.includes("return '場地 '") && html.includes("return '預備區 '"));
 assert('roster import defaults to blue', html.includes('color:COLORS[0]'));
