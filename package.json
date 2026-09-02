@@ -3,7 +3,8 @@
   "version": "1.1.0-ipad",
   "private": true,
   "scripts": {
-    "test": "node tools/ipad-compat-test.js && node tools/ipad-layout-test.js && node tools/ipad-behavior-test.js",
+    "test": "node tools/ipad-compat-test.js && node tools/ipad-layout-test.js && node tools/ipad-behavior-test.js && node tools/voice-sync-test.js",
+    "voice:sync": "node tools/voice-sync.js",
     "test:visual": "node tools/ipad-visual-test.js"
   },
   "devDependencies": {
