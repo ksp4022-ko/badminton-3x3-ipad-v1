@@ -235,6 +235,11 @@
     .modal-card h3{margin:0 0 10px;font-size:24px;}
     .modal-card p{margin:8px 0;color:#475569;font-weight:750;line-height:1.45;}
     .modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+    .court-down-confirm{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 4px;}
+    .court-down-confirm-card{min-height:76px;border-radius:16px;border:3px solid rgba(255,255,255,.95);box-shadow:0 4px 12px rgba(15,23,42,.18);display:flex;align-items:center;justify-content:center;padding:8px;color:#0f172a;overflow:hidden;}
+    .court-down-confirm-card .name{font-size:clamp(24px,3.2vw,36px);font-weight:1000;line-height:1.05;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+    .modal-actions .court-down-cancel{background:#fff;color:#0f172a;border:2px solid #cbd5e1;min-height:58px;font-size:22px;font-weight:1000;}
+    .modal-actions .court-down-ok{background:#fef3c7;color:#92400e;border:2px solid #f59e0b;min-height:58px;font-size:22px;font-weight:1000;}
     .portrait-warning{display:none;position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:100;background:linear-gradient(135deg,#0f766e,#0f172a);color:#fff;align-items:center;justify-content:center;padding:26px;text-align:center;}
     .portrait-card{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.35);border-radius:26px;padding:28px;box-shadow:var(--shadow);}
     .portrait-card .big{font-size:34px;font-weight:1000;margin-bottom:12px;}
@@ -1002,6 +1007,7 @@
       $('modalExtra').innerHTML = extraHtml;
       if(okText) $('modalOkBtn').textContent = okText;
       if(okClass) $('modalOkBtn').className = okClass;
+      if(okClass === 'court-down-ok') $('modalCancelBtn').className = 'court-down-cancel';
       $('modalMask').classList.add('show');
       setTap($('modalOkBtn'), () => { closeModal(); resolve(true); });
       setTap($('modalCancelBtn'), () => { closeModal(); resolve(false); });
@@ -1024,6 +1030,12 @@
   function playerChipHtml(p){
     const selected = selectedPlayer && selectedPlayer.playerId === p.id ? ' selected' : '';
     return `<div class="player-chip${selected}" data-player-id="${escapeHtml(p.id)}" style="background:${escapeHtml(p.color)}"><div class="games">${Number(p.games)||0}</div><div class="name" style="font-family:${escapeHtml(playerNameFontFamily())}">${escapeHtml(p.name)}</div></div>`;
+  }
+
+  function courtDownConfirmHtml(players){
+    return '<div class="court-down-confirm">' + players.map(function(p){
+      return '<div class="court-down-confirm-card" style="background:' + escapeHtml(p.color || COLORS[0]) + '"><div class="name" style="font-family:' + escapeHtml(playerNameFontFamily()) + '">' + escapeHtml(p.name) + '</div></div>';
+    }).join('') + '</div>';
   }
 
   function render(){
@@ -1390,7 +1402,7 @@
   async function courtDown(courtZone){
     const players = zonePlayers(courtZone);
     if(players.length === 0){ showToast('這個球場目前沒有人'); return; }
-    const ok = await confirmDialog('確認下場', `${zoneLabel(courtZone)} 下場？`, `<div class="backup-summary">${players.length}/4｜場次 +1</div>`, '下場', 'warn');
+    const ok = await confirmDialog(`${zoneLabel(courtZone)} 下場`, '', courtDownConfirmHtml(players), '下場', 'court-down-ok');
     if(!ok) return;
     players.forEach(p => { p.games = (Number(p.games)||0)+1; p.updatedAt=nowIso(); });
     if(state.settings.autoArrangeMode){

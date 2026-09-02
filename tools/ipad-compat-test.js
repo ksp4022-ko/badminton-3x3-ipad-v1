@@ -52,7 +52,7 @@ assert('system buttons use unified tap handler', html.includes("tap('resetTodayB
 const courtDownStart = html.indexOf('async function courtDown');
 const autoArrangeStart = html.indexOf('async function autoArrangeCourtDown');
 const courtDownBlock = html.slice(courtDownStart, autoArrangeStart);
-assert('court down dialog is concise', !courtDownBlock.includes('modeNote') && !courtDownBlock.includes('countNote') && courtDownBlock.includes("confirmDialog('確認下場'") && courtDownBlock.includes("'下場', 'warn'"));
+assert('court down dialog shows player cards', !courtDownBlock.includes('modeNote') && !courtDownBlock.includes('countNote') && courtDownBlock.includes('courtDownConfirmHtml(players)') && courtDownBlock.includes("'下場', 'court-down-ok'"));
 assert('partial next up requires confirmation', html.includes('function confirmPartialNextUp') && html.includes('仍要上場嗎？') && html.includes('await confirmPartialNextUp'));
 assert('board touch does not await before click guard', html.includes('function runBoardInteraction') && html.includes('lastTouchHandledAt = Date.now();') && !html.includes('await handleBoardInteraction(e);'));
 const selectStart = html.indexOf('function selectPlayer');

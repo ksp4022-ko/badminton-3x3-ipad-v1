@@ -464,8 +464,10 @@ async function run() {
   head.classList.add('zone-head');
   head.setAttribute('data-court', 'court1');
   const down = api.handleBoardInteraction(eventFor(head));
-  assert('court down dialog message is concise', context.document.getElementById('modalMessage').textContent === '場地 1 下場？');
-  assert('court down dialog summary is concise', /4\/4｜場次 \+1/.test(context.document.getElementById('modalExtra').innerHTML || ''));
+  assert('court down dialog title names court', context.document.getElementById('modalTitle').textContent === '場地 1 下場');
+  assert('court down dialog message is empty', context.document.getElementById('modalMessage').textContent === '');
+  assert('court down dialog shows player cards', (context.document.getElementById('modalExtra').innerHTML.match(/court-down-confirm-card/g) || []).length === 4);
+  assert('court down dialog removes game-count text', !/場次 \+1/.test(context.document.getElementById('modalExtra').innerHTML || ''));
   assert('court down dialog ok button is down', context.document.getElementById('modalOkBtn').textContent === '下場');
   api.tap('modalOkBtn');
   await down;
