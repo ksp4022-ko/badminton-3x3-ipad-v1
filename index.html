@@ -413,6 +413,7 @@
                 <button id="autoCallOffBtn">關閉</button>
                 <button id="autoCallOnBtn">開啟</button>
               </div>
+              <div class="compact-help" id="edgeReadyStatus"></div>
               <div class="voice-grid">
                 <div>
                   <label>中文人聲</label>
@@ -987,6 +988,18 @@
   function activePlayers(){ return state.players.filter(p => p.isActive !== false); }
   function zonePlayers(zone){ return activePlayers().filter(p => p.zone === zone).sort((a,b) => (a.slot || 99) - (b.slot || 99)); }
   function restPlayers(){ return activePlayers().filter(p => p.zone === 'rest').sort((a,b) => (a.games - b.games) || (a.sortOrder - b.sortOrder)); }
+  function onCourtPlayers(){ return activePlayers().filter(p => COURTS.includes(p.zone)); }
+  function restPlayerNamesForEdgeCheck(){
+    const seen = {};
+    const names = [];
+    restPlayers().forEach(function(p){
+      const name = String(p.name || '').replace(/^\s+|\s+$/g, '');
+      if(!name || seen[name]) return;
+      seen[name] = true;
+      names.push(name);
+    });
+    return names;
+  }
   function occupant(zone, slot){ return activePlayers().find(p => p.zone === zone && Number(p.slot) === Number(slot)) || null; }
   function zoneLabel(zone){
     if(zone === 'rest') return '休息區';
@@ -2016,6 +2029,75 @@
     next();
   }
 
+  function validateAudioPartsAsync(urls){
+    const token = speechCallToken;
+    return new Promise(function(resolve){
+      validateAudioParts(urls, token, resolve);
+    });
+  }
+
+  function setEdgeReadyStatus(message, mode){
+    const el = $('edgeReadyStatus');
+    if(!el) return;
+    el.textContent = message || '';
+    el.style.color = mode === 'ready' ? '#0f766e' : (mode === 'missing' ? '#991b1b' : '#64748b');
+  }
+
+  function edgeAudioPartsForName(name){
+    return fixedNameAudioParts(name);
+  }
+
+  async function checkEdgeReadyFromRest(){
+    if(onCourtPlayers().length){
+      return {
+        ok:false,
+        reason:'onCourt',
+        total:0,
+        ready:0,
+        missing:[],
+        message:'場上目前還有人員，請先執行『今日重新開始』，讓今日所有人員回到休息區後，再啟用 Edge 語音。'
+      };
+    }
+    const names = restPlayerNamesForEdgeCheck();
+    const missing = [];
+    for(let i = 0; i < names.length; i += 1){
+      const name = names[i];
+      const audio = edgeAudioPartsForName(name);
+      if(!audio.length){
+        missing.push(name);
+        continue;
+      }
+      const ok = await validateAudioPartsAsync(audio);
+      if(!ok) missing.push(name);
+    }
+    return {
+      ok:missing.length === 0,
+      reason:missing.length ? 'missing' : 'ready',
+      total:names.length,
+      ready:names.length - missing.length,
+      missing:missing,
+      message:missing.length ? ('Edge 缺少音源：' + missing.join('、')) : ('Edge Ready ' + names.length + '/' + names.length)
+    };
+  }
+
+  async function enableAutoCallWithEdgeCheck(){
+    const result = await checkEdgeReadyFromRest();
+    if(!result.ok){
+      state.settings.autoCallEnabled = false;
+      saveState();
+      setEdgeReadyStatus(result.message, result.reason === 'missing' ? 'missing' : 'info');
+      showToast(result.reason === 'onCourt' ? result.message : result.message);
+      renderPanel();
+      return result;
+    }
+    state.settings.autoCallEnabled = true;
+    saveState();
+    setEdgeReadyStatus(result.message, 'ready');
+    showToast(result.message);
+    renderPanel();
+    return result;
+  }
+
   function speakTextPart(part, token, done){
     const synth = window.speechSynthesis;
     if(!synth || !synth.speak || typeof SpeechSynthesisUtterance === 'undefined'){ done(); return; }
@@ -3005,8 +3087,8 @@
     tap('autoModeBtn', () => { state.settings.freePlayMode=false; state.settings.autoArrangeMode=true; saveState(); showToast('已切換'); renderPanel(); });
     tap('randomFillBtn', randomFillCourts);
     tap('fetchRosterBtn', showRosterImportDialog);
-    tap('autoCallOffBtn', () => { state.settings.autoCallEnabled=false; saveState(); renderPanel(); });
-    tap('autoCallOnBtn', () => { state.settings.autoCallEnabled=true; saveState(); renderPanel(); });
+    tap('autoCallOffBtn', () => { state.settings.autoCallEnabled=false; saveState(); setEdgeReadyStatus('', 'info'); renderPanel(); });
+    tap('autoCallOnBtn', enableAutoCallWithEdgeCheck);
     tap('callEffectOffBtn', () => setCallEffectEnabled(false));
     tap('callEffectOnBtn', () => setCallEffectEnabled(true));
     tap('callMarqueeOffBtn', () => setCallMarqueeEnabled(false));
@@ -3128,6 +3210,9 @@
       courtLabel:courtLabel,
       courtVoiceText:courtVoiceText,
       callSequenceParts:callSequenceParts,
+      restPlayerNamesForEdgeCheck:restPlayerNamesForEdgeCheck,
+      checkEdgeReadyFromRest:checkEdgeReadyFromRest,
+      enableAutoCallWithEdgeCheck:enableAutoCallWithEdgeCheck,
       populateVoiceSelects:populateVoiceSelects
     };
   }

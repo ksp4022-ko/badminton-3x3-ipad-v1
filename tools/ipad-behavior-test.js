@@ -431,6 +431,43 @@ async function run() {
     './voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3': true,
     './voice-poc/zh-TW-HsiaoChenNeural/go-court-3.mp3': true
   };
+
+  api.setState(baseState([
+    player('court-player', '柯', 'court1', 1),
+    player('rest-player', 'Chris', 'rest', null)
+  ]));
+  const blockedEdge = await api.enableAutoCallWithEdgeCheck();
+  assert('on-court players block Edge ready check', blockedEdge.reason === 'onCourt' && api.getState().settings.autoCallEnabled === false && /今日重新開始/.test(context.document.getElementById('toast').textContent));
+
+  const resetForEdge = api.resetToday();
+  api.tap('modalOkBtn');
+  await resetForEdge;
+  assert('reset today returns everyone to rest before Edge check', api.getState().players.every((p) => p.zone === 'rest' && p.slot === null));
+
+  api.setState(baseState([
+    player('rest-a', ' 柯 ', 'rest', null),
+    player('rest-b', 'Chris', 'rest', null),
+    player('rest-c', '柯', 'rest', null)
+  ]));
+  assert('rest area names trim and dedupe for Edge check', api.restPlayerNamesForEdgeCheck().join('|') === '柯|Chris');
+
+  const readyEdge = await api.enableAutoCallWithEdgeCheck();
+  assert('all rest MP3 assets enable Edge ready', readyEdge.ok && readyEdge.ready === 2 && readyEdge.total === 2 && api.getState().settings.autoCallEnabled === true && /Edge Ready 2\/2/.test(context.document.getElementById('edgeReadyStatus').textContent));
+
+  api.setState(baseState([
+    player('rest-a', '柯', 'rest', null),
+    player('rest-b', 'Missing Voice', 'rest', null)
+  ]));
+  const missingEdge = await api.enableAutoCallWithEdgeCheck();
+  assert('missing rest MP3 blocks Edge ready and lists name', !missingEdge.ok && missingEdge.missing.join('|') === 'Missing Voice' && api.getState().settings.autoCallEnabled === false && /Missing Voice/.test(context.document.getElementById('edgeReadyStatus').textContent));
+
+  context.__spokenUtterances = [];
+  api.callPlayers(['Missing Voice'], 'court1');
+  await wait(500);
+  assert('browser speech fallback still works when auto call disabled', context.__spokenUtterances.some((u) => u.text === 'Missing Voice'));
+
+  context.__spokenUtterances = [];
+  context.__playedAudio = [];
   api.callPlayers(['柯'], 'court1');
   await wait(700);
   assert('complete fixed mp3 call uses audio first', context.__playedAudio.join('|') === './voice-poc/zh-TW-HsiaoChenNeural/ke.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-1.mp3' && context.__spokenUtterances.length === 0);
