@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const INDEX_PATH = path.join(ROOT_DIR, 'index.html');
@@ -204,11 +204,7 @@ function resolveNeededVoices(names, fixedMap, rootDir) {
     const suffix = splitEnglishSuffix(name);
     if (suffix) {
       ensure(suffix.base, suffix.base);
-      if (fixedMap[suffix.suffix] && fileExistsNonEmpty(absoluteAudioPath(rootDir, fixedMap[suffix.suffix]))) {
-        skipped.push({ name: suffix.suffix, reason: 'shared suffix' });
-      } else {
-        ensure(suffix.suffix, suffix.suffix);
-      }
+      skipped.push({ name: suffix.suffix, reason: 'english suffix ignored for Edge fixed voice' });
       continue;
     }
     ensure(name, name);
@@ -238,6 +234,37 @@ function generateWithEdgeTts(item) {
   });
 }
 
+function normalizeMp3WithFfmpeg(filePath) {
+  if (!fileExistsNonEmpty(filePath)) throw new Error('cannot normalize missing mp3');
+  const tmpPath = filePath + '.normalize-tmp.mp3';
+  const filter = 'silenceremove=start_periods=1:start_duration=0.02:start_threshold=-55dB:start_silence=0.02:stop_periods=1:stop_duration=0.08:stop_threshold=-55dB:stop_silence=0.03';
+  const result = spawnSync('ffmpeg', [
+    '-hide_banner',
+    '-loglevel',
+    'error',
+    '-y',
+    '-i',
+    filePath,
+    '-af',
+    filter,
+    '-codec:a',
+    'libmp3lame',
+    '-q:a',
+    '4',
+    tmpPath
+  ], { stdio: 'pipe' });
+  if (result.status !== 0) {
+    try { if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath); } catch (err) {}
+    const message = result.stderr ? String(result.stderr).trim() : 'ffmpeg failed';
+    throw new Error(message);
+  }
+  if (!fileExistsNonEmpty(tmpPath)) {
+    try { if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath); } catch (err) {}
+    throw new Error('normalized file is empty or missing');
+  }
+  fs.renameSync(tmpPath, filePath);
+}
+
 function updateIndexMapping(indexPath, fixedMap, generated) {
   if (!generated.length) return false;
   const source = fs.readFileSync(indexPath, 'utf8');
@@ -264,6 +291,7 @@ async function syncVoices(options = {}) {
   const fixedMap = extractFixedNameMap(source);
   const fetchJson = options.fetchJson || defaultFetchJson;
   const generateAudio = options.generateAudio || generateWithEdgeTts;
+  const normalizeAudio = options.normalizeAudio === false ? null : (options.normalizeAudio || normalizeMp3WithFfmpeg);
   const names = options.names || await fetchCurrentRosterNames(config, fetchJson);
   const plan = resolveNeededVoices(names, fixedMap, rootDir);
   const generated = [];
@@ -279,6 +307,10 @@ async function syncVoices(options = {}) {
     try {
       await generateAudio(task);
       if (!fileExistsNonEmpty(output)) throw new Error('generated file is empty or missing');
+      if (normalizeAudio) {
+        normalizeAudio(output);
+        if (!fileExistsNonEmpty(output)) throw new Error('normalized file is empty or missing');
+      }
       generated.push(item);
     } catch (err) {
       failed.push({ name: item.name, path: item.path, error: err.message });
@@ -350,6 +382,7 @@ module.exports = {
   splitEnglishSuffix,
   audioPathForName,
   parseNames,
+  normalizeMp3WithFfmpeg,
   resolveNeededVoices,
   syncVoices
 };

@@ -78,15 +78,15 @@ assert('speaker button uses purple tool color', html.includes('.floating-button.
 assert('selected floating button still turns yellow', html.includes('.floating-button.has-selected{background:linear-gradient(135deg,#f59e0b,#facc15);color:#422006;}'));
 assert('admin nested section titles are blue', html.includes('#adminTools .panel-section .collapse-head') && html.includes('color:#1d4ed8'));
 assert('bilingual speech helpers exist', html.includes('function detectNameLanguage') && html.includes('function findPreferredVoice') && html.includes('function speakCallSequence'));
-assert('court call speaks player names sequentially', html.includes('function callSequenceParts') && html.includes('function playAudioParts') && html.includes('function speakTextPart') && html.includes('setTimeout(function(){ speakNext(index + 1); }, 110)'));
-assert('court call prefers fixed audio with fallback', html.includes('const FIXED_AUDIO_BASE') && html.includes('fixedNameAudioParts') && html.includes('fixedCourtAudioParts') && html.includes('else speakTextPart(part, token, next)'));
+assert('court call speaks player names sequentially', html.includes('function callSequenceParts') && html.includes('function playAudioParts') && html.includes('function speakTextPart') && html.includes('const nameGap = 90') && html.includes('const courtGap = 110'));
+assert('auto call has mutually exclusive Edge and Browser modes', html.includes("autoCallMode:'off'") && html.includes('id="edgeCallBtn"') && html.includes('id="browserCallBtn"') && html.includes('function browserCallSequenceParts') && html.includes('function edgeCallSequenceParts'));
 assert('court call no longer uses single combined zh sentence', !html.includes("names.join('、')} 請上") && !html.includes("'請上場：' + names.join('、')"));
 assert('repeat call reuses callPlayers path', html.includes('function repeatLastCall') && html.includes('callPlayers(names, state.settings.lastCallCourt || null);'));
 assert('selectable bilingual voice controls exist', html.includes('id="zhVoiceSelect"') && html.includes('id="enVoiceSelect"') && html.includes('zhVoiceId') && html.includes('enVoiceId'));
 assert('old voice language selector removed from UI', !html.includes('id="voiceLangSelect"') && html.includes("voiceLang:'zh-TW-first'"));
 assert('voice selectors populate safely', html.includes('function populateVoiceSelects') && html.includes('onvoiceschanged') && html.includes('<option value="">自動推薦</option>'));
 assert('selected voice fallback exists', html.includes('function findSelectedVoice') && html.includes('findVoiceById(id)') && html.includes('return findPreferredVoice(lang);'));
-assert('voice test uses bilingual one-court sample', html.includes("callPlayers(['雅雯','Kevin'], 'court1')"));
+assert('voice test uses browser bilingual one-court sample', html.includes("speakCallSequence(['雅雯','Kevin'], 'court1', 'browser')"));
 assert('player name display controls exist', html.includes('id="playerNameScaleSelect"') && html.includes('id="playerNameFontSelect"') && html.includes('function savePlayerNameDisplaySettings'));
 assert('player name fit cache exists', html.includes('playerNameFitCache') && html.includes('playerNameFitKey'));
 assert('panel scroll tap guard exists', html.includes('function initPanelScrollGuard') && html.includes('panelTouch.blockUntil') && html.includes('isPanelScrollBlocked(el)'));

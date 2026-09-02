@@ -67,6 +67,7 @@ async function run() {
   writeMp3(rootDir, 'zh-TW-HsiaoChenNeural/jie.mp3');
 
   const generated = [];
+  const normalized = [];
   const first = await syncVoices({
     rootDir,
     indexPath,
@@ -74,9 +75,13 @@ async function run() {
     generateAudio: async (item) => {
       generated.push({ name: item.name, argsPath: item.path, output: item.output, lang: item.lang });
       writeFile(item.output, Buffer.from([9, 9, 9, 9]));
+    },
+    normalizeAudio: (output) => {
+      normalized.push(output);
     }
   });
   assert('sync generates missing files', first.failed.length === 0 && generated.length === 3);
+  assert('newly generated mp3 files are normalized once', normalized.length === generated.length);
   assert('generated mp3 files are non-empty', generated.every((item) => fs.statSync(item.output).size > 0));
   assert('sync updates mapping for generated names', /'Bobo':'en-US-AriaNeural\/rate-test\/bobo-rate-minus20\.mp3'/.test(fs.readFileSync(indexPath, 'utf8')));
   assert('English generation marked en', generated.some((item) => item.name === 'Bobo' && item.lang === 'en'));
@@ -90,6 +95,9 @@ async function run() {
     generateAudio: async (item) => {
       generated.push(item);
       writeFile(item.output, Buffer.from([8]));
+    },
+    normalizeAudio: (output) => {
+      normalized.push(output);
     }
   });
   assert('second run does not regenerate', second.failed.length === 0 && generated.length === 0 && second.generated.length === 0);

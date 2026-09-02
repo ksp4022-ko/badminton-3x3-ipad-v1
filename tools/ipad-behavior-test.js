@@ -466,6 +466,7 @@ async function run() {
   await wait(500);
   assert('browser speech fallback still works when auto call disabled', context.__spokenUtterances.some((u) => u.text === 'Missing Voice'));
 
+  api.setAutoCallModeForTest('edge');
   context.__spokenUtterances = [];
   context.__playedAudio = [];
   api.callPlayers(['柯'], 'court1');
@@ -476,18 +477,18 @@ async function run() {
   context.__playedAudio = [];
   api.callPlayers(['Chris 哥'], 'court2');
   await wait(900);
-  assert('english name plus ge uses english mp3 then ge mp3', context.__playedAudio.join('|') === './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3|./voice-poc/zh-TW-HsiaoChenNeural/ge.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3' && context.__spokenUtterances.length === 0);
+  assert('english name plus ge uses english mp3 only before court', context.__playedAudio.join('|') === './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3' && context.__spokenUtterances.length === 0);
 
   context.__spokenUtterances = [];
   context.__playedAudio = [];
   api.callPlayers(['Chris 姊'], 'court2');
   await wait(900);
-  assert('english name plus jie uses english mp3 then jie mp3', context.__playedAudio.join('|') === './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3|./voice-poc/zh-TW-HsiaoChenNeural/jie.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3' && context.__spokenUtterances.length === 0);
+  assert('english name plus jie uses english mp3 only before court', context.__playedAudio.join('|') === './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3' && context.__spokenUtterances.length === 0);
   context.__playedAudio = [];
   context.__spokenUtterances = [];
   api.repeatLastCall();
   await wait(900);
-  assert('repeat last call reuses fixed audio path', context.__playedAudio.join('|') === './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3|./voice-poc/zh-TW-HsiaoChenNeural/jie.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3' && context.__spokenUtterances.length === 0);
+  assert('repeat last call follows Edge fixed audio path', context.__playedAudio.join('|') === './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3' && context.__spokenUtterances.length === 0);
 
   context.__spokenUtterances = [];
   context.__playedAudio = [];
@@ -504,7 +505,7 @@ async function run() {
   };
   api.callPlayers(['Chris 哥'], 'court2');
   await wait(900);
-  assert('incomplete english suffix fixed audio falls back without partial playback', context.__playedAudio.join('|') === './voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3' && context.__spokenUtterances.length === 1 && context.__spokenUtterances[0].text === 'Chris 哥');
+  assert('english suffix Edge ignores missing ge mp3', context.__playedAudio.join('|') === './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3' && context.__spokenUtterances.length === 0);
 
   context.__spokenUtterances = [];
   context.__playedAudio = [];
@@ -516,21 +517,23 @@ async function run() {
   };
   api.callPlayers(['Bobo 哥'], 'court1');
   await wait(500);
-  assert('missing english mp3 falls back to original full name', context.__spokenUtterances[0].text === 'Bobo 哥');
+  assert('Edge missing english mp3 does not fall back to browser', context.__playedAudio.length === 0 && context.__spokenUtterances.length === 0);
 
   context.__spokenUtterances = [];
   context.__playedAudio = [];
   api.setState(baseState([], { courtLabels: { court1: 'A', court2: '2', court3: '3' } }));
+  api.setAutoCallModeForTest('edge');
   api.callPlayers(['柯'], 'court1');
   await wait(900);
-  assert('missing court phrase falls back to court label speech', context.__spokenUtterances.some((u) => u.text === '請到場地A。'));
+  assert('Edge missing court phrase does not fall back to browser', context.__playedAudio.join('|') === './voice-poc/zh-TW-HsiaoChenNeural/ke.mp3' && context.__spokenUtterances.length === 0);
 
   context.__spokenUtterances = [];
   context.__playedAudio = [];
   api.setState(baseState([], { courtLabels: { court1: '5', court2: '2', court3: '3' } }));
+  api.setAutoCallModeForTest('browser');
   api.callPlayers(['柯'], 'court1');
   await wait(900);
-  assert('court 5 phrase falls back to browser speech once', context.__spokenUtterances.filter((u) => u.text === '請到場地5。').length === 1 && !context.__playedAudio.includes('./voice-poc/zh-TW-HsiaoChenNeural/go-court-5.mp3'));
+  assert('Browser court 5 uses browser speech once and no mp3', context.__spokenUtterances.filter((u) => u.text === '請到場地5。').length === 1 && context.__playedAudio.length === 0);
 
   context.__spokenUtterances = [];
   context.__playedAudio = [];
