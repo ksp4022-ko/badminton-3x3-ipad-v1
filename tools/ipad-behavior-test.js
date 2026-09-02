@@ -175,6 +175,9 @@ function createContext() {
     __voices: [],
     __spokenUtterances: [],
     __speechCancelCount: 0,
+    __playedAudio: [],
+    __audioOk: {},
+    __audioCreated: [],
     speechSynthesis: null,
     SpeechSynthesisUtterance: function SpeechSynthesisUtterance(text) { this.text = text; },
     Blob: function Blob(parts, options) { this.parts = parts; this.options = options; },
@@ -217,6 +220,31 @@ function createContext() {
   context.window.addEventListener = function () {};
   context.document.execCommand = function () { return true; };
   return context;
+}
+
+function installFakeAudio(context) {
+  context.Audio = function Audio(src) {
+    this.src = src;
+    this.preload = '';
+    this.onended = null;
+    this.onerror = null;
+    context.__audioCreated.push(src);
+    this.play = function () {
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (context.__audioOk[src]) {
+            context.__playedAudio.push(src);
+            if (typeof this.onended === 'function') this.onended({ type: 'ended' });
+            resolve();
+          } else {
+            if (typeof this.onerror === 'function') this.onerror({ type: 'error' });
+            reject(new Error('audio failed'));
+          }
+        }, 0);
+      });
+    };
+    this.pause = function () {};
+  };
 }
 
 function player(id, name, zone, slot, games) {
@@ -291,6 +319,20 @@ async function run() {
   const api = context.window.__badmintonIpadV1;
   assert('debug api exposed', !!api);
 
+  ['1', '2', '3', '4', '5', 'A', 'B', 'C'].forEach((label) => {
+    api.setState(baseState([], { courtLabels: { court1: label, court2: '2', court3: '3' } }));
+    assert('court label accepts ' + label, api.courtLabel('court1') === label);
+  });
+  api.setState(baseState([], { courtLabels: { court1: 'A', court2: 'B', court3: 'C' } }));
+  assert('court labels do not add formal courts', (context.document.getElementById('courtRow').innerHTML.match(/data-zone-card="court/g) || []).length === 3);
+  assert('court frame reads court label', context.document.getElementById('courtRow').innerHTML.indexOf('場地 A') >= 0);
+  assert('court voice reads court label', api.courtVoiceText('court2') === '請到場地B。');
+  context.document.getElementById('court1LabelInput').value = '5';
+  context.document.getElementById('court2LabelInput').value = 'A';
+  context.document.getElementById('court3LabelInput').value = 'C';
+  api.tap('saveCourtLabelsBtn');
+  assert('admin saves court labels', api.getState().settings.courtLabels.court1 === '5' && api.getState().settings.courtLabels.court2 === 'A');
+
   api.setState(baseState([]));
   await api.setNextCount(5);
   assert('modern 3x3 next count can increase to five', api.getState().settings.nextCount3x3 === 5 && (context.document.getElementById('nextRow').innerHTML.match(/data-zone-card="next/g) || []).length === 5);
@@ -325,13 +367,13 @@ async function run() {
   ];
   api.callPlayers(['雅雯', '承昀'], 'court1');
   await wait(500);
-  assert('chinese names use zh-TW voice and final court instruction', context.__spokenUtterances.map((u) => u.lang).join(',') === 'zh-TW,zh-TW,zh-TW' && context.__spokenUtterances[2].text === '請上，一號場。');
+  assert('chinese names use zh-TW voice and final court instruction', context.__spokenUtterances.map((u) => u.lang).join(',') === 'zh-TW,zh-TW,zh-TW' && context.__spokenUtterances[2].text === '請到場地1。');
   assert('chinese names prefer exact local zh-TW voice', context.__spokenUtterances.every((u) => u.voiceName === 'Taiwan Local'));
 
   context.__spokenUtterances = [];
   api.callPlayers(['Kevin', 'Amy'], 'court2');
   await wait(500);
-  assert('english names use en-US voice and final instruction uses zh-TW', context.__spokenUtterances.map((u) => u.lang).join(',') === 'en-US,en-US,zh-TW' && context.__spokenUtterances[2].text === '請上，二號場。');
+  assert('english names use en-US voice and final instruction uses zh-TW', context.__spokenUtterances.map((u) => u.lang).join(',') === 'en-US,en-US,zh-TW' && context.__spokenUtterances[2].text === '請到場地2。');
   assert('english names prefer exact local en-US voice', context.__spokenUtterances[0].voiceName === 'US Local' && context.__spokenUtterances[1].voiceName === 'US Local');
 
   context.__spokenUtterances = [];
@@ -356,7 +398,67 @@ async function run() {
   context.__spokenUtterances = [];
   api.repeatLastCall();
   await wait(500);
-  assert('repeat last call uses bilingual sequence', context.__spokenUtterances.map((u) => u.lang).join(',') === 'zh-TW,en-US,zh-TW' && context.__spokenUtterances[2].text === '請上，二號場。');
+  assert('repeat last call uses bilingual sequence', context.__spokenUtterances.map((u) => u.lang).join(',') === 'zh-TW,en-US,zh-TW' && context.__spokenUtterances[2].text === '請到場地2。');
+
+  installFakeAudio(context);
+  context.__spokenUtterances = [];
+  context.__playedAudio = [];
+  context.__audioCreated = [];
+  context.__audioOk = {
+    './voice-poc/zh-TW-HsiaoChenNeural/ke.mp3': true,
+    './voice-poc/zh-TW-HsiaoChenNeural/go-court-1.mp3': true,
+    './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3': true,
+    './voice-poc/zh-TW-HsiaoChenNeural/ge.mp3': true,
+    './voice-poc/zh-TW-HsiaoChenNeural/jie.mp3': true,
+    './voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3': true
+  };
+  api.callPlayers(['柯'], 'court1');
+  await wait(700);
+  assert('complete fixed mp3 call uses audio first', context.__playedAudio.join('|') === './voice-poc/zh-TW-HsiaoChenNeural/ke.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-1.mp3' && context.__spokenUtterances.length === 0);
+
+  context.__spokenUtterances = [];
+  context.__playedAudio = [];
+  api.callPlayers(['Chris 哥'], 'court2');
+  await wait(900);
+  assert('english name plus ge uses english mp3 then ge mp3', context.__playedAudio.join('|') === './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3|./voice-poc/zh-TW-HsiaoChenNeural/ge.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3');
+
+  context.__spokenUtterances = [];
+  context.__playedAudio = [];
+  api.callPlayers(['Chris 姊'], 'court2');
+  await wait(900);
+  assert('english name plus jie uses english mp3 then jie mp3', context.__playedAudio.join('|') === './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3|./voice-poc/zh-TW-HsiaoChenNeural/jie.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3');
+  context.__playedAudio = [];
+  api.repeatLastCall();
+  await wait(900);
+  assert('repeat last call reuses fixed audio path', context.__playedAudio.join('|') === './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3|./voice-poc/zh-TW-HsiaoChenNeural/jie.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3');
+
+  context.__spokenUtterances = [];
+  context.__playedAudio = [];
+  api.callPlayers(['Bobo 哥'], 'court1');
+  await wait(500);
+  assert('missing english mp3 falls back to original full name', context.__spokenUtterances[0].text === 'Bobo 哥');
+
+  context.__spokenUtterances = [];
+  context.__playedAudio = [];
+  api.setState(baseState([], { courtLabels: { court1: 'A', court2: '2', court3: '3' } }));
+  api.callPlayers(['柯'], 'court1');
+  await wait(900);
+  assert('missing court phrase falls back to court label speech', context.__spokenUtterances.some((u) => u.text === '請到場地A。'));
+
+  context.__spokenUtterances = [];
+  context.__playedAudio = [];
+  context.__audioOk = {};
+  api.setState(baseState([]));
+  api.callPlayers(['柯'], 'court1');
+  await wait(900);
+  assert('audio failure falls back and does not block call', context.__spokenUtterances.some((u) => u.text === '柯') && context.__spokenUtterances.some((u) => u.text === '請到場地1。'));
+
+  context.__spokenUtterances = [];
+  api.callPlayers(['雅雯'], 'court1');
+  api.callPlayers(['Kevin'], 'court2');
+  await wait(700);
+  assert('rapid calls cancel previous speech queue', context.__speechCancelCount >= 2 && context.__spokenUtterances.some((u) => u.text === 'Kevin'));
+  delete context.Audio;
 
   context.__voices = [
     { name: 'Taiwan Auto', lang: 'zh-TW', localService: true, voiceURI: 'zh-auto' },

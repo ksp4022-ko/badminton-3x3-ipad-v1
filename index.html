@@ -221,6 +221,8 @@
     .next-count-group{margin:6px 0;}
     .next-count-group .compact-row-label{min-width:76px;}
     .next-count-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;}
+    .court-label-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;align-items:end;margin:6px 0;}
+    .court-label-grid label{font-size:13px;white-space:nowrap;}
     #adminTools .mode-row{gap:4px;}
     .help{font-size:14px;line-height:1.35;color:#64748b;font-weight:700;margin:6px 0 0;}
     .mode-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -525,6 +527,12 @@
                   <button id="nextCountMaxBtn" data-next-count-option="max">5</button>
                 </div>
               </div>
+              <div class="court-label-grid" id="courtLabelControls">
+                <label>場地1<input id="court1LabelInput" type="text" maxlength="12" /></label>
+                <label>場地2<input id="court2LabelInput" type="text" maxlength="12" /></label>
+                <label>場地3<input id="court3LabelInput" type="text" maxlength="12" /></label>
+                <button class="primary" id="saveCourtLabelsBtn">儲存場名</button>
+              </div>
               <div class="admin-button-row three">
                 <button id="randomFillBtn">隨機填滿</button>
                 <button class="primary" id="fetchRosterBtn">更新日安名單</button>
@@ -589,6 +597,7 @@
   let floatingTapHandledAt = 0;
   let floatingToggleLockedUntil = 0;
   let speechCallToken = 0;
+  let activeCallAudio = null;
   const FLOAT_DRAG_THRESHOLD = 8;
   const LEGACY_FLOAT_DRAG_THRESHOLD = 20;
   let courtHighlightZone = null;
@@ -596,6 +605,31 @@
   let panelTouch = { active:false, moved:false, x:0, y:0, blockUntil:0 };
 
   const $ = (id) => document.getElementById(id);
+  const FIXED_AUDIO_BASE = './voice-poc/';
+  const FIXED_AUDIO = {
+    zhBase:FIXED_AUDIO_BASE + 'zh-TW-HsiaoChenNeural/',
+    enBase:FIXED_AUDIO_BASE + 'en-US-AriaNeural/rate-test/',
+    names:{
+      '柯':'zh-TW-HsiaoChenNeural/ke.mp3',
+      '安鼎 哥':'zh-TW-HsiaoChenNeural/an-ding-ge.mp3',
+      '簡 哥':'zh-TW-HsiaoChenNeural/jian-ge.mp3',
+      '建志 哥':'zh-TW-HsiaoChenNeural/jian-zhi-ge.mp3',
+      '國泰 哥':'zh-TW-HsiaoChenNeural/guo-tai-ge.mp3',
+      '綿羊🐑':'zh-TW-HsiaoChenNeural/mian-yang.mp3',
+      '綿羊':'zh-TW-HsiaoChenNeural/mian-yang-no-emoji.mp3',
+      '柔伊':'zh-TW-HsiaoChenNeural/rou-yi.mp3',
+      '哥':'zh-TW-HsiaoChenNeural/ge.mp3',
+      '姊':'zh-TW-HsiaoChenNeural/jie.mp3',
+      'Chris':'en-US-AriaNeural/rate-test/chris-rate-minus20.mp3'
+    },
+    courtPhrases:{
+      '1':'zh-TW-HsiaoChenNeural/go-court-1.mp3',
+      '2':'zh-TW-HsiaoChenNeural/go-court-2.mp3',
+      '3':'zh-TW-HsiaoChenNeural/go-court-3.mp3',
+      '4':'zh-TW-HsiaoChenNeural/go-court-4.mp3'
+    },
+    nextPrepare:'zh-TW-HsiaoChenNeural/next-group-prepare.mp3'
+  };
 
   function nowIso(){ return new Date().toISOString(); }
   function pad(n){ return String(n).padStart(2,'0'); }
@@ -818,6 +852,7 @@
         nextCount:3,
         nextCount2x2:2,
         nextCount3x3:3,
+        courtLabels:{court1:'1', court2:'2', court3:'3'},
         playersPerCourt:4,
         adminPassword:'1111',
         freePlayMode:false,
@@ -865,6 +900,7 @@
     merged.settings.nextCount2x2 = normalizeNextCount(2, merged.settings.nextCount2x2 || (merged.settings.courtCount === 2 ? merged.settings.nextCount : 2));
     merged.settings.nextCount3x3 = normalizeNextCount(3, merged.settings.nextCount3x3 || (merged.settings.courtCount === 3 ? merged.settings.nextCount : 3));
     merged.settings.nextCount = activeNextCountForSettings(merged.settings);
+    merged.settings.courtLabels = normalizeCourtLabels(merged.settings.courtLabels);
     merged.settings.collapsedSections = Array.isArray(merged.settings.collapsedSections)
       ? merged.settings.collapsedSections.filter(id => DEFAULT_COLLAPSED_SECTIONS.includes(id))
       : DEFAULT_COLLAPSED_SECTIONS.slice();
@@ -902,6 +938,22 @@
 
   function validZone(zone){ return zone === 'rest' || COURTS.includes(zone) || NEXTS.includes(zone); }
   function activeCourts(){ return COURTS.slice(0, Number(state.settings.courtCount) === 2 ? 2 : 3); }
+  function normalizeCourtLabel(value, fallback){
+    const label = String(value == null ? '' : value).replace(/^\s+|\s+$/g, '');
+    return label ? label.slice(0, 12) : fallback;
+  }
+  function normalizeCourtLabels(labels){
+    labels = labels && typeof labels === 'object' ? labels : {};
+    return {
+      court1:normalizeCourtLabel(labels.court1, '1'),
+      court2:normalizeCourtLabel(labels.court2, '2'),
+      court3:normalizeCourtLabel(labels.court3, '3')
+    };
+  }
+  function courtLabel(courtZone){
+    const labels = normalizeCourtLabels(state.settings.courtLabels);
+    return labels[courtZone] || courtZone.replace('court', '');
+  }
   function normalizeNextCount(modeCount, value){
     const count = Number(value);
     const min = modeCount === 2 ? 2 : 3;
@@ -934,7 +986,7 @@
   function occupant(zone, slot){ return activePlayers().find(p => p.zone === zone && Number(p.slot) === Number(slot)) || null; }
   function zoneLabel(zone){
     if(zone === 'rest') return '休息區';
-    if(zone.startsWith('court')) return '場地 ' + zone.replace('court','');
+    if(zone.startsWith('court')) return '場地 ' + courtLabel(zone);
     if(zone.startsWith('next')) return '預備區 ' + zone.replace('next','');
     return zone;
   }
@@ -1298,6 +1350,7 @@
     if($('callEffectColorSelect')) $('callEffectColorSelect').value = state.settings.callEffectColor || 'yellow';
     if($('playerNameScaleSelect')) $('playerNameScaleSelect').value = String(state.settings.playerNameScale || 100);
     if($('playerNameFontSelect')) $('playerNameFontSelect').value = state.settings.playerNameFont || 'system';
+    renderCourtLabelControls();
     if($('courtModeStatus')) $('courtModeStatus').textContent = '場地模式';
     if($('use3x3Btn')) $('use3x3Btn').classList.toggle('active', currentMode() === '3x3');
     if($('use2x2Btn')) $('use2x2Btn').classList.toggle('active', currentMode() === '2x2');
@@ -1324,6 +1377,24 @@
       buttons[i].setAttribute('data-next-count-value', String(options[i]));
       buttons[i].classList.toggle('active', options[i] === current);
     }
+  }
+
+  function renderCourtLabelControls(){
+    const labels = normalizeCourtLabels(state.settings.courtLabels);
+    if($('court1LabelInput')) $('court1LabelInput').value = labels.court1;
+    if($('court2LabelInput')) $('court2LabelInput').value = labels.court2;
+    if($('court3LabelInput')) $('court3LabelInput').value = labels.court3;
+  }
+
+  function saveCourtLabels(){
+    state.settings.courtLabels = normalizeCourtLabels({
+      court1:$('court1LabelInput') ? $('court1LabelInput').value : '1',
+      court2:$('court2LabelInput') ? $('court2LabelInput').value : '2',
+      court3:$('court3LabelInput') ? $('court3LabelInput').value : '3'
+    });
+    saveState();
+    showToast('場地名稱已儲存');
+    render();
   }
 
   function renderColorPicker(){
@@ -1716,9 +1787,9 @@
     else showToast('已隨機填滿場地');
   }
 
-  function courtVoiceName(courtZone){
-    const map = {court1:'一號場', court2:'二號場', court3:'三號場'};
-    return map[courtZone] || '';
+  function courtVoiceText(courtZone){
+    if(!courtZone) return '請上場。';
+    return '請到場地' + courtLabel(courtZone) + '。';
   }
 
   function detectNameLanguage(name){
@@ -1820,6 +1891,116 @@
     return utter;
   }
 
+  function fixedAudioUrl(path){
+    return path ? FIXED_AUDIO_BASE + path : '';
+  }
+
+  function fixedNameAudioParts(name){
+    const raw = String(name || '').replace(/^\s+|\s+$/g, '');
+    if(!raw) return [];
+    if(FIXED_AUDIO.names[raw]) return [fixedAudioUrl(FIXED_AUDIO.names[raw])];
+    const suffixMatch = raw.match(/^(.+?)\s*(哥|姊)$/);
+    if(suffixMatch && detectNameLanguage(suffixMatch[1]) === 'en-US'){
+      const basePath = FIXED_AUDIO.names[suffixMatch[1].replace(/^\s+|\s+$/g, '')];
+      const suffixPath = FIXED_AUDIO.names[suffixMatch[2]];
+      if(basePath && suffixPath) return [fixedAudioUrl(basePath), fixedAudioUrl(suffixPath)];
+    }
+    return [];
+  }
+
+  function fixedCourtAudioParts(courtZone){
+    if(!courtZone) return [];
+    const path = FIXED_AUDIO.courtPhrases[courtLabel(courtZone)];
+    return path ? [fixedAudioUrl(path)] : [];
+  }
+
+  function callSequenceParts(names, courtZone){
+    const parts = names.map(function(name){
+      const text = String(name || '').replace(/^\s+|\s+$/g, '');
+      return {text:text, lang:detectNameLanguage(text), audio:fixedNameAudioParts(text)};
+    }).filter(function(part){ return part.text; });
+    parts.push({text:courtVoiceText(courtZone), lang:'zh-TW', audio:fixedCourtAudioParts(courtZone)});
+    return parts;
+  }
+
+  function stopCurrentCallAudio(){
+    if(activeCallAudio){
+      try{ activeCallAudio.pause(); }catch(err){}
+      try{ activeCallAudio.src = ''; }catch(err){}
+      activeCallAudio = null;
+    }
+  }
+
+  function playAudioUrl(url, token, done){
+    if(!url || typeof Audio === 'undefined'){ done(false); return; }
+    let audio;
+    let finished = false;
+    let timer = null;
+    function finish(ok){
+      if(finished) return;
+      finished = true;
+      if(timer) clearTimeout(timer);
+      if(activeCallAudio === audio) activeCallAudio = null;
+      done(!!ok);
+    }
+    try{
+      audio = new Audio(url);
+      activeCallAudio = audio;
+      audio.preload = 'auto';
+      audio.onended = function(){ finish(true); };
+      audio.onerror = function(){ finish(false); };
+      const played = audio.play();
+      if(played && played.catch) played.catch(function(){ finish(false); });
+      timer = setTimeout(function(){ finish(false); }, 2200);
+    }catch(err){
+      finish(false);
+    }
+  }
+
+  function speakTextPart(part, token, done){
+    const synth = window.speechSynthesis;
+    if(!synth || !synth.speak || typeof SpeechSynthesisUtterance === 'undefined'){ done(); return; }
+    let utter;
+    try{
+      utter = createCallUtterance(part.text, part.lang);
+    }catch(err){
+      console.error(err);
+      done();
+      return;
+    }
+    let finished = false;
+    let fallbackTimer = null;
+    const next = function(){
+      if(finished) return;
+      finished = true;
+      if(fallbackTimer) clearTimeout(fallbackTimer);
+      done();
+    };
+    utter.onend = next;
+    utter.onerror = next;
+    try{
+      synth.speak(utter);
+      fallbackTimer = setTimeout(next, 1500);
+    }catch(err){
+      console.error(err);
+      next();
+    }
+  }
+
+  function playAudioParts(urls, token, done){
+    let index = 0;
+    function next(){
+      if(token !== speechCallToken){ done(false); return; }
+      if(index >= urls.length){ done(true); return; }
+      playAudioUrl(urls[index], token, function(ok){
+        if(!ok){ done(false); return; }
+        index += 1;
+        setTimeout(next, 55);
+      });
+    }
+    next();
+  }
+
   function populateVoiceSelect(selectId, selectedId, filterFn){
     const select = $(selectId);
     if(!select) return;
@@ -1841,44 +2022,28 @@
   }
 
   function speakCallSequence(names, courtZone){
-    const synth = window.speechSynthesis;
-    if(!synth || !synth.speak || typeof SpeechSynthesisUtterance === 'undefined') return;
     const token = ++speechCallToken;
-    const courtName = courtVoiceName(courtZone);
-    const parts = names.map(function(name){
-      return {text:String(name || ''), lang:detectNameLanguage(name)};
-    }).filter(function(part){ return part.text.trim(); });
-    parts.push({text:courtName ? '請上，' + courtName + '。' : '請上場。', lang:'zh-TW'});
+    const synth = window.speechSynthesis;
+    const parts = callSequenceParts(names, courtZone);
+    stopCurrentCallAudio();
     try{
       if(synth.cancel) synth.cancel();
     }catch(err){}
     function speakNext(index){
       if(token !== speechCallToken || index >= parts.length) return;
-      let utter;
-      try{
-        utter = createCallUtterance(parts[index].text, parts[index].lang);
-      }catch(err){
-        console.error(err);
-        return;
-      }
-      let finished = false;
-      let fallbackTimer = null;
+      const part = parts[index];
       const next = function(){
-        if(finished) return;
-        finished = true;
-        if(fallbackTimer) clearTimeout(fallbackTimer);
         if(token !== speechCallToken) return;
         setTimeout(function(){ speakNext(index + 1); }, 110);
       };
-      utter.onend = next;
-      utter.onerror = next;
-      try{
-        synth.speak(utter);
-        fallbackTimer = setTimeout(next, 1500);
-      }catch(err){
-        console.error(err);
-        next();
+      if(part.audio && part.audio.length){
+        playAudioParts(part.audio, token, function(ok){
+          if(ok) next();
+          else speakTextPart(part, token, next);
+        });
+        return;
       }
+      speakTextPart(part, token, next);
     }
     speakNext(0);
   }
@@ -2800,6 +2965,7 @@
     tap('nextCountMinBtn', () => setNextCount(Number(dataAttr($('nextCountMinBtn'), 'next-count-value'))));
     tap('nextCountMidBtn', () => setNextCount(Number(dataAttr($('nextCountMidBtn'), 'next-count-value'))));
     tap('nextCountMaxBtn', () => setNextCount(Number(dataAttr($('nextCountMaxBtn'), 'next-count-value'))));
+    tap('saveCourtLabelsBtn', saveCourtLabels);
     tap('exportBackupBtn', exportJson);
     tap('exportLogBtn', exportLogCsv);
     tap('importBackupBtn', showImportPasteDialog);
@@ -2894,6 +3060,9 @@
       callPlayers:callPlayers,
       repeatLastCall:repeatLastCall,
       detectNameLanguage:detectNameLanguage,
+      courtLabel:courtLabel,
+      courtVoiceText:courtVoiceText,
+      callSequenceParts:callSequenceParts,
       populateVoiceSelects:populateVoiceSelects
     };
   }
