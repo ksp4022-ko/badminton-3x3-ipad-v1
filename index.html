@@ -115,6 +115,11 @@
     .zone-row.next-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:3px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
     .zone-row.next-scroll .zone-card{min-width:0;}
     .zone-card{background:rgba(255,255,255,.96);border:1px solid #bae6fd;border-radius:var(--radius);box-shadow:0 10px 22px rgba(15,23,42,.1);padding:8px;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+    .rest-board-card{background:rgba(248,250,252,.98);border-color:#cbd5e1;}
+    .rest-board-card .zone-head{background:linear-gradient(135deg,#334155,#64748b);border-color:#cbd5e1;}
+    .rest-board-grid{flex:1 1 auto;display:grid;grid-template-rows:repeat(2,minmax(0,1fr));grid-auto-flow:column;grid-auto-columns:minmax(145px,1fr);gap:8px;min-height:0;overflow:hidden;}
+    .rest-board-empty{grid-column:1 / -1;grid-row:1 / -1;border:2px dashed #94a3b8;border-radius:16px;background:#f8fafc;color:#94a3b8;font-weight:900;font-size:clamp(14px,1.5vw,20px);display:flex;align-items:center;justify-content:center;text-align:center;}
+    html.legacyIpad .rest-board-card{display:none;}
     .zone-card.call-target{animation:courtCallPulse 1.6s ease-in-out 0s 2;border-color:var(--call-border,#facc15);box-shadow:0 0 0 var(--call-ring,4px) var(--call-soft,rgba(250,204,21,.45)),0 10px 22px rgba(15,23,42,.16);}
     .zone-card.call-target .zone-head{box-shadow:inset 0 0 0 3px rgba(255,255,255,.85);}
     .zone-card.call-yellow{--call-border:#facc15;--call-soft:rgba(250,204,21,.45);--call-strong:rgba(250,204,21,.75);}
@@ -275,6 +280,7 @@
       html:not(.legacyIpad) .player-chip{min-height:0;border-width:2px;border-radius:11px;padding:4px 5px 3px;}
       html:not(.legacyIpad) .player-chip .games{min-width:28px;height:26px;font-size:17px;top:3px;left:4px;}
       html:not(.legacyIpad) .slot.empty::after{font-size:14px;}
+      html:not(.legacyIpad) .rest-board-grid{gap:4px;grid-auto-columns:minmax(145px,1fr);}
     }
     @media (orientation:landscape){
       html.modernIpad .float-panel,html.modernDesktop .float-panel{left:auto;right:0;top:0;bottom:0;width:min(430px,42vw);height:100vh;height:var(--safe-vh);max-height:var(--safe-vh);border-left:1px solid var(--line);border-radius:18px 0 0 18px;}
@@ -373,7 +379,7 @@
       <button class="small close-strong" id="closePanelBtn">×</button>
     </div>
     <div class="panel-body" id="panelBody">
-      <div class="quick-grid">
+      <div class="quick-grid" id="quickMoveGrid">
         <button class="warn wide-action" id="moveRestBtn">回到休息區</button>
       </div>
 
@@ -1151,16 +1157,22 @@
     $('courtRow').classList.toggle('mode-2', activeCourts().length === 2);
     const nexts = activeNexts();
     const nextCount = nexts.length;
+    const showBoardRest = !isLegacyIpadRuntime();
+    const restColumns = Math.max(1, Math.ceil(restPlayers().length / 2));
+    const restMinWidth = showBoardRest ? Math.max(300, restColumns * 155) : 0;
     $('nextRow').classList.toggle('mode-2', nextCount === 2);
-    $('nextRow').classList.toggle('next-scroll', !isLegacyIpadRuntime() && nextCount > activeCourts().length);
-    if(!isLegacyIpadRuntime() && nextCount > activeCourts().length){
+    $('nextRow').classList.toggle('next-scroll', showBoardRest || (!isLegacyIpadRuntime() && nextCount > activeCourts().length));
+    if(showBoardRest){
+      const minWidth = currentMode() === '2x2' ? 310 : 300;
+      $('nextRow').style.gridTemplateColumns = 'repeat(' + nextCount + ', minmax(' + minWidth + 'px, 1fr)) minmax(' + restMinWidth + 'px, ' + restMinWidth + 'px)';
+    }else if(!isLegacyIpadRuntime() && nextCount > activeCourts().length){
       const minWidth = currentMode() === '2x2' ? 310 : 300;
       $('nextRow').style.gridTemplateColumns = 'repeat(' + nextCount + ', minmax(' + minWidth + 'px, 1fr))';
     }else{
       $('nextRow').style.gridTemplateColumns = '';
     }
     $('courtRow').innerHTML = activeCourts().map(z => renderZoneCard(z, true)).join('');
-    $('nextRow').innerHTML = nexts.map(z => renderZoneCard(z, false)).join('');
+    $('nextRow').innerHTML = nexts.map(z => renderZoneCard(z, false)).join('') + (showBoardRest ? renderRestBoardCard(restMinWidth) : '');
   }
 
   function renderZoneCard(zone, isCourt){
@@ -1180,6 +1192,14 @@
       ? `<div class="call-marquee"><span>${title}</span></div>`
       : `<div class="zone-title">${title}</div>${isCourt ? '<div class="court-down-pill">下場 <span class="arrow">↓</span></div>' : '<div></div>'}`;
     return `<div class="zone-card${highlightClass}" data-zone-card="${zone}"><button class="zone-head ${actionClass}" ${actionData} type="button">${titleHtml}<div class="zone-count">${players.length}/4</div></button><div class="slot-grid">${slots}</div></div>`;
+  }
+
+  function renderRestBoardCard(minWidth){
+    const players = restPlayers();
+    const content = players.length
+      ? players.map(function(p){ return '<div class="rest-board-player">' + playerChipHtml(p) + '</div>'; }).join('')
+      : '<div class="rest-board-empty">休息區目前沒有人</div>';
+    return '<div class="zone-card rest-board-card rest-board-drop" data-zone-card="rest" data-rest-target="rest" style="min-width:' + Number(minWidth || 300) + 'px"><button class="zone-head rest-board-drop" data-rest-target="rest" type="button"><div class="zone-title">休息區</div><div class="zone-count">' + players.length + '人</div></button><div class="rest-board-grid">' + content + '</div></div>';
   }
 
   function callEffectColorClass(){
@@ -1210,15 +1230,18 @@
   function renderPanel(){
     const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
     const hint = $('panelHint');
+    const legacy = isLegacyIpadRuntime();
     if(p){
       hint.textContent = p.zone === 'rest'
         ? `已選取：${p.name}。請點選 Court / Next 空格放入。`
-        : `已選取：${p.name}。可按「回到休息區」或點其他格交換。`;
-      $('moveRestBtn').style.display = p.zone === 'rest' ? 'none' : '';
+        : legacy ? `已選取：${p.name}。可按「回到休息區」或點其他格交換。` : `已選取：${p.name}。可點主畫面休息區或其他格移動。`;
+      $('moveRestBtn').style.display = legacy && p.zone !== 'rest' ? '' : 'none';
     }else{
-      hint.textContent = '未選取球員。可從場地或休息區點選人名。';
+      hint.textContent = legacy ? '未選取球員。可從場地或休息區點選人名。' : '未選取球員。可從主畫面場地、預備區或休息區點選人名。';
       $('moveRestBtn').style.display = 'none';
     }
+    $('quickMoveGrid').style.display = legacy && p && p.zone !== 'rest' ? '' : 'none';
+    $('restSection').style.display = legacy ? '' : 'none';
     $('panelTitle').innerHTML = isAdmin ? `羽球排場 ${currentMode()} <span class="version-inline">| V ${APP_VERSION}</span>` : '管理員工具';
     renderRestList();
     renderAdminUi();
@@ -2613,6 +2636,25 @@
       await nextUp(dataAttr(zoneHead, 'next'));
       return true;
     }
+    if(zoneHead && dataAttr(zoneHead, 'rest-target')){
+      if(e.cancelable) e.preventDefault();
+      e.stopPropagation();
+      if(!selectedPlayer){
+        showToast('請先點選球員');
+        return true;
+      }
+      const moved = movePlayer(selectedPlayer.playerId, 'rest', null);
+      if(moved){
+        debugLog('rest head move success', selectedPlayer.playerId + ' -> rest');
+        setSelectedPlayer(null);
+        showToast('已回到休息區');
+        render();
+      }else{
+        debugLog('rest head move fail', selectedPlayer.playerId + ' -> rest');
+        showToast('移動失敗');
+      }
+      return true;
+    }
 
     const slot = closestByClass(e.target, 'slot');
     if(slot){
@@ -2648,9 +2690,30 @@
     if(chip){
       if(e.cancelable) e.preventDefault();
       e.stopPropagation();
-      const inRest = !!closestById(chip, 'restList');
+      const inRest = !!closestById(chip, 'restList') || !!closestByClass(chip, 'rest-board-card');
       debugLog(inRest ? 'chip rest select' : 'chip board select', dataAttr(chip, 'player-id'));
-      selectPlayer(dataAttr(chip, 'player-id'), {closePanelAfterSelect:inRest});
+      selectPlayer(dataAttr(chip, 'player-id'), {closePanelAfterSelect:!!closestById(chip, 'restList')});
+      return true;
+    }
+
+    const restTarget = closestByClass(e.target, 'rest-board-drop');
+    if(restTarget){
+      if(e.cancelable) e.preventDefault();
+      e.stopPropagation();
+      if(!selectedPlayer){
+        showToast('請先點選球員');
+        return true;
+      }
+      const moved = movePlayer(selectedPlayer.playerId, 'rest', null);
+      if(moved){
+        debugLog('rest card move success', selectedPlayer.playerId + ' -> rest');
+        setSelectedPlayer(null);
+        showToast('已回到休息區');
+        render();
+      }else{
+        debugLog('rest card move fail', selectedPlayer.playerId + ' -> rest');
+        showToast('移動失敗');
+      }
       return true;
     }
     return false;
@@ -2658,7 +2721,7 @@
 
   function bindEvents(){
     function isBoardTarget(target){
-      return !!(closestByClass(target, 'zone-head') || closestByClass(target, 'slot') || closestByClass(target, 'player-chip'));
+      return !!(closestByClass(target, 'zone-head') || closestByClass(target, 'slot') || closestByClass(target, 'player-chip') || closestByClass(target, 'rest-board-drop'));
     }
     function runBoardInteraction(e){
       if(e.type === 'touchend' && isBoardTarget(e.target)){

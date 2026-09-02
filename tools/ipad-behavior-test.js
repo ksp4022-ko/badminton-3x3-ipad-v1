@@ -293,12 +293,13 @@ async function run() {
 
   api.setState(baseState([]));
   await api.setNextCount(5);
-  assert('modern 3x3 next count can increase to five', api.getState().settings.nextCount3x3 === 5 && (context.document.getElementById('nextRow').innerHTML.match(/data-zone-card=/g) || []).length === 5);
+  assert('modern 3x3 next count can increase to five', api.getState().settings.nextCount3x3 === 5 && (context.document.getElementById('nextRow').innerHTML.match(/data-zone-card="next/g) || []).length === 5);
+  assert('modern board shows rest area after next zones', (context.document.getElementById('nextRow').innerHTML.match(/data-zone-card="rest"/g) || []).length === 1);
   await api.setCourtMode(2);
   await api.setNextCount(4);
-  assert('modern 2x2 next count can increase to four', api.getState().settings.nextCount2x2 === 4 && (context.document.getElementById('nextRow').innerHTML.match(/data-zone-card=/g) || []).length === 4);
+  assert('modern 2x2 next count can increase to four', api.getState().settings.nextCount2x2 === 4 && (context.document.getElementById('nextRow').innerHTML.match(/data-zone-card="next/g) || []).length === 4);
   await api.setCourtMode(3);
-  assert('next count is remembered separately per mode', api.getState().settings.nextCount3x3 === 5 && (context.document.getElementById('nextRow').innerHTML.match(/data-zone-card=/g) || []).length === 5);
+  assert('next count is remembered separately per mode', api.getState().settings.nextCount3x3 === 5 && (context.document.getElementById('nextRow').innerHTML.match(/data-zone-card="next/g) || []).length === 5);
 
   api.setState(baseState([player('busy1', 'Busy', 'court1', 1)], { nextCount3x3: 3 }));
   const blockedNextCount = api.setNextCount(5);
@@ -495,6 +496,11 @@ async function run() {
   await api.handleBoardInteraction(eventFor(targetSlot));
   assert('selected board player moves to tapped empty slot', api.getState().players[0].zone === 'court2' && api.getState().players[0].slot === 1);
   assert('selected player cleared from session storage after move', !context.sessionStorage.getItem('badminton3x3.ipad.v1.state.selectedPlayer'));
+  await api.handleBoardInteraction(eventFor(sourceChip));
+  const restDrop = new FakeElement('div');
+  restDrop.classList.add('rest-board-drop');
+  await api.handleBoardInteraction(eventFor(restDrop));
+  assert('selected board player moves to board rest area', api.getState().players[0].zone === 'rest' && api.getState().players[0].slot === null);
 
   api.setState(baseState([
     player('p1', 'A', 'court1', 1, 5),
