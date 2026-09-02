@@ -300,6 +300,8 @@ async function run() {
   assert('modern 2x2 next count can increase to four', api.getState().settings.nextCount2x2 === 4 && (context.document.getElementById('nextRow').innerHTML.match(/data-zone-card="next/g) || []).length === 4);
   await api.setCourtMode(3);
   assert('next count is remembered separately per mode', api.getState().settings.nextCount3x3 === 5 && (context.document.getElementById('nextRow').innerHTML.match(/data-zone-card="next/g) || []).length === 5);
+  api.setState(baseState([player('rest1', '休息A', 'rest', null), player('rest2', '休息B', 'rest', null)]));
+  assert('modern board rest area reserves drop spaces', (context.document.getElementById('nextRow').innerHTML.match(/rest-board-space/g) || []).length === 2);
 
   api.setState(baseState([player('busy1', 'Busy', 'court1', 1)], { nextCount3x3: 3 }));
   const blockedNextCount = api.setNextCount(5);
