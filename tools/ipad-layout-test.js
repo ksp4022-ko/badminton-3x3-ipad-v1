@@ -18,6 +18,7 @@ assert('legacy height uses window.innerHeight first', html.includes('var height 
 assert('legacy height writes css variable', html.includes("style.setProperty('--legacy-vh'"));
 assert('legacy safari class is separate from standalone', html.includes("classList.toggle('legacyIpadSafari', isLegacy && !isStandalone)"));
 assert('legacy standalone class exists', html.includes("classList.toggle('legacyIpadStandalone', isLegacy && isStandalone)"));
+assert('modern device layout classes exist', html.includes("classList.toggle('modernIpad'") && html.includes("classList.toggle('modernDesktop'"));
 assert('legacy app shell uses measured height', cssRuleIncludes('html.legacyIpad .app-shell', 'height:var(--legacy-vh)'));
 assert('legacy body is locked to measured height', cssRuleIncludes('html.legacyIpad body', 'max-height:var(--legacy-vh)'));
 assert('legacy landscape keeps two rows compressible', cssRuleIncludes('html.legacyIpadLandscape .app-shell', 'grid-template-rows:minmax(0,1fr) minmax(0,1fr)'));
@@ -29,6 +30,9 @@ assert('legacy safari landscape keeps enlarged title buttons', cssRuleIncludes('
 assert('legacy landscape game badge is enlarged', cssRuleIncludes('html.legacyIpadLandscape .player-chip .games', 'height:38px'));
 assert('legacy standalone avoids status bar', cssRuleIncludes('html.legacyIpadStandalone.legacyIpadLandscape .app-shell', 'padding-top:26px'));
 assert('legacy panel opens fullscreen', cssRuleIncludes('html.legacyIpadLandscape .float-panel', 'top:0') && cssRuleIncludes('html.legacyIpadLandscape .float-panel', 'height:var(--legacy-vh)') && cssRuleIncludes('html.legacyIpadLandscape .float-panel', 'bottom:0'));
+assert('modern cards clip overflowing content', html.includes('.zone-card{background:rgba(255,255,255,.96)') && html.includes('display:flex;flex-direction:column;overflow:hidden;}'));
+assert('modern short landscape removes slot min height', html.includes('@media (orientation:landscape) and (max-height:560px)') && html.includes('html:not(.legacyIpad) .slot{min-height:0'));
+assert('modern tablet desktop panel uses side drawer', html.includes('html.modernIpad .float-panel,html.modernDesktop .float-panel') && html.includes('width:min(430px,42vw)'));
 assert('player name auto fit exists', html.includes('function fitPlayerNameText') && html.includes('function fitOnePlayerName') && html.includes('scheduleFitPlayerNames()'));
 assert('player name fit cache exists', html.includes('const playerNameFitCache') && html.includes('function playerNameFitKey'));
 assert('legacy court down pill stays wide', cssRuleIncludes('html.legacyIpadLandscape .court-down-pill', 'min-width:136px'));

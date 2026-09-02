@@ -39,10 +39,15 @@
         var isLegacy = !!window.__legacyIpad;
         var isLandscape = isLegacy && legacyIpadIsLandscape();
         var isStandalone = !!window.navigator.standalone;
+        var ua = navigator.userAgent || '';
+        var isIpad = /iPad/i.test(ua) || ((navigator.platform || '') === 'MacIntel' && Number(navigator.maxTouchPoints || 0) > 1);
+        var isPhone = /iPhone|iPod|Android.*Mobile/i.test(ua);
         document.documentElement.classList.toggle('legacyIpad', isLegacy);
         document.documentElement.classList.toggle('legacyIpadLandscape', isLandscape);
         document.documentElement.classList.toggle('legacyIpadSafari', isLegacy && !isStandalone);
         document.documentElement.classList.toggle('legacyIpadStandalone', isLegacy && isStandalone);
+        document.documentElement.classList.toggle('modernIpad', !isLegacy && isIpad);
+        document.documentElement.classList.toggle('modernDesktop', !isLegacy && !isIpad && !isPhone);
         if(isLegacy){
           document.documentElement.style.setProperty('--legacy-vh', measuredLegacyViewportHeight() + 'px');
         }
@@ -109,7 +114,7 @@
     .zone-row.mode-2{grid-template-columns:repeat(2,minmax(0,1fr));}
     .zone-row.next-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:3px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
     .zone-row.next-scroll .zone-card{min-width:0;}
-    .zone-card{background:rgba(255,255,255,.96);border:1px solid #bae6fd;border-radius:var(--radius);box-shadow:0 10px 22px rgba(15,23,42,.1);padding:8px;min-width:0;min-height:0;display:flex;flex-direction:column;}
+    .zone-card{background:rgba(255,255,255,.96);border:1px solid #bae6fd;border-radius:var(--radius);box-shadow:0 10px 22px rgba(15,23,42,.1);padding:8px;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
     .zone-card.call-target{animation:courtCallPulse 1.6s ease-in-out 0s 2;border-color:var(--call-border,#facc15);box-shadow:0 0 0 var(--call-ring,4px) var(--call-soft,rgba(250,204,21,.45)),0 10px 22px rgba(15,23,42,.16);}
     .zone-card.call-target .zone-head{box-shadow:inset 0 0 0 3px rgba(255,255,255,.85);}
     .zone-card.call-yellow{--call-border:#facc15;--call-soft:rgba(250,204,21,.45);--call-strong:rgba(250,204,21,.75);}
@@ -254,6 +259,22 @@
       .floating-button{width:56px;height:56px;font-size:24px;}
       .float-panel{left:0;right:0;top:0;bottom:0;width:100vw;height:100vh;height:var(--safe-vh);max-height:var(--safe-vh);border-radius:0;}
       .panel-body{padding-bottom:calc(16px + var(--safe-bottom));}
+    }
+    @media (orientation:landscape) and (max-height:560px){
+      html:not(.legacyIpad) .app-shell{padding:4px max(6px,var(--safe-right)) calc(6px + var(--safe-bottom)) max(6px,var(--safe-left));gap:4px;}
+      html:not(.legacyIpad) .zone-row{gap:5px;}
+      html:not(.legacyIpad) .zone-card{padding:5px;border-radius:13px;}
+      html:not(.legacyIpad) .zone-head{min-height:42px;margin-bottom:4px;padding:6px 8px;border-radius:11px;}
+      html:not(.legacyIpad) .slot-grid{gap:4px;min-height:0;}
+      html:not(.legacyIpad) .slot{min-height:0;border-radius:11px;}
+      html:not(.legacyIpad) .player-chip{min-height:0;border-width:2px;border-radius:11px;padding:4px 5px 3px;}
+      html:not(.legacyIpad) .player-chip .games{min-width:28px;height:26px;font-size:17px;top:3px;left:4px;}
+      html:not(.legacyIpad) .slot.empty::after{font-size:14px;}
+    }
+    @media (orientation:landscape){
+      html.modernIpad .float-panel,html.modernDesktop .float-panel{left:auto;right:0;top:0;bottom:0;width:min(430px,42vw);height:100vh;height:var(--safe-vh);max-height:var(--safe-vh);border-left:1px solid var(--line);border-radius:18px 0 0 18px;}
+      html.modernIpad .panel-title,html.modernDesktop .panel-title{font-size:20px;}
+      html.modernIpad .panel-body,html.modernDesktop .panel-body{padding:10px;}
     }
     @media (max-width:700px){
       .voice-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
@@ -1088,10 +1109,15 @@
       return;
     }
     const scale = playerNameScale() / 100;
+    const legacy = document.documentElement.classList.contains('legacyIpad');
     let maxSize = Math.round((text.length <= 2 ? 44 : (text.length <= 4 ? 42 : 40)) * scale);
     let minSize = Math.max(14, Math.round(20 * scale));
-    if(document.documentElement.classList.contains('legacyIpad')){
+    if(legacy){
       minSize = Math.max(18, Math.round(22 * scale));
+    }else{
+      const heightCap = Math.max(20, Math.round(chipHeight * 0.48));
+      maxSize = Math.min(maxSize, heightCap);
+      minSize = Math.min(minSize, Math.max(14, heightCap - 8));
     }
     nameEl.style.fontSize = maxSize + 'px';
     nameEl.style.lineHeight = '1.05';
