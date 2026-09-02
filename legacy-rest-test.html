@@ -1,0 +1,2924 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f766e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="羽球排場" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Legacy iPad 休息區測試</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <script>
+    (function(){
+      function detectLegacyIpad(){
+        var ua = navigator.userAgent || '';
+        var match = ua.match(/OS (\d+)[_.]/);
+        var major = match ? Number(match[1]) : 0;
+        return /iPad/i.test(ua) && major > 0 && major <= 12;
+      }
+      function legacyIpadIsLandscape(){
+        if(window.orientation === 90 || window.orientation === -90) return true;
+        var doc = document.documentElement || {};
+        var cw = doc.clientWidth || 0;
+        var ch = doc.clientHeight || 0;
+        var iw = window.innerWidth || 0;
+        var ih = window.innerHeight || 0;
+        if(cw && ch && cw > ch) return true;
+        if(iw && ih && iw > ih) return true;
+        return false;
+      }
+      function measuredLegacyViewportHeight(){
+        var doc = document.documentElement || {};
+        var height = window.innerHeight || doc.clientHeight || 0;
+        if(!height) height = 600;
+        return Math.max(320, Math.floor(height - 2));
+      }
+      function updateLegacyIpadClass(){
+        var isLegacy = !!window.__legacyIpad;
+        var isLandscape = isLegacy && legacyIpadIsLandscape();
+        var isStandalone = !!window.navigator.standalone;
+        var ua = navigator.userAgent || '';
+        var isIpad = /iPad/i.test(ua) || ((navigator.platform || '') === 'MacIntel' && Number(navigator.maxTouchPoints || 0) > 1);
+        var isPhone = /iPhone|iPod|Android.*Mobile/i.test(ua);
+        document.documentElement.classList.add('legacyRestTest');
+        document.documentElement.classList.toggle('legacyIpad', isLegacy);
+        document.documentElement.classList.toggle('legacyIpadLandscape', isLandscape);
+        document.documentElement.classList.toggle('legacyIpadSafari', isLegacy && !isStandalone);
+        document.documentElement.classList.toggle('legacyIpadStandalone', isLegacy && isStandalone);
+        document.documentElement.classList.toggle('modernIpad', !isLegacy && isIpad);
+        document.documentElement.classList.toggle('modernDesktop', !isLegacy && !isIpad && !isPhone);
+        if(isLegacy){
+          document.documentElement.style.setProperty('--legacy-vh', measuredLegacyViewportHeight() + 'px');
+        }
+      }
+      window.__legacyIpad = detectLegacyIpad();
+      window.__updateLegacyIpadClass = updateLegacyIpadClass;
+      updateLegacyIpadClass();
+      window.addEventListener('resize', updateLegacyIpadClass);
+      window.addEventListener('orientationchange', function(){ setTimeout(updateLegacyIpadClass, 260); });
+    })();
+  </script>
+  <style>
+    :root{
+      --safe-vh:100dvh;
+      --safe-top:env(safe-area-inset-top,0px);
+      --safe-right:env(safe-area-inset-right,0px);
+      --bg:#ecfeff;
+      --panel:#ffffff;
+      --ink:#0f172a;
+      --muted:#475569;
+      --line:#cbd5e1;
+      --brand:#0f766e;
+      --brand2:#14b8a6;
+      --danger:#dc2626;
+      --warn:#f59e0b;
+      --ok:#16a34a;
+      --chip:#fef3c7;
+      --shadow:0 12px 32px rgba(15,23,42,.18);
+      --radius:18px;
+      --safe-bottom:env(safe-area-inset-bottom,0px);
+      --safe-left:env(safe-area-inset-left,0px);
+      --legacy-vh:100vh;
+    }
+    @supports not (height:100dvh){:root{--safe-vh:100vh;}}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;}
+    body{min-height:100vh;min-height:var(--safe-vh);touch-action:manipulation;-webkit-text-size-adjust:100%;}
+    button,input,select{font:inherit}
+    button{cursor:pointer;border:0;border-radius:14px;min-height:48px;font-weight:800;background:#e2e8f0;color:#0f172a;padding:10px 14px;}
+    button:active{transform:translateY(1px)}
+    button.primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff}
+    button.danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+    button.warn{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+    button.ghost{background:#f8fafc;border:1px solid var(--line)}
+    button.small{min-height:40px;padding:8px 10px;font-size:16px;border-radius:12px}
+    button.cancel-select-strong{background:#dc2626;color:#fff;border:2px solid #991b1b;}
+    input,select{width:100%;min-height:48px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:#fff;color:var(--ink);font-size:18px;}
+    label{font-weight:800;font-size:16px;color:#334155;display:block;margin:6px 0 4px}
+    .app-shell{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;width:100vw;height:var(--safe-vh);max-height:var(--safe-vh);max-width:1366px;margin:0 auto;padding:8px max(12px,var(--safe-right)) calc(12px + var(--safe-bottom)) max(12px,var(--safe-left));display:grid;grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:8px;overflow:hidden;}
+    .app-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px 10px;position:sticky;top:0;background:linear-gradient(180deg,rgba(236,254,255,.98),rgba(236,254,255,.86));z-index:10;backdrop-filter:blur(8px)}
+    .title-wrap{display:flex;align-items:baseline;gap:10px;min-width:0;}
+    .app-title{font-size:clamp(23px,2.4vw,34px);font-weight:950;letter-spacing:.02em;white-space:nowrap;}
+    .version{font-size:clamp(15px,1.4vw,20px);font-weight:900;color:#0f766e;white-space:nowrap;}
+    .status-line{font-size:clamp(14px,1.2vw,18px);font-weight:800;color:#475569;text-align:right;}
+    .selected-banner{display:none;position:fixed;left:12px;right:12px;top:max(8px,env(safe-area-inset-top,0px));align-items:center;justify-content:space-between;gap:12px;min-height:64px;padding:9px 12px;border:3px solid #facc15;background:linear-gradient(135deg,#172554,#1e3a8a);color:#fff;border-radius:16px;font-size:22px;font-weight:1000;box-shadow:0 10px 24px rgba(15,23,42,.26);z-index:48;backdrop-filter:blur(8px)}
+    .selected-banner.show{display:flex}
+    .selected-banner #selectedText{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff;line-height:1.12;}
+    .selected-banner .selected-name{color:#fde047;font-size:1.16em;font-weight:1000;}
+    .selected-banner button{flex:0 0 auto;min-width:132px;min-height:48px;font-size:20px;border-radius:14px;}
+    .app-header,.section-title{display:none;}
+    .board-section{margin:0;min-width:0;min-height:0;}
+    .section-title{display:none;}
+    .zone-row{height:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;min-width:0;min-height:0;}
+    .zone-row.mode-2{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .zone-row.next-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:3px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
+    .zone-row.next-scroll .zone-card{min-width:0;}
+    .zone-card{background:rgba(255,255,255,.96);border:1px solid #bae6fd;border-radius:var(--radius);box-shadow:0 10px 22px rgba(15,23,42,.1);padding:8px;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+    .rest-board-card{background:rgba(248,250,252,.98);border-color:#cbd5e1;}
+    .rest-board-card .zone-head{background:linear-gradient(135deg,#334155,#64748b);border-color:#cbd5e1;}
+    .rest-board-grid{flex:1 1 auto;display:grid;grid-template-rows:repeat(2,minmax(0,1fr));grid-auto-flow:column;grid-auto-columns:minmax(145px,1fr);gap:8px;min-height:0;overflow:hidden;}
+    .rest-board-empty{grid-column:1 / -1;grid-row:1 / -1;border:2px dashed #94a3b8;border-radius:16px;background:#f8fafc;color:#94a3b8;font-weight:900;font-size:clamp(14px,1.5vw,20px);display:flex;align-items:center;justify-content:center;text-align:center;}
+    .rest-board-space{border:2px dashed #94a3b8;border-radius:16px;background:#f8fafc;color:#94a3b8;font-weight:900;font-size:clamp(14px,1.5vw,20px);display:flex;align-items:center;justify-content:center;text-align:center;min-height:0;}
+    html.legacyIpad .rest-board-card{display:none;}
+    html.legacyRestTest.legacyIpad .rest-board-card{display:grid;}
+    .zone-card.call-target{animation:courtCallPulse 1.6s ease-in-out 0s 2;border-color:var(--call-border,#facc15);box-shadow:0 0 0 var(--call-ring,4px) var(--call-soft,rgba(250,204,21,.45)),0 10px 22px rgba(15,23,42,.16);}
+    .zone-card.call-target .zone-head{box-shadow:inset 0 0 0 3px rgba(255,255,255,.85);}
+    .zone-card.call-yellow{--call-border:#facc15;--call-soft:rgba(250,204,21,.45);--call-strong:rgba(250,204,21,.75);}
+    .zone-card.call-green{--call-border:#22c55e;--call-soft:rgba(34,197,94,.42);--call-strong:rgba(34,197,94,.72);}
+    .zone-card.call-blue{--call-border:#38bdf8;--call-soft:rgba(56,189,248,.42);--call-strong:rgba(56,189,248,.72);}
+    .zone-card.call-red{--call-border:#fb7185;--call-soft:rgba(251,113,133,.42);--call-strong:rgba(251,113,133,.72);}
+    .zone-card.call-low{--call-ring:3px;--call-ring-strong:5px;--call-scale:.992;}
+    .zone-card.call-medium{--call-ring:4px;--call-ring-strong:8px;--call-scale:.985;}
+    .zone-card.call-high{--call-ring:6px;--call-ring-strong:12px;--call-scale:.975;}
+    @keyframes courtCallPulse{
+      0%,100%{transform:scale(1);box-shadow:0 0 0 var(--call-ring,4px) var(--call-soft,rgba(250,204,21,.35)),0 10px 22px rgba(15,23,42,.16);}
+      45%{transform:scale(var(--call-scale,.985));box-shadow:0 0 0 var(--call-ring-strong,8px) var(--call-strong,rgba(250,204,21,.75)),0 12px 26px rgba(15,23,42,.22);}
+    }
+    .zone-head{width:100%;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:14px;border:1px solid #99f6e4;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border-radius:14px;min-height:44px;padding:8px 10px;text-align:left;}
+    .zone-head.warn{background:linear-gradient(135deg,#92400e,#f59e0b);border-color:#facc15;}
+    .zone-head:active{transform:translateY(1px)}
+    .zone-title{font-size:clamp(18px,2vw,25px);font-weight:950;color:#0f172a;white-space:nowrap;min-width:0;flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;}
+    .zone-head .zone-title,.zone-head .zone-count{color:#fff;}
+    .zone-count{font-size:15px;color:#64748b;font-weight:800;white-space:nowrap;flex:0 0 auto;}
+    .court-down-pill{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:136px;min-height:34px;padding:4px 14px;border-radius:999px;background:#fef3c7;color:#92400e;border:2px solid rgba(146,64,14,.25);font-weight:1000;font-size:20px;line-height:1;box-shadow:inset 0 -2px 0 rgba(146,64,14,.12);flex:0 0 auto;}
+    .court-down-pill .arrow{display:inline-block;animation:downArrowBounce .9s ease-in-out infinite;}
+    @keyframes downArrowBounce{0%,100%{transform:translateY(-1px)}50%{transform:translateY(3px)}}
+    .call-marquee{min-width:0;flex:1 1 auto;overflow:hidden;white-space:nowrap;font-size:30px;font-weight:1000;color:#fff;}
+    .call-marquee span{display:inline-block;min-width:100%;animation:callMarquee 1.4s ease-in-out infinite alternate;}
+    @keyframes callMarquee{0%{transform:translateX(0)}100%{transform:translateX(18px)}}
+    .slot-grid{flex:1 1 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:8px;min-height:0;}
+    .slot{border:2px dashed #94a3b8;border-radius:16px;background:#f8fafc;min-height:54px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+    .slot.empty::after{content:"點此放入";color:#94a3b8;font-weight:900;font-size:clamp(14px,1.5vw,20px)}
+    .zone-action{display:none;}
+    .player-chip{position:relative;width:100%;height:100%;min-height:54px;border-radius:15px;border:3px solid rgba(255,255,255,.95);box-shadow:0 4px 10px rgba(15,23,42,.18);display:flex;align-items:center;justify-content:center;padding:8px 8px 6px;overflow:hidden;color:#0f172a;user-select:none;cursor:pointer;}
+    .player-chip.selected{transform:scale(.96);border-color:#111827;box-shadow:inset 0 0 0 3px #fff,0 4px 12px rgba(15,23,42,.25);}
+    .player-chip.selected::after{content:"✓";position:absolute;top:4px;right:6px;z-index:3;width:24px;height:24px;border-radius:999px;background:#111827;color:#fff;font-size:16px;font-weight:1000;line-height:24px;text-align:center;}
+    .player-chip .games{position:absolute;top:4px;left:6px;z-index:1;background:rgba(255,255,255,.95);border:1px solid rgba(15,23,42,.18);border-radius:999px;min-width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:clamp(15px,1.8vw,22px);font-weight:1000;line-height:1;padding:0 6px;}
+    .player-chip .name{position:relative;z-index:2;text-align:center;font-weight:1000;line-height:1.05;letter-spacing:.02em;font-size:clamp(20px,2.6vw,34px);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px;}
+    .rest-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px;}
+    .rest-list .player-chip{min-height:52px;}
+    .rest-list .player-chip .name{font-size:22px;}
+    .floating-button{position:fixed;left:12px;top:45vh;top:45dvh;width:64px;height:64px;border-radius:999px;background:linear-gradient(135deg,#6d28d9,#4f46e5);color:#fff;font-size:28px;font-weight:1000;display:flex;align-items:center;justify-content:center;z-index:50;box-shadow:var(--shadow);touch-action:none;user-select:none;}
+    .floating-button.has-selected{background:linear-gradient(135deg,#f59e0b,#facc15);color:#422006;}
+    .floating-button.speaker-button{display:none;background:linear-gradient(135deg,#6d28d9,#4f46e5);color:#fff;font-size:30px;}
+    .floating-button.speaker-button.show{display:flex;}
+    .float-panel{position:fixed;z-index:49;top:0;right:0;bottom:0;left:0;width:100vw;height:100vh;height:var(--safe-vh);max-height:var(--safe-vh);background:#ffffff;border:0;border-radius:0;box-shadow:var(--shadow);display:none;overflow:hidden;}
+    .float-panel.open{display:flex;flex-direction:column;}
+    .panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 12px;border-bottom:1px solid var(--line);background:#f8fafc;}
+    .panel-title{font-size:22px;font-weight:1000;}
+    .panel-title .version-inline{font-size:16px;color:#0f766e;}
+    .close-strong{background:#dc2626!important;color:#fff!important;border:2px solid #7f1d1d!important;min-width:50px;}
+    .panel-body{padding:12px;overflow:auto;padding-bottom:calc(18px + var(--safe-bottom));}
+    .quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px;}
+    .quick-grid .wide-action{grid-column:1 / -1;min-height:96px;font-size:24px;}
+    .panel-section{border:1px solid #e2e8f0;border-radius:18px;background:#fff;margin:10px 0;padding:12px;}
+    .panel-section h3{margin:0 0 10px;font-size:19px;font-weight:1000;color:#0f766e;}
+    .collapse-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f8fafc;color:#0f766e;border:1px solid #e2e8f0;border-radius:14px;margin-bottom:10px;text-align:left;font-size:24px;font-weight:1000;}
+    .collapse-head::after{content:"🔼";font-size:16px;color:#475569;margin-left:auto;}
+    .panel-section.collapsed .collapse-head::after{content:"🔽";}
+    #adminTools .panel-section .collapse-head{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe;}
+    #adminTools .panel-section .collapse-head::after{color:#1d4ed8;}
+    #adminTools{padding:0 10px 8px;background:#f8fafc;}
+    #adminTools .panel-section{padding:8px;margin:6px 0;border-color:#cbd5e1;border-radius:10px;background:#fff;}
+    #adminTools .collapse-head{min-height:38px;padding:7px 10px;margin-bottom:7px;border-radius:10px;font-size:18px;background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe;}
+    #adminTools .collapse-head::after{font-size:14px;}
+    #adminTools label{font-size:14px;margin:3px 0 3px;color:#334155;}
+    #adminTools button,#adminTools input,#adminTools select{min-height:40px;border-radius:9px;font-size:15px;padding:7px 9px;}
+    #adminTools button{background:#e2e8f0;color:#0f172a;}
+    #adminTools button.primary{background:#0f766e;color:#fff;border-color:#0f766e;}
+    #adminTools button.active{background:#2563eb;color:#fff;}
+    #adminTools button.warn{background:#fef3c7;color:#92400e;border:1px solid #fde68a;}
+    #adminTools button.strong-warn{font-weight:1000;}
+    #adminTools button.danger{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;}
+    #adminTools .collapsible-body{padding:0 2px;}
+    .panel-section.collapsed .collapsible-body{display:none;}
+    .button-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+    .button-grid.single{grid-template-columns:1fr;}
+    .voice-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:end;margin-top:6px;}
+    .voice-grid label{white-space:nowrap;}
+    .voice-grid select{min-width:0;font-size:16px;padding-left:8px;padding-right:8px;}
+    .effect-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:end;margin-top:6px;}
+    .effect-grid label{white-space:nowrap;}
+    .effect-grid select{min-width:0;font-size:16px;padding-left:8px;padding-right:8px;}
+    .player-text-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:end;margin-top:6px;}
+    .player-text-grid label{white-space:nowrap;}
+    .player-text-grid select{min-width:0;font-size:16px;padding-left:8px;padding-right:8px;}
+    .compact-state-row{display:grid;grid-template-columns:auto minmax(72px,110px) minmax(72px,110px);gap:8px;align-items:center;margin:4px 0 6px;}
+    .compact-row-label{font-size:15px;font-weight:1000;color:#334155;white-space:nowrap;}
+    .compact-help{font-size:13px;font-weight:800;color:#64748b;margin-top:4px;}
+    .player-admin-row{display:grid;gap:8px;align-items:center;margin:5px 0;}
+    .player-add-row{grid-template-columns:56px minmax(160px,1fr) 332px 108px;}
+    .player-edit-row{grid-template-columns:56px minmax(180px,1fr) 88px 108px;}
+    #adminTools .compact-colors{display:grid;grid-template-columns:repeat(12,24px);gap:4px;margin:0;align-items:center;justify-content:start;overflow:hidden;}
+    #adminTools .compact-colors .color-swatch{min-height:24px;width:24px;border-radius:7px;border-width:2px;}
+    #adminTools .compact-colors .color-swatch.active{transform:scale(1.05);box-shadow:0 0 0 2px #111827,0 0 0 4px #fff;}
+    #adminTools .compact-colors .color-swatch.active::after{top:-7px;right:-7px;width:18px;height:18px;font-size:12px;line-height:18px;}
+    .admin-button-row{display:grid;gap:8px;margin:6px 0;}
+    .admin-button-row.three{grid-template-columns:repeat(3,minmax(0,1fr));}
+    .admin-button-row.four{grid-template-columns:repeat(4,minmax(0,1fr));}
+    .system-mode-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end;margin:4px 0 6px;}
+    .segmented-group{display:grid;grid-template-columns:76px 1fr;gap:8px;align-items:center;}
+    .next-count-group{margin:6px 0;}
+    .next-count-group .compact-row-label{min-width:76px;}
+    .next-count-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;}
+    #adminTools .mode-row{gap:4px;}
+    .help{font-size:14px;line-height:1.35;color:#64748b;font-weight:700;margin:6px 0 0;}
+    .mode-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .mode-row button.active{background:#0f766e;color:#fff}
+    .toggle-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .toggle-row button.active{background:#0f766e;color:#fff}
+    .color-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:8px 0 10px;}
+    .color-swatch{position:relative;min-height:42px;border-radius:12px;border:3px solid #fff;box-shadow:0 0 0 1px rgba(15,23,42,.2);padding:0;transition:transform .15s ease,box-shadow .15s ease;}
+    .color-swatch.active{transform:scale(1.08);border-color:#fff;box-shadow:0 0 0 3px #111827,0 0 0 6px #fff,0 6px 14px rgba(15,23,42,.22);}
+    .color-swatch.active::after{content:"✓";position:absolute;top:-9px;right:-9px;width:22px;height:22px;border-radius:999px;background:#111827;color:#fff;font-size:15px;font-weight:1000;line-height:22px;text-align:center;}
+    .mode-status{font-weight:900;color:#334155;margin:4px 0 8px;}
+    .toast{position:fixed;left:50%;bottom:calc(18px + var(--safe-bottom));transform:translateX(-50%) translateY(120px);opacity:0;background:#0f172a;color:#fff;border-radius:999px;padding:12px 18px;font-weight:900;font-size:17px;z-index:80;box-shadow:var(--shadow);max-width:calc(100vw - 24px);text-align:center;transition:.25s ease;}
+    .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+    .debug-panel{display:none;position:fixed;left:8px;right:8px;bottom:calc(8px + var(--safe-bottom));z-index:95;background:#111827;color:#fff;border:2px solid #facc15;border-radius:12px;padding:8px 10px;font:700 13px/1.35 monospace;white-space:pre-wrap;box-shadow:var(--shadow);}
+    .modal-mask{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;background:rgba(15,23,42,.45);z-index:70;display:none;align-items:center;justify-content:center;padding:18px;}
+    .modal-mask.show{display:flex;}
+    .modal-card{width:min(520px,100%);background:#fff;border-radius:22px;padding:18px;box-shadow:var(--shadow);}
+    .modal-card h3{margin:0 0 10px;font-size:24px;}
+    .modal-card p{margin:8px 0;color:#475569;font-weight:750;line-height:1.45;}
+    .modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+    .court-down-confirm{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 4px;}
+    .court-down-confirm-card{min-height:76px;border-radius:16px;border:3px solid rgba(255,255,255,.95);box-shadow:0 4px 12px rgba(15,23,42,.18);display:flex;align-items:center;justify-content:center;padding:8px;color:#0f172a;overflow:hidden;}
+    .court-down-confirm-card .name{font-size:clamp(24px,3.2vw,36px);font-weight:1000;line-height:1.05;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+    .modal-actions .court-down-cancel{background:#fff;color:#0f172a;border:2px solid #cbd5e1;min-height:58px;font-size:22px;font-weight:1000;}
+    .modal-actions .court-down-ok{background:#fef3c7;color:#92400e;border:2px solid #f59e0b;min-height:58px;font-size:22px;font-weight:1000;}
+    .portrait-warning{display:none;position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:100;background:linear-gradient(135deg,#0f766e,#0f172a);color:#fff;align-items:center;justify-content:center;padding:26px;text-align:center;}
+    .portrait-card{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.35);border-radius:26px;padding:28px;box-shadow:var(--shadow);}
+    .portrait-card .big{font-size:34px;font-weight:1000;margin-bottom:12px;}
+    .portrait-card .small{font-size:20px;font-weight:800;line-height:1.4;opacity:.95;}
+    .file-input{display:none}
+    .backup-summary{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:10px;margin-top:8px;font-weight:800;line-height:1.55;color:#334155;}
+    @media (max-width:900px) and (orientation:landscape){
+      .app-shell{padding:6px 8px calc(10px + var(--safe-bottom));}
+      .app-header{padding:4px 6px 6px;}
+      .zone-row{gap:6px;}
+      .selected-banner{left:8px;right:8px;min-height:48px;padding:6px 8px;font-size:15px;border-radius:13px;}
+      .selected-banner #selectedText{white-space:normal;line-height:1.2;}
+      .selected-banner button{min-height:36px;font-size:14px;padding:5px 8px;}
+      .zone-card{padding:6px;border-radius:14px;}
+      .zone-head{min-height:38px;padding:6px 8px;margin-bottom:5px;border-radius:12px;}
+      .slot-grid{gap:5px;min-height:136px;}
+      .slot{border-radius:12px;min-height:48px;}
+      .zone-title{font-size:18px}.zone-count{font-size:12px}
+      .player-chip{min-height:48px;border-radius:12px;border-width:2px;}
+      .player-chip .name{font-size:clamp(17px,3vw,25px)}
+      .player-chip .games{min-width:22px;height:22px;font-size:15px;top:3px;left:4px;}
+      .floating-button{width:56px;height:56px;font-size:24px;}
+      .float-panel{left:0;right:0;top:0;bottom:0;width:100vw;height:100vh;height:var(--safe-vh);max-height:var(--safe-vh);border-radius:0;}
+      .panel-body{padding-bottom:calc(16px + var(--safe-bottom));}
+    }
+    @media (orientation:landscape) and (max-height:560px){
+      html:not(.legacyIpad) .app-shell{padding:4px max(6px,var(--safe-right)) calc(6px + var(--safe-bottom)) max(6px,var(--safe-left));gap:4px;}
+      html:not(.legacyIpad) .zone-row{gap:5px;}
+      html:not(.legacyIpad) .zone-card{padding:5px;border-radius:13px;}
+      html:not(.legacyIpad) .zone-head{min-height:42px;margin-bottom:4px;padding:6px 8px;border-radius:11px;}
+      html:not(.legacyIpad) .slot-grid{gap:4px;min-height:0;}
+      html:not(.legacyIpad) .slot{min-height:0;border-radius:11px;}
+      html:not(.legacyIpad) .player-chip{min-height:0;border-width:2px;border-radius:11px;padding:4px 5px 3px;}
+      html:not(.legacyIpad) .player-chip .games{min-width:28px;height:26px;font-size:17px;top:3px;left:4px;}
+      html:not(.legacyIpad) .slot.empty::after{font-size:14px;}
+      html:not(.legacyIpad) .rest-board-grid{gap:4px;grid-auto-columns:minmax(145px,1fr);}
+    }
+    @media (orientation:landscape){
+      html.modernIpad .float-panel,html.modernDesktop .float-panel{left:auto;right:0;top:0;bottom:0;width:min(430px,42vw);height:100vh;height:var(--safe-vh);max-height:var(--safe-vh);border-left:1px solid var(--line);border-radius:18px 0 0 18px;}
+      html.modernIpad .panel-title,html.modernDesktop .panel-title{font-size:20px;}
+      html.modernIpad .panel-body,html.modernDesktop .panel-body{padding:10px;}
+    }
+    @media (max-width:700px){
+      .voice-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+      .effect-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+      .player-text-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+      .player-add-row,.player-edit-row{grid-template-columns:1fr 1fr;}
+      .player-add-row .compact-row-label,.player-edit-row .compact-row-label{grid-column:1 / -1;}
+      #adminTools .compact-colors{grid-column:1 / -1;grid-template-columns:repeat(6,24px);}
+      .system-mode-row,.admin-button-row.three,.admin-button-row.four{grid-template-columns:repeat(2,minmax(0,1fr));}
+      .segmented-group{grid-template-columns:1fr;}
+    }
+    @media (max-width:700px) and (orientation:portrait){
+      .portrait-warning.phone{display:flex;}
+    }
+    @media (min-width:701px) and (orientation:portrait){
+      .app-shell{max-width:900px;}
+      .zone-row{grid-template-columns:repeat(3,minmax(0,1fr));}
+    }
+    @media (min-width:1367px){
+      .app-shell{max-width:1500px}.slot-grid{min-height:196px}
+    }
+    html.legacyIpad,
+    html.legacyIpad body{height:var(--legacy-vh);min-height:var(--legacy-vh);max-height:var(--legacy-vh);overflow:hidden;}
+    html.legacyIpad .app-shell{height:var(--legacy-vh);max-height:var(--legacy-vh);}
+    html.legacyIpad .float-panel{height:var(--legacy-vh);max-height:var(--legacy-vh);}
+    html.legacyIpadLandscape .app-shell{max-width:none;padding:2px max(4px,var(--safe-right)) max(4px,var(--safe-bottom)) max(4px,var(--safe-left));gap:3px;grid-template-rows:minmax(0,1fr) minmax(0,1fr);}
+    html.legacyIpadLandscape .board-section{min-height:0;overflow:hidden;}
+    html.legacyIpadLandscape .zone-row{gap:3px;min-height:0;}
+    html.legacyIpadLandscape .zone-row.next-scroll{overflow:hidden;padding-bottom:0;}
+    html.legacyRestTest.legacyIpadLandscape .zone-row.next-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:0;-webkit-overflow-scrolling:touch;}
+    html.legacyIpadLandscape .zone-card{padding:3px;border-radius:12px;box-shadow:0 3px 10px rgba(15,23,42,.12);overflow:hidden;display:grid;grid-template-rows:60px minmax(0,calc(100% - 62px));row-gap:2px;}
+    html.legacyIpadLandscape .zone-head{height:60px;min-height:60px;margin-bottom:0;padding:9px 11px;border-radius:10px;}
+    html.legacyIpadLandscape .zone-title{font-size:30px;line-height:1;}
+    html.legacyIpadLandscape .zone-count{font-size:24px;line-height:1;}
+    html.legacyIpadLandscape .court-down-pill{min-width:136px;min-height:40px;font-size:24px;padding:4px 14px;}
+    html.legacyIpadLandscape .call-marquee{font-size:30px;}
+    html.legacyIpadLandscape .slot-grid{height:100%;gap:3px;min-height:0;overflow:hidden;padding:0 1px 5px;grid-template-rows:repeat(2,minmax(0,1fr));}
+    html.legacyIpadLandscape .slot{height:100%;min-height:0;border-width:2px;border-radius:9px;}
+    html.legacyIpadLandscape .slot.empty::after{font-size:14px;}
+    html.legacyIpadLandscape .player-chip{min-height:0;border-width:2px;border-radius:9px;padding:3px 4px 2px;}
+    html.legacyIpadLandscape .player-chip .name{font-size:40px;}
+    html.legacyIpadLandscape .player-chip .games{min-width:42px;height:38px;font-size:26px;top:4px;left:5px;padding:0 8px;z-index:3;}
+    html.legacyIpadLandscape .selected-banner{left:6px;right:6px;min-height:58px;padding:7px 9px;border-radius:12px;font-size:21px;}
+    html.legacyIpadLandscape .selected-banner #selectedText{white-space:nowrap;line-height:1.12;}
+    html.legacyIpadLandscape .selected-banner button{min-width:128px;min-height:46px;font-size:20px;padding:5px 10px;}
+    html.legacyIpadLandscape .floating-button{width:52px;height:52px;font-size:22px;left:8px;}
+    html.legacyIpadLandscape .float-panel{left:0;right:0;top:0;bottom:0;width:100vw;height:var(--legacy-vh);max-height:var(--legacy-vh);border-radius:0;}
+    html.legacyIpadLandscape .panel-head{padding:9px 10px;}
+    html.legacyIpadLandscape .panel-title{font-size:20px;}
+    html.legacyIpadLandscape .panel-body{padding:10px;padding-bottom:calc(16px + var(--safe-bottom));}
+    html.legacyIpadLandscape #adminTools{padding:0 14px;}
+    html.legacyIpadSafari.legacyIpadLandscape .app-shell{padding-top:2px;padding-bottom:3px;gap:3px;}
+    html.legacyIpadSafari.legacyIpadLandscape .zone-row{gap:3px;}
+    html.legacyIpadSafari.legacyIpadLandscape .zone-card{padding:3px;grid-template-rows:58px minmax(0,calc(100% - 60px));row-gap:2px;}
+    html.legacyIpadSafari.legacyIpadLandscape .zone-head{height:58px;min-height:58px;margin-bottom:0;}
+    html.legacyIpadSafari.legacyIpadLandscape .zone-title{font-size:29px;}
+    html.legacyIpadSafari.legacyIpadLandscape .zone-count{font-size:23px;}
+    html.legacyIpadSafari.legacyIpadLandscape .player-chip .name{font-size:40px;}
+    html.legacyIpadStandalone.legacyIpadLandscape .app-shell{padding-top:26px;}
+    html.legacyIpadStandalone.legacyIpadLandscape .floating-button{top:58vh;top:58dvh;}
+  </style>
+</head>
+<body>
+  <div class="portrait-warning phone">
+    <div class="portrait-card">
+      <div class="big">請將手機轉為橫向使用</div>
+      <div class="small">橫向後會顯示完整排場畫面</div>
+    </div>
+  </div>
+
+  <main class="app-shell" id="appShell">
+    <div class="selected-banner" id="selectedBanner">
+      <div id="selectedText">已選取</div>
+      <button class="small cancel-select-strong" id="cancelSelectBtn">取消選取</button>
+    </div>
+
+    <section class="board-section">
+      <div class="zone-row" id="courtRow"></div>
+    </section>
+
+    <section class="board-section">
+      <div class="zone-row" id="nextRow"></div>
+    </section>
+  </main>
+
+  <button class="floating-button" id="floatButton" aria-label="管理員工具">•••</button>
+  <button class="floating-button speaker-button" id="speakerButton" aria-label="再叫一次">📢</button>
+
+  <aside class="float-panel" id="floatPanel" aria-label="浮點管理員面板">
+    <div class="panel-head">
+      <div class="panel-title" id="panelTitle">管理員工具</div>
+      <button class="small close-strong" id="closePanelBtn">×</button>
+    </div>
+    <div class="panel-body" id="panelBody">
+      <div class="quick-grid" id="quickMoveGrid">
+        <button class="warn wide-action" id="moveRestBtn">回到休息區</button>
+      </div>
+
+      <div id="panelHint" class="backup-summary">未選取球員。可從場地或休息區點選人名。</div>
+
+      <section class="panel-section" id="restSection">
+        <button class="collapse-head" data-collapse-target="restSectionBody" type="button" id="restSectionHead">休息區 0人</button>
+        <div class="collapsible-body" id="restSectionBody">
+          <div class="help">點選球員後，面板會自動縮小，接著點 Court / Next 空格放入。</div>
+          <div class="rest-list" id="restList"></div>
+        </div>
+      </section>
+
+      <section class="panel-section" id="adminSection">
+        <button class="collapse-head" data-collapse-target="adminSectionBody" type="button" id="adminSectionHead">Admin</button>
+        <div class="collapsible-body" id="adminSectionBody">
+          <div id="adminLoginBox">
+            <label>管理員密碼</label>
+            <input id="adminPasswordInput" type="password" inputmode="numeric" placeholder="" />
+            <button class="primary" id="adminLoginBtn" style="width:100%;margin-top:8px">登入</button>
+          </div>
+          <div id="adminTools" style="display:none">
+            <div class="panel-section">
+              <button class="collapse-head" data-collapse-target="autoCallBody" type="button">自動呼叫</button>
+              <div class="collapsible-body" id="autoCallBody">
+              <div class="compact-state-row">
+                <div class="compact-row-label">自動呼叫</div>
+                <button id="autoCallOffBtn">關閉</button>
+                <button id="autoCallOnBtn">開啟</button>
+              </div>
+              <div class="voice-grid">
+                <div>
+                  <label>中文人聲</label>
+                  <select id="zhVoiceSelect"><option value="">自動推薦</option></select>
+                </div>
+                <div>
+                  <label>英文人聲</label>
+                  <select id="enVoiceSelect"><option value="">自動推薦</option></select>
+                </div>
+                <div>
+                  <label>語速</label>
+                  <select id="voiceRateSelect"><option value="slow">慢</option><option value="normal">正常</option><option value="fast">快</option></select>
+                </div>
+                <div>
+                  <label>音調</label>
+                  <select id="voicePitchSelect"><option value="low">低</option><option value="normal">正常</option><option value="high">高</option></select>
+                </div>
+              </div>
+              <div class="compact-state-row">
+                <div class="compact-row-label">視覺提醒</div>
+                <button id="callEffectOffBtn">關閉</button>
+                <button id="callEffectOnBtn">開啟</button>
+              </div>
+              <div class="effect-grid">
+                <div>
+                  <label>提醒時間</label>
+                  <select id="callEffectDurationSelect"><option value="3">3 秒</option><option value="5">5 秒</option><option value="8">8 秒</option><option value="10">10 秒</option></select>
+                </div>
+                <div>
+                  <label>特效強度</label>
+                  <select id="callEffectIntensitySelect"><option value="low">低</option><option value="medium">中</option><option value="high">高</option></select>
+                </div>
+                <div>
+                  <label>提醒顏色</label>
+                  <select id="callEffectColorSelect"><option value="yellow">黃</option><option value="green">綠</option><option value="blue">藍</option><option value="red">紅</option></select>
+                </div>
+                <div>
+                  <label>跑馬燈</label>
+                  <select id="callMarqueeSelect"><option value="on">開啟</option><option value="off">關閉</option></select>
+                </div>
+              </div>
+              <div class="player-text-grid">
+                <div>
+                  <label>字級大小</label>
+                  <select id="playerNameScaleSelect"><option value="80">80%</option><option value="100">100%</option><option value="120">120%</option><option value="140">140%</option><option value="160">160%</option><option value="180">180%</option></select>
+                </div>
+                <div>
+                  <label>字體</label>
+                  <select id="playerNameFontSelect"><option value="system">系統黑體</option><option value="bold">粗黑體</option><option value="serif">明體</option></select>
+                </div>
+                <button id="voiceTestBtn">試播</button>
+                <button class="primary" id="saveVoiceBtn">儲存</button>
+              </div>
+              </div>
+            </div>
+
+          <div class="panel-section">
+            <button class="collapse-head" data-collapse-target="playerManageBody" type="button">球員管理</button>
+            <div class="collapsible-body" id="playerManageBody">
+              <div class="player-admin-row player-add-row">
+                <div class="compact-row-label">新增</div>
+                <input id="newPlayerInput" type="text" placeholder="輸入姓名" />
+                <div class="color-grid compact-colors" id="newPlayerColorGrid" aria-label="新增球員貼紙底色"></div>
+                <button class="primary" id="addPlayerBtn">新增</button>
+              </div>
+              <div class="player-admin-row player-edit-row">
+                <div class="compact-row-label">修改</div>
+                <input id="renamePlayerInput" type="text" placeholder="先選取球員" />
+                <button id="renamePlayerBtn">修改</button>
+                <button class="danger" id="deletePlayerBtn">刪除球員</button>
+              </div>
+              <div id="sharedColorLabel" class="compact-help">貼紙底色</div>
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <button class="collapse-head" data-collapse-target="gamesManageBody" type="button">場次管理</button>
+            <div class="collapsible-body" id="gamesManageBody">
+              <div class="admin-button-row four">
+                <button id="plusGameBtn">+1</button>
+                <button id="minusGameBtn">-1</button>
+                <button class="warn" id="zeroPlayerBtn">選取歸零</button>
+                <button class="warn strong-warn" id="resetAllGamesBtn">全部場次歸零</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <button class="collapse-head" data-collapse-target="systemOpsBody" type="button">系統操作</button>
+            <div class="collapsible-body" id="systemOpsBody">
+              <div class="system-mode-row">
+                <div class="segmented-group">
+                  <div class="compact-row-label">模式</div>
+                  <div class="mode-row">
+                    <button id="freeModeBtn">自由暢打</button>
+                    <button id="autoModeBtn">自動排場</button>
+                  </div>
+                </div>
+                <div class="segmented-group" id="courtModeControls">
+                  <div class="compact-row-label" id="courtModeStatus">場地模式</div>
+                  <div class="mode-row">
+                    <button id="use3x3Btn">3x3</button>
+                    <button id="use2x2Btn">2x2</button>
+                  </div>
+                </div>
+              </div>
+              <div class="segmented-group next-count-group" id="nextCountControls">
+                <div class="compact-row-label">預備區數量</div>
+                <div class="next-count-choices">
+                  <button id="nextCountMinBtn" data-next-count-option="min">3</button>
+                  <button id="nextCountMidBtn" data-next-count-option="mid">4</button>
+                  <button id="nextCountMaxBtn" data-next-count-option="max">5</button>
+                </div>
+              </div>
+              <div class="admin-button-row three">
+                <button id="randomFillBtn">隨機填滿</button>
+                <button class="primary" id="fetchRosterBtn">更新日安名單</button>
+                <button class="warn" id="resetTodayBtn">今日重新開始</button>
+              </div>
+              <div class="admin-button-row four">
+                <button id="exportBackupBtn">複製名單</button>
+                <button id="importBackupBtn">貼上名單</button>
+                <button id="exportLogBtn">匯出CSV</button>
+                <button class="danger" id="clearAllBtn">清空全部</button>
+              </div>
+              <input class="file-input" id="importFileInput" type="file" accept=".json,application/json" />
+              <div class="help">貼上名單會清空目前 Court / Next，球員回到休息區。</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </aside>
+
+  <div class="toast" id="toast"></div>
+  <div class="debug-panel" id="debugPanel"></div>
+
+  <div class="modal-mask" id="modalMask">
+    <div class="modal-card">
+      <h3 id="modalTitle">確認</h3>
+      <p id="modalMessage">確定？</p>
+      <div id="modalExtra"></div>
+      <div class="modal-actions">
+        <button class="ghost" id="modalCancelBtn">取消</button>
+        <button class="primary" id="modalOkBtn">確認</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  'use strict';
+
+  const APP_VERSION = '1.1.0-ipad-legacy-rest-test';
+  const STORAGE_KEY = 'badminton3x3.ipad.v1.legacyRestTest.state';
+  const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
+  const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
+  const ROSTER_SITE = 'rian';
+  const ROSTER_SOURCE_PAGE = 'https://ksp4022-ko.github.io/shuttle-burst-dynamic/rian';
+  const SHUTTLE_ROSTER_API_BASE = 'https://badminton-signup-v6-alpha.badminton-signup-v6-worker.workers.dev/api/v7-shuttle';
+  const DEBUG_MODE = location.search.indexOf('debug=1') >= 0;
+  const COURTS = ['court1','court2','court3'];
+  const NEXTS = ['next1','next2','next3','next4','next5'];
+  const SLOTS = [1,2,3,4];
+  const COLORS = ['#bfdbfe','#bbf7d0','#fde68a','#fecaca','#ddd6fe','#fed7aa','#bae6fd','#fbcfe8','#ccfbf1','#e9d5ff','#d9f99d','#fef3c7'];
+  const DEFAULT_COLLAPSED_SECTIONS = ['restSectionBody','adminSectionBody','autoCallBody','playerManageBody','gamesManageBody','systemOpsBody'];
+
+  let state = loadState();
+  let selectedPlayer = loadSelectedPlayer();
+  let isAdmin = false;
+  let panelOpen = false;
+  let collapsedSections = new Set(state.settings.collapsedSections || DEFAULT_COLLAPSED_SECTIONS);
+  let selectedNewPlayerColor = COLORS[0];
+  let floatingDrag = { active:false, moved:false, dx:0, dy:0 };
+  let lastTouchHandledAt = 0;
+  let floatingTapHandledAt = 0;
+  let floatingToggleLockedUntil = 0;
+  let speechCallToken = 0;
+  const FLOAT_DRAG_THRESHOLD = 8;
+  const LEGACY_FLOAT_DRAG_THRESHOLD = 20;
+  let courtHighlightZone = null;
+  let courtHighlightTimer = null;
+  let panelTouch = { active:false, moved:false, x:0, y:0, blockUntil:0 };
+
+  const $ = (id) => document.getElementById(id);
+
+  function nowIso(){ return new Date().toISOString(); }
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function todayKey(){
+    const d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  function localStamp(){
+    const d = new Date();
+    return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes());
+  }
+  function uid(prefix){ return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2,7).toUpperCase(); }
+  function clone(obj){ return JSON.parse(JSON.stringify(obj)); }
+  function escapeHtml(str){
+    return String(str == null ? '' : str).replace(/[&<>'"]/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]; });
+  }
+  function debugLog(action, details){
+    if(!DEBUG_MODE) return;
+    const el = $('debugPanel');
+    if(!el) return;
+    el.style.display = 'block';
+    const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
+    const selected = p ? p.name + ' @ ' + p.zone + (p.slot ? ':' + p.slot : '') : 'none';
+    el.textContent = [
+      'V ' + APP_VERSION,
+      'action: ' + action,
+      'selected: ' + selected,
+      'detail: ' + details
+    ].join('\n');
+  }
+  function closestByClass(el, className){
+    while(el && el !== document){
+      if(el.classList && el.classList.contains(className)) return el;
+      el = el.parentNode;
+    }
+    return null;
+  }
+  function closestById(el, id){
+    while(el && el !== document){
+      if(el.id === id) return el;
+      el = el.parentNode;
+    }
+    return null;
+  }
+  function dataAttr(el, name){
+    return el && el.getAttribute ? el.getAttribute('data-' + name) : null;
+  }
+  function bindTap(el, handler){
+    let lastTouch = 0;
+    function run(e){
+      if(isPanelScrollBlocked(el)){
+        if(e.cancelable) e.preventDefault();
+        if(e.stopPropagation) e.stopPropagation();
+        return;
+      }
+      if(e.type === 'click' && Date.now() - lastTouch < 600) return;
+      if(e.type === 'touchend'){
+        lastTouch = Date.now();
+        if(e.cancelable) e.preventDefault();
+      }
+      if(e.stopPropagation) e.stopPropagation();
+      handler(e);
+    }
+    el.addEventListener('touchend', run, false);
+    el.addEventListener('click', run, false);
+  }
+  function bindStableTap(el, handler){
+    let start = null;
+    let moved = false;
+    let lastTouch = 0;
+    function pointFromEvent(e){
+      const touch = e.touches && e.touches.length ? e.touches[0] : (e.changedTouches && e.changedTouches.length ? e.changedTouches[0] : e);
+      return {x:touch.clientX || 0, y:touch.clientY || 0};
+    }
+    el.addEventListener('touchstart', function(e){
+      start = pointFromEvent(e);
+      moved = false;
+    }, {passive:true});
+    el.addEventListener('touchmove', function(e){
+      if(!start) return;
+      const p = pointFromEvent(e);
+      if(Math.abs(p.x - start.x) >= FLOAT_DRAG_THRESHOLD || Math.abs(p.y - start.y) >= FLOAT_DRAG_THRESHOLD) moved = true;
+    }, {passive:true});
+    el.addEventListener('touchend', function(e){
+      lastTouch = Date.now();
+      if(e.cancelable) e.preventDefault();
+      if(e.stopPropagation) e.stopPropagation();
+      const shouldRun = !moved;
+      start = null;
+      moved = false;
+      if(shouldRun) handler(e);
+    }, false);
+    el.addEventListener('click', function(e){
+      if(Date.now() - lastTouch < 600) return;
+      if(e.stopPropagation) e.stopPropagation();
+      handler(e);
+    }, false);
+  }
+  function setTap(el, handler){
+    if(!el) return;
+    el.__tapHandler = handler;
+    if(el.__tapBound) return;
+    bindTap(el, function(e){
+      if(el.__tapHandler) el.__tapHandler(e);
+    });
+    el.__tapBound = true;
+  }
+  function setStableTap(el, handler){
+    if(!el) return;
+    el.__stableTapHandler = handler;
+    if(el.__stableTapBound) return;
+    bindStableTap(el, function(e){
+      if(el.__stableTapHandler) el.__stableTapHandler(e);
+    });
+    el.__stableTapBound = true;
+  }
+  function clearTap(el){
+    if(el) el.__tapHandler = null;
+  }
+  function isPanelScrollBlocked(el){
+    return !!(closestById(el, 'floatPanel') && Date.now() < panelTouch.blockUntil);
+  }
+  function isOldIosSafari(){
+    const ua = navigator.userAgent || '';
+    const match = ua.match(/OS (\d+)_/);
+    return /iPad|iPhone|iPod/.test(ua) && match && Number(match[1]) <= 12;
+  }
+  function isAdminUnlocked(){
+    try{ return localStorage.getItem(ADMIN_UNLOCK_KEY) === todayKey(); }
+    catch(err){ return false; }
+  }
+  function saveAdminUnlock(){
+    try{ localStorage.setItem(ADMIN_UNLOCK_KEY, todayKey()); }
+    catch(err){}
+  }
+  function clearAdminUnlock(){
+    try{ localStorage.removeItem(ADMIN_UNLOCK_KEY); }
+    catch(err){}
+  }
+  function loadSelectedPlayer(){
+    let raw = '';
+    try{ raw = sessionStorage.getItem(SELECTED_PLAYER_KEY) || ''; }catch(err){}
+    if(!raw){
+      try{ raw = localStorage.getItem(SELECTED_PLAYER_KEY) || ''; }catch(err){}
+    }
+    if(!raw) return null;
+    try{
+      const saved = JSON.parse(raw);
+      if(saved && saved.playerId && getPlayer(saved.playerId)) return saved;
+    }catch(err){}
+    clearStoredSelectedPlayer();
+    return null;
+  }
+  function saveSelectedPlayer(){
+    const raw = selectedPlayer ? JSON.stringify(selectedPlayer) : '';
+    try{ if(raw) sessionStorage.setItem(SELECTED_PLAYER_KEY, raw); else sessionStorage.removeItem(SELECTED_PLAYER_KEY); }catch(err){}
+    try{ if(raw) localStorage.setItem(SELECTED_PLAYER_KEY, raw); else localStorage.removeItem(SELECTED_PLAYER_KEY); }catch(err){}
+  }
+  function clearStoredSelectedPlayer(){
+    try{ sessionStorage.removeItem(SELECTED_PLAYER_KEY); }catch(err){}
+    try{ localStorage.removeItem(SELECTED_PLAYER_KEY); }catch(err){}
+  }
+  function setSelectedPlayer(record){
+    selectedPlayer = record || null;
+    if(selectedPlayer) saveSelectedPlayer();
+    else clearStoredSelectedPlayer();
+  }
+
+  function updateSelectedChipClasses(previousId, nextId){
+    const chips = document.querySelectorAll('.player-chip');
+    for(let i = 0; i < chips.length; i += 1){
+      const chip = chips[i];
+      const id = dataAttr(chip, 'player-id');
+      if(previousId && id === previousId) chip.classList.remove('selected');
+      if(nextId && id === nextId) chip.classList.add('selected');
+    }
+  }
+
+  function refreshSelectionUi(previousId, nextId){
+    updateSelectedChipClasses(previousId, nextId);
+    renderSelectedBanner();
+    renderPanel();
+  }
+
+  function updatePlayerChipColor(playerId, color){
+    const chips = document.querySelectorAll('.player-chip');
+    for(let i = 0; i < chips.length; i += 1){
+      if(dataAttr(chips[i], 'player-id') === playerId) chips[i].style.background = color;
+    }
+  }
+
+  function markCourtCallTarget(zone){
+    if(!state.settings.callEffectEnabled) return;
+    courtHighlightZone = zone || null;
+    if(courtHighlightTimer) clearTimeout(courtHighlightTimer);
+    const duration = Number(state.settings.callEffectDuration) || 5;
+    courtHighlightTimer = setTimeout(function(){
+      courtHighlightZone = null;
+      renderZones();
+      fitPlayerNameText();
+    }, duration * 1000);
+  }
+
+  function removeCourtCallTarget(zone){
+    const cards = document.querySelectorAll('.zone-card.call-target');
+    for(let i = 0; i < cards.length; i += 1){
+      if(!zone || dataAttr(cards[i], 'zone-card') === zone) cards[i].classList.remove('call-target');
+    }
+  }
+
+  function defaultState(){
+    return {
+      app:'badminton-court-2x2-3x3-ipad',
+      version:APP_VERSION,
+      createdAt:nowIso(),
+      updatedAt:nowIso(),
+      players:[],
+      settings:{
+        courtCount:3,
+        nextCount:3,
+        nextCount2x2:2,
+        nextCount3x3:3,
+        playersPerCourt:4,
+        adminPassword:'1111',
+        freePlayMode:false,
+        autoArrangeMode:true,
+        autoCallEnabled:false,
+        voiceRate:'normal',
+        voicePitch:'normal',
+        voiceLang:'zh-TW-first',
+        zhVoiceId:'',
+        enVoiceId:'',
+        playerNameScale:100,
+        playerNameFont:'system',
+        callEffectEnabled:true,
+        callEffectDuration:5,
+        callEffectIntensity:'medium',
+        callEffectColor:'yellow',
+        callEffectMarquee:true,
+        rosterApiUrl:ROSTER_SOURCE_PAGE,
+        lastCallPlayers:[],
+        lastCallCourt:null,
+        floating:{ side:'left', y:0.45 },
+        collapsedSections:DEFAULT_COLLAPSED_SECTIONS.slice()
+      },
+      gameLog:[]
+    };
+  }
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return defaultState();
+      const data = JSON.parse(raw);
+      return normalizeState(data);
+    }catch(err){
+      console.error(err);
+      return defaultState();
+    }
+  }
+
+  function normalizeState(data){
+    const base = defaultState();
+    const merged = Object.assign(base, data || {});
+    merged.settings = Object.assign(base.settings, data && data.settings ? data.settings : {});
+    merged.settings.courtCount = Number(merged.settings.courtCount) === 2 ? 2 : 3;
+    merged.settings.nextCount2x2 = normalizeNextCount(2, merged.settings.nextCount2x2 || (merged.settings.courtCount === 2 ? merged.settings.nextCount : 2));
+    merged.settings.nextCount3x3 = normalizeNextCount(3, merged.settings.nextCount3x3 || (merged.settings.courtCount === 3 ? merged.settings.nextCount : 3));
+    merged.settings.nextCount = activeNextCountForSettings(merged.settings);
+    merged.settings.collapsedSections = Array.isArray(merged.settings.collapsedSections)
+      ? merged.settings.collapsedSections.filter(id => DEFAULT_COLLAPSED_SECTIONS.includes(id))
+      : DEFAULT_COLLAPSED_SECTIONS.slice();
+    merged.settings.callEffectEnabled = merged.settings.callEffectEnabled !== false;
+    merged.settings.callEffectDuration = [3,5,8,10].indexOf(Number(merged.settings.callEffectDuration)) >= 0 ? Number(merged.settings.callEffectDuration) : 5;
+    merged.settings.callEffectIntensity = ['low','medium','high'].indexOf(String(merged.settings.callEffectIntensity)) >= 0 ? String(merged.settings.callEffectIntensity) : 'medium';
+    merged.settings.callEffectColor = ['yellow','green','blue','red'].indexOf(String(merged.settings.callEffectColor)) >= 0 ? String(merged.settings.callEffectColor) : 'yellow';
+    merged.settings.callEffectMarquee = merged.settings.callEffectMarquee !== false;
+    merged.settings.playerNameScale = normalizePlayerNameScale(merged.settings.playerNameScale);
+    merged.settings.playerNameFont = ['system','bold','serif'].indexOf(String(merged.settings.playerNameFont)) >= 0 ? String(merged.settings.playerNameFont) : 'system';
+    merged.settings.rosterApiUrl = ROSTER_SOURCE_PAGE;
+    merged.players = Array.isArray(data && data.players ? data.players : null) ? data.players : [];
+    merged.gameLog = Array.isArray(data && data.gameLog ? data.gameLog : null) ? data.gameLog : [];
+    merged.players.forEach((p, i) => {
+      p.id = p.id || uid('P');
+      p.name = p.name || '未命名';
+      p.games = Number.isFinite(Number(p.games)) ? Math.max(0, Number(p.games)) : 0;
+      p.color = p.color || COLORS[i % COLORS.length];
+      p.zone = validZone(p.zone) ? p.zone : 'rest';
+      p.slot = p.zone === 'rest' ? null : Number(p.slot) || null;
+      p.sortOrder = Number.isFinite(Number(p.sortOrder)) ? Number(p.sortOrder) : i + 1;
+      p.isActive = p.isActive !== false;
+      p.createdAt = p.createdAt || nowIso();
+      p.updatedAt = p.updatedAt || nowIso();
+    });
+    merged.version = APP_VERSION;
+    merged.updatedAt = nowIso();
+    return merged;
+  }
+
+  function saveState(){
+    state.updatedAt = nowIso();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function validZone(zone){ return zone === 'rest' || COURTS.includes(zone) || NEXTS.includes(zone); }
+  function activeCourts(){ return COURTS.slice(0, Number(state.settings.courtCount) === 2 ? 2 : 3); }
+  function normalizeNextCount(modeCount, value){
+    const count = Number(value);
+    const min = modeCount === 2 ? 2 : 3;
+    const max = modeCount === 2 ? 4 : 5;
+    if(!Number.isFinite(count)) return min;
+    return Math.max(min, Math.min(max, Math.round(count)));
+  }
+  function activeNextCountForSettings(settings){
+    const modeCount = Number(settings.courtCount) === 2 ? 2 : 3;
+    return modeCount === 2 ? normalizeNextCount(2, settings.nextCount2x2) : normalizeNextCount(3, settings.nextCount3x3);
+  }
+  function isLegacyIpadRuntime(){
+    return document.documentElement.classList.contains('legacyIpad');
+  }
+  function boardRestEnabled(){
+    return document.documentElement.classList.contains('legacyRestTest') || !isLegacyIpadRuntime();
+  }
+  function activeNextCount(){
+    if(isLegacyIpadRuntime()) return Number(state.settings.courtCount) === 2 ? 2 : 3;
+    return activeNextCountForSettings(state.settings);
+  }
+  function activeNexts(){ return NEXTS.slice(0, activeNextCount()); }
+  function nextCountOptionsForMode(){
+    return Number(state.settings.courtCount) === 2 ? [2,3,4] : [3,4,5];
+  }
+  function currentMode(){ return Number(state.settings.courtCount) === 2 ? '2x2' : '3x3'; }
+  function boardPlayers(){ return activePlayers().filter(p => COURTS.includes(p.zone) || NEXTS.includes(p.zone)); }
+  function isBoardEmpty(){ return boardPlayers().length === 0; }
+  function getPlayer(id){ return state.players.find(p => p.id === id && p.isActive !== false) || null; }
+  function activePlayers(){ return state.players.filter(p => p.isActive !== false); }
+  function zonePlayers(zone){ return activePlayers().filter(p => p.zone === zone).sort((a,b) => (a.slot || 99) - (b.slot || 99)); }
+  function restPlayers(){ return activePlayers().filter(p => p.zone === 'rest').sort((a,b) => (a.games - b.games) || (a.sortOrder - b.sortOrder)); }
+  function occupant(zone, slot){ return activePlayers().find(p => p.zone === zone && Number(p.slot) === Number(slot)) || null; }
+  function zoneLabel(zone){
+    if(zone === 'rest') return '休息區';
+    if(zone.startsWith('court')) return '場地 ' + zone.replace('court','');
+    if(zone.startsWith('next')) return '預備區 ' + zone.replace('next','');
+    return zone;
+  }
+
+  function logAction(action, zone, players, note){
+    state.gameLog.push({ logId:uid('L'), time:nowIso(), action, zone, players:Array.isArray(players)?players:[], note:note || '' });
+    if(state.gameLog.length > 1000) state.gameLog = state.gameLog.slice(-1000);
+  }
+
+  function showToast(msg){
+    const el = $('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => el.classList.remove('show'), 2200);
+  }
+
+  function confirmDialog(title, message, extraHtml=''){
+    return new Promise((resolve) => {
+      $('modalTitle').textContent = title;
+      $('modalMessage').textContent = message;
+      $('modalExtra').innerHTML = extraHtml;
+      $('modalMask').classList.add('show');
+      const cleanup = (answer) => {
+        $('modalMask').classList.remove('show');
+        $('modalOkBtn').onclick = null;
+        $('modalCancelBtn').onclick = null;
+        resolve(answer);
+      };
+      $('modalOkBtn').onclick = () => cleanup(true);
+      $('modalCancelBtn').onclick = () => cleanup(false);
+    });
+  }
+
+  function alertDialog(title, message, extraHtml=''){
+    return new Promise((resolve) => {
+      $('modalTitle').textContent = title;
+      $('modalMessage').textContent = message;
+      $('modalExtra').innerHTML = extraHtml;
+      $('modalCancelBtn').style.display = 'none';
+      $('modalOkBtn').textContent = '知道了';
+      $('modalMask').classList.add('show');
+      const cleanup = () => {
+        $('modalMask').classList.remove('show');
+        $('modalCancelBtn').style.display = '';
+        $('modalOkBtn').textContent = '確認';
+        $('modalOkBtn').onclick = null;
+        resolve();
+      };
+      $('modalOkBtn').onclick = cleanup;
+    });
+  }
+
+  function resetModalButtons(){
+    $('modalCancelBtn').style.display = '';
+    $('modalCancelBtn').textContent = '取消';
+    $('modalOkBtn').textContent = '確認';
+    $('modalCancelBtn').className = 'ghost';
+    $('modalOkBtn').className = 'primary';
+    $('modalOkBtn').onclick = null;
+    $('modalCancelBtn').onclick = null;
+    clearTap($('modalOkBtn'));
+    clearTap($('modalCancelBtn'));
+  }
+
+  function closeModal(){
+    $('modalMask').classList.remove('show');
+    $('modalExtra').innerHTML = '';
+    resetModalButtons();
+  }
+
+  function confirmDialog(title, message, extraHtml='', okText, okClass){
+    return new Promise((resolve) => {
+      resetModalButtons();
+      $('modalTitle').textContent = title;
+      $('modalMessage').textContent = message;
+      $('modalExtra').innerHTML = extraHtml;
+      if(okText) $('modalOkBtn').textContent = okText;
+      if(okClass) $('modalOkBtn').className = okClass;
+      if(okClass === 'court-down-ok') $('modalCancelBtn').className = 'court-down-cancel';
+      $('modalMask').classList.add('show');
+      setTap($('modalOkBtn'), () => { closeModal(); resolve(true); });
+      setTap($('modalCancelBtn'), () => { closeModal(); resolve(false); });
+    });
+  }
+
+  function alertDialog(title, message, extraHtml=''){
+    return new Promise((resolve) => {
+      resetModalButtons();
+      $('modalTitle').textContent = title;
+      $('modalMessage').textContent = message;
+      $('modalExtra').innerHTML = extraHtml;
+      $('modalCancelBtn').style.display = 'none';
+      $('modalOkBtn').textContent = '知道了';
+      $('modalMask').classList.add('show');
+      setTap($('modalOkBtn'), () => { closeModal(); resolve(); });
+    });
+  }
+
+  function playerChipHtml(p){
+    const selected = selectedPlayer && selectedPlayer.playerId === p.id ? ' selected' : '';
+    return `<div class="player-chip${selected}" data-player-id="${escapeHtml(p.id)}" style="background:${escapeHtml(p.color)}"><div class="games">${Number(p.games)||0}</div><div class="name" style="font-family:${escapeHtml(playerNameFontFamily())}">${escapeHtml(p.name)}</div></div>`;
+  }
+
+  function courtDownConfirmHtml(players){
+    return '<div class="court-down-confirm">' + players.map(function(p){
+      return '<div class="court-down-confirm-card" style="background:' + escapeHtml(p.color || COLORS[0]) + '"><div class="name" style="font-family:' + escapeHtml(playerNameFontFamily()) + '">' + escapeHtml(p.name) + '</div></div>';
+    }).join('') + '</div>';
+  }
+
+  function render(){
+    if(console.time) console.time('render');
+    renderHeader();
+    renderZones();
+    renderSelectedBanner();
+    renderPanel();
+    renderSpeakerButton();
+    fitPlayerNameText();
+    scheduleFitPlayerNames();
+    saveState();
+    if(console.timeEnd) console.timeEnd('render');
+  }
+
+  let fitPlayerNameTimer = null;
+  const playerNameFitCache = {};
+
+  function scheduleFitPlayerNames(){
+    if(fitPlayerNameTimer) return;
+    const run = function(){
+      fitPlayerNameTimer = null;
+      fitPlayerNameText();
+    };
+    if(window.requestAnimationFrame){
+      fitPlayerNameTimer = window.requestAnimationFrame(run);
+    }else{
+      fitPlayerNameTimer = setTimeout(run, 0);
+    }
+  }
+
+  function fitPlayerNameText(){
+    const names = document.querySelectorAll('.player-chip .name');
+    for(let i=0;i<names.length;i+=1){
+      fitOnePlayerName(names[i]);
+    }
+  }
+
+  function playerNameFitKey(text, chipWidth, chipHeight){
+    const legacy = document.documentElement.classList.contains('legacyIpad') ? 'legacy' : 'modern';
+    return legacy + '|' + playerNameScale() + '|' + state.settings.playerNameFont + '|' + text + '|' + Math.round(chipWidth) + 'x' + Math.round(chipHeight);
+  }
+
+  function playerNameScale(){
+    const scale = Number(state.settings.playerNameScale) || 100;
+    return normalizePlayerNameScale(scale);
+  }
+
+  function normalizePlayerNameScale(value){
+    const scale = Number(value);
+    const supported = [80,100,120,140,160,180];
+    if(!Number.isFinite(scale)) return 100;
+    let best = 100;
+    let bestDistance = Math.abs(scale - best);
+    for(let i = 0; i < supported.length; i += 1){
+      const distance = Math.abs(scale - supported[i]);
+      if(distance < bestDistance){
+        best = supported[i];
+        bestDistance = distance;
+      }
+    }
+    return best;
+  }
+
+  function playerNameFontFamily(){
+    const font = state.settings.playerNameFont || 'system';
+    if(font === 'serif') return '"Noto Serif TC","Songti TC","PMingLiU",serif';
+    if(font === 'bold') return '"PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif';
+    return '-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif';
+  }
+
+  function fitOnePlayerName(nameEl){
+    if(!nameEl || !nameEl.parentNode) return;
+    const chip = nameEl.parentNode;
+    const chipWidth = chip.clientWidth || chip.offsetWidth || 0;
+    const chipHeight = chip.clientHeight || chip.offsetHeight || 0;
+    if(chipWidth < 24 || chipHeight < 24) return;
+    const text = String(nameEl.textContent || '');
+    const fitKey = playerNameFitKey(text, chipWidth, chipHeight);
+    if(playerNameFitCache[fitKey]){
+      nameEl.style.fontSize = playerNameFitCache[fitKey] + 'px';
+      nameEl.style.lineHeight = '1.05';
+      return;
+    }
+    const scale = playerNameScale() / 100;
+    const legacy = document.documentElement.classList.contains('legacyIpad');
+    let maxSize = Math.round((text.length <= 2 ? 44 : (text.length <= 4 ? 42 : 40)) * scale);
+    let minSize = Math.max(14, Math.round(20 * scale));
+    if(legacy){
+      minSize = Math.max(18, Math.round(22 * scale));
+    }else{
+      const heightCap = Math.max(20, Math.round(chipHeight * 0.48));
+      maxSize = Math.min(maxSize, heightCap);
+      minSize = Math.min(minSize, Math.max(14, heightCap - 8));
+    }
+    nameEl.style.fontSize = maxSize + 'px';
+    nameEl.style.lineHeight = '1.05';
+    const maxWidth = Math.max(24, chipWidth - 18);
+    const maxHeight = Math.max(20, chipHeight - 12);
+    let size = maxSize;
+    while(size > minSize && (nameEl.scrollWidth > maxWidth || nameEl.scrollHeight > maxHeight)){
+      size -= 1;
+      nameEl.style.fontSize = size + 'px';
+    }
+    playerNameFitCache[fitKey] = size;
+  }
+
+  function renderHeader(){
+    return;
+  }
+
+  function renderZones(){
+    $('courtRow').classList.toggle('mode-2', activeCourts().length === 2);
+    const nexts = activeNexts();
+    const nextCount = nexts.length;
+    const showBoardRest = boardRestEnabled();
+    const restColumns = Math.max(1, Math.ceil(restPlayers().length / 2) + 1);
+    const restMinWidth = showBoardRest ? Math.max(300, restColumns * 155) : 0;
+    $('nextRow').classList.toggle('mode-2', nextCount === 2);
+    $('nextRow').classList.toggle('next-scroll', showBoardRest || (!isLegacyIpadRuntime() && nextCount > activeCourts().length));
+    if(showBoardRest){
+      const minWidth = currentMode() === '2x2' ? 310 : 300;
+      $('nextRow').style.gridTemplateColumns = 'repeat(' + nextCount + ', minmax(' + minWidth + 'px, 1fr)) minmax(' + restMinWidth + 'px, ' + restMinWidth + 'px)';
+    }else if(!isLegacyIpadRuntime() && nextCount > activeCourts().length){
+      const minWidth = currentMode() === '2x2' ? 310 : 300;
+      $('nextRow').style.gridTemplateColumns = 'repeat(' + nextCount + ', minmax(' + minWidth + 'px, 1fr))';
+    }else{
+      $('nextRow').style.gridTemplateColumns = '';
+    }
+    $('courtRow').innerHTML = activeCourts().map(z => renderZoneCard(z, true)).join('');
+    $('nextRow').innerHTML = nexts.map(z => renderZoneCard(z, false)).join('') + (showBoardRest ? renderRestBoardCard(restMinWidth) : '');
+  }
+
+  function renderZoneCard(zone, isCourt){
+    const players = zonePlayers(zone);
+    const isCallTarget = courtHighlightZone === zone;
+    const useMarquee = isCallTarget && state.settings.callEffectMarquee !== false;
+    const title = useMarquee ? zoneLabel(zone) + ' >>> 請上場…' : zoneLabel(zone);
+    const slots = SLOTS.map(slot => {
+      const p = occupant(zone, slot);
+      const content = p ? playerChipHtml(p) : '';
+      return `<div class="slot ${p?'filled':'empty'}" data-zone="${zone}" data-slot="${slot}">${content}</div>`;
+    }).join('');
+    const actionClass = isCourt ? 'warn' : '';
+    const actionData = isCourt ? `data-court="${zone}"` : `data-next="${zone}"`;
+    const highlightClass = isCallTarget ? ' call-target call-' + callEffectColorClass() + ' call-' + callEffectIntensityClass() : '';
+    const titleHtml = useMarquee
+      ? `<div class="call-marquee"><span>${title}</span></div>`
+      : `<div class="zone-title">${title}</div>${isCourt ? '<div class="court-down-pill">下場 <span class="arrow">↓</span></div>' : '<div></div>'}`;
+    return `<div class="zone-card${highlightClass}" data-zone-card="${zone}"><button class="zone-head ${actionClass}" ${actionData} type="button">${titleHtml}<div class="zone-count">${players.length}/4</div></button><div class="slot-grid">${slots}</div></div>`;
+  }
+
+  function renderRestBoardCard(minWidth){
+    const players = restPlayers();
+    const openSlots = '<div class="rest-board-space rest-board-drop" data-rest-target="rest">點此放入</div><div class="rest-board-space rest-board-drop" data-rest-target="rest">點此放入</div>';
+    const content = players.length
+      ? players.map(function(p){ return '<div class="rest-board-player">' + playerChipHtml(p) + '</div>'; }).join('') + openSlots
+      : '<div class="rest-board-empty">休息區目前沒有人</div>';
+    return '<div class="zone-card rest-board-card rest-board-drop" data-zone-card="rest" data-rest-target="rest" style="min-width:' + Number(minWidth || 300) + 'px"><button class="zone-head rest-board-drop" data-rest-target="rest" type="button"><div class="zone-title">休息區</div><div class="zone-count">' + players.length + '人</div></button><div class="rest-board-grid">' + content + '</div></div>';
+  }
+
+  function callEffectColorClass(){
+    const value = String(state.settings.callEffectColor || 'yellow');
+    return ['yellow','green','blue','red'].indexOf(value) >= 0 ? value : 'yellow';
+  }
+
+  function callEffectIntensityClass(){
+    const value = String(state.settings.callEffectIntensity || 'medium');
+    return ['low','medium','high'].indexOf(value) >= 0 ? value : 'medium';
+  }
+
+  function renderSelectedBanner(){
+    const banner = $('selectedBanner');
+    const btn = $('floatButton');
+    if(selectedPlayer){
+      const p = getPlayer(selectedPlayer.playerId);
+      if(!p){ setSelectedPlayer(null); renderSelectedBanner(); return; }
+      banner.classList.add('show');
+      $('selectedText').innerHTML = `已選取：<span class="selected-name">${escapeHtml(p.name)}</span>｜目前位置：${escapeHtml(zoneLabel(p.zone))}${p.slot ? ' 第 '+p.slot+' 格' : ''}｜請點選場地空格放入`;
+      btn.classList.add('has-selected');
+    }else{
+      banner.classList.remove('show');
+      btn.classList.remove('has-selected');
+    }
+  }
+
+  function renderPanel(){
+    const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
+    const hint = $('panelHint');
+    const legacy = isLegacyIpadRuntime();
+    const boardRest = boardRestEnabled();
+    if(p){
+      hint.textContent = p.zone === 'rest'
+        ? `已選取：${p.name}。請點選 Court / Next 空格放入。`
+        : boardRest ? `已選取：${p.name}。可點主畫面休息區或其他格移動。` : `已選取：${p.name}。可按「回到休息區」或點其他格交換。`;
+      $('moveRestBtn').style.display = !boardRest && legacy && p.zone !== 'rest' ? '' : 'none';
+    }else{
+      hint.textContent = boardRest ? '未選取球員。可從主畫面場地、預備區或休息區點選人名。' : '未選取球員。可從場地或休息區點選人名。';
+      $('moveRestBtn').style.display = 'none';
+    }
+    $('quickMoveGrid').style.display = !boardRest && legacy && p && p.zone !== 'rest' ? '' : 'none';
+    $('restSection').style.display = boardRest ? 'none' : '';
+    $('panelTitle').innerHTML = isAdmin ? `羽球排場 ${currentMode()} <span class="version-inline">| V ${APP_VERSION}</span>` : '管理員工具';
+    renderRestList();
+    renderAdminUi();
+    renderColorPicker();
+    renderCollapsedSections();
+    renderSpeakerButton();
+  }
+
+  function renderSpeakerButton(){
+    const speaker = $('speakerButton');
+    if(!speaker) return;
+    const show = !!state.settings.autoCallEnabled;
+    speaker.classList.toggle('show', show);
+    if(show){
+      const btn = $('floatButton');
+      if(btn){
+        const rect = btn.getBoundingClientRect();
+        const y = Math.max(54, Math.min(floatingMaxTop(btn), rect.top));
+        if(Math.abs(y - rect.top) > 1){
+          btn.style.top = y + 'px';
+          state.settings.floating = Object.assign(state.settings.floating || {}, {y: y / window.innerHeight});
+          saveState();
+        }
+      }
+    }
+    positionSpeakerButton();
+  }
+
+  function renderRestList(){
+    const players = restPlayers();
+    $('restSectionHead').textContent = `休息區 ${players.length}人`;
+    $('restList').innerHTML = players.length
+      ? players.map(playerChipHtml).join('')
+      : '<div class="help">休息區目前沒有人</div>';
+  }
+
+  function renderAdminUi(){
+    $('adminSectionHead').textContent = isAdmin ? 'Admin 已登入' : 'Admin';
+    $('adminLoginBox').style.display = isAdmin ? 'none' : '';
+    $('adminTools').style.display = isAdmin ? '' : 'none';
+    $('freeModeBtn').classList.toggle('active', !!state.settings.freePlayMode);
+    $('autoModeBtn').classList.toggle('active', !!state.settings.autoArrangeMode);
+    $('autoCallOffBtn').classList.toggle('active', !state.settings.autoCallEnabled);
+    $('autoCallOnBtn').classList.toggle('active', !!state.settings.autoCallEnabled);
+    if($('callEffectOffBtn')) $('callEffectOffBtn').classList.toggle('active', state.settings.callEffectEnabled === false);
+    if($('callEffectOnBtn')) $('callEffectOnBtn').classList.toggle('active', state.settings.callEffectEnabled !== false);
+    if($('callMarqueeOffBtn')) $('callMarqueeOffBtn').classList.toggle('active', state.settings.callEffectMarquee === false);
+    if($('callMarqueeOnBtn')) $('callMarqueeOnBtn').classList.toggle('active', state.settings.callEffectMarquee !== false);
+    if($('callMarqueeSelect')) $('callMarqueeSelect').value = state.settings.callEffectMarquee === false ? 'off' : 'on';
+    if($('callEffectDurationSelect')) $('callEffectDurationSelect').value = String(state.settings.callEffectDuration || 5);
+    if($('callEffectIntensitySelect')) $('callEffectIntensitySelect').value = state.settings.callEffectIntensity || 'medium';
+    if($('callEffectColorSelect')) $('callEffectColorSelect').value = state.settings.callEffectColor || 'yellow';
+    if($('playerNameScaleSelect')) $('playerNameScaleSelect').value = String(state.settings.playerNameScale || 100);
+    if($('playerNameFontSelect')) $('playerNameFontSelect').value = state.settings.playerNameFont || 'system';
+    if($('courtModeStatus')) $('courtModeStatus').textContent = '場地模式';
+    if($('use3x3Btn')) $('use3x3Btn').classList.toggle('active', currentMode() === '3x3');
+    if($('use2x2Btn')) $('use2x2Btn').classList.toggle('active', currentMode() === '2x2');
+    renderNextCountControls();
+    $('voiceRateSelect').value = state.settings.voiceRate || 'normal';
+    $('voicePitchSelect').value = state.settings.voicePitch || 'normal';
+    populateVoiceSelects();
+    const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
+    $('renamePlayerInput').value = p ? p.name : '';
+  }
+
+  function renderNextCountControls(){
+    const box = $('nextCountControls');
+    if(!box) return;
+    const legacy = isLegacyIpadRuntime();
+    box.style.display = legacy ? 'none' : '';
+    if(legacy) return;
+    const options = nextCountOptionsForMode();
+    const buttons = [$('nextCountMinBtn'), $('nextCountMidBtn'), $('nextCountMaxBtn')];
+    const current = activeNextCountForSettings(state.settings);
+    for(let i = 0; i < buttons.length; i += 1){
+      if(!buttons[i]) continue;
+      buttons[i].textContent = String(options[i]);
+      buttons[i].setAttribute('data-next-count-value', String(options[i]));
+      buttons[i].classList.toggle('active', options[i] === current);
+    }
+  }
+
+  function renderColorPicker(){
+    const newGrid = $('newPlayerColorGrid');
+    const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
+    if($('sharedColorLabel')) $('sharedColorLabel').textContent = p ? '已選球員貼紙顏色' : '貼紙底色';
+    if(newGrid){
+      const activeColor = p ? p.color : selectedNewPlayerColor;
+      const label = p ? '已選球員顏色' : '新增球員顏色';
+      newGrid.innerHTML = colorSwatchesHtml(activeColor, label);
+    }
+  }
+
+  function colorSwatchesHtml(activeColor, label){
+    return COLORS.map(color => {
+      const activeClass = color === activeColor ? ' active' : '';
+      return `<button class="color-swatch${activeClass}" type="button" data-color="${escapeHtml(color)}" style="background:${escapeHtml(color)}" aria-label="${escapeHtml(label)} ${escapeHtml(color)}"></button>`;
+    }).join('');
+  }
+
+  function setSelectedPlayerColor(color){
+    const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
+    if(!p){ showToast('請先選取球員'); return; }
+    if(COLORS.indexOf(color) < 0) return;
+    p.color = color;
+    p.updatedAt = nowIso();
+    saveState();
+    updatePlayerChipColor(p.id, color);
+    renderColorPicker();
+    showToast('貼紙顏色已更新');
+  }
+
+  function renderCollapsedSections(){
+    const buttons = document.querySelectorAll('[data-collapse-target]');
+    for(let i = 0; i < buttons.length; i += 1){
+      const btn = buttons[i];
+      const body = $(dataAttr(btn, 'collapse-target'));
+      const section = closestByClass(btn, 'panel-section');
+      if(!body || !section) continue;
+      section.classList.toggle('collapsed', collapsedSections.has(body.id));
+    }
+  }
+
+  function saveCollapsedSections(){
+    state.settings.collapsedSections = Array.from(collapsedSections);
+    saveState();
+  }
+
+  function selectPlayer(playerId, options={}){
+    if(selectedPlayer && selectedPlayer.playerId === playerId){
+      clearSelected('已取消選取');
+      return;
+    }
+    const previousId = selectedPlayer ? selectedPlayer.playerId : null;
+    const p = getPlayer(playerId);
+    if(!p) return;
+    setSelectedPlayer({ playerId:p.id, name:p.name, fromZone:p.zone, fromSlot:p.slot == null ? null : p.slot });
+    showToast(`已選取：${p.name}`);
+    if(options.closePanelAfterSelect){ closePanel(); }
+    refreshSelectionUi(previousId, p.id);
+  }
+
+  function clearSelected(reason){
+    const previousId = selectedPlayer ? selectedPlayer.playerId : null;
+    setSelectedPlayer(null);
+    if(reason) showToast(reason);
+    refreshSelectionUi(previousId, null);
+  }
+
+  function movePlayer(playerId, targetZone, targetSlot){
+    const p = getPlayer(playerId);
+    if(!p || !validZone(targetZone)) return false;
+    const oldZone = p.zone;
+    const oldSlot = p.slot;
+
+    if(targetZone === 'rest'){
+      p.zone = 'rest';
+      p.slot = null;
+      p.updatedAt = nowIso();
+      logAction('moveToRest','rest',[p.name],`${zoneLabel(oldZone)} → 休息區`);
+      saveState();
+      return true;
+    }
+
+    targetSlot = Number(targetSlot);
+    if(!SLOTS.includes(targetSlot)) return false;
+    const target = occupant(targetZone, targetSlot);
+    if(target && target.id !== p.id){
+      target.zone = oldZone;
+      target.slot = oldZone === 'rest' ? null : oldSlot;
+      target.updatedAt = nowIso();
+    }
+    p.zone = targetZone;
+    p.slot = targetSlot;
+    p.updatedAt = nowIso();
+    logAction('movePlayer',targetZone,[p.name],`${zoneLabel(oldZone)} → ${zoneLabel(targetZone)} #${targetSlot}`);
+    saveState();
+    return true;
+  }
+
+  async function courtDown(courtZone){
+    const players = zonePlayers(courtZone);
+    if(players.length === 0){ showToast('這個球場目前沒有人'); return; }
+    const ok = await confirmDialog(`${zoneLabel(courtZone)} 下場`, '', courtDownConfirmHtml(players), '下場', 'court-down-ok');
+    if(!ok) return;
+    players.forEach(p => { p.games = (Number(p.games)||0)+1; p.updatedAt=nowIso(); });
+    if(state.settings.autoArrangeMode){
+      await autoArrangeCourtDown(courtZone, players);
+    }else{
+      players.forEach(p => { p.zone='rest'; p.slot=null; p.updatedAt=nowIso(); });
+      logAction('courtDown',courtZone,players.map(p=>p.name),'下場並場次 +1');
+    }
+    if(selectedPlayer && players.some(p => p.id === selectedPlayer.playerId)) setSelectedPlayer(null);
+    saveState();
+    showToast(`${zoneLabel(courtZone)} 已下場`);
+    render();
+  }
+
+  async function autoArrangeCourtDown(courtZone, players){
+    players.forEach(p => { p.zone='rest'; p.slot=null; p.updatedAt=nowIso(); });
+    await autoNextUpToCourt('next1', courtZone, true);
+    const sorted = shuffleTiesByGames(players);
+    const nextSlots = emptySlots(activeNexts());
+    const placed = [];
+    const overflow = [];
+    sorted.forEach((p, i) => {
+      const target = nextSlots[i];
+      if(target){
+        p.zone = target.zone;
+        p.slot = target.slot;
+        placed.push(p.name);
+      }else{
+        p.zone = 'rest';
+        p.slot = null;
+        overflow.push(p.name);
+      }
+      p.updatedAt = nowIso();
+    });
+    logAction('autoCourtDown',courtZone,sorted.map(p=>p.name),`下場 +1，排入 Next：${placed.join('、') || '無'}${overflow.length ? '；回休息區：' + overflow.join('、') : ''}`);
+    if(overflow.length){
+      await alertDialog('Next 空位不足', 'Next 空位不足，已依規則能放幾個放幾個，剩下回休息區。', `<div class="backup-summary">回休息區：${overflow.map(escapeHtml).join('、')}</div>`);
+    }
+  }
+
+  function emptySlots(zones){
+    const slots = [];
+    zones.forEach(zone => SLOTS.forEach(slot => {
+      if(!occupant(zone, slot)) slots.push({zone, slot});
+    }));
+    return slots;
+  }
+
+  function shuffleTiesByGames(players){
+    return players
+      .map(p => ({p, tie:Math.random()}))
+      .sort((a,b) => ((Number(a.p.games)||0) - (Number(b.p.games)||0)) || (a.tie - b.tie))
+      .map(item => item.p);
+  }
+
+  function firstEmptyCourt(){
+    return activeCourts().find(z => zonePlayers(z).length === 0) || null;
+  }
+
+  async function confirmPartialNextUp(nextZone, count){
+    if(count >= 4) return true;
+    return await confirmDialog('Next 未滿 4 人', `${zoneLabel(nextZone)} 目前只有 ${count}/4 人，仍要上場嗎？`, '');
+  }
+
+  async function nextUp(nextZone){
+    const players = zonePlayers(nextZone);
+    if(players.length === 0){ showToast('這組 Next 沒有人'); return; }
+    const court = firstEmptyCourt();
+    if(!court){ await alertDialog('目前沒有空球場', '沒有完全空的 Court，所有位置不動。'); return; }
+    if(state.settings.autoArrangeMode){
+      await autoNextUpToCourt(nextZone, court, false);
+      saveState();
+      render();
+      return;
+    }
+    if(!(await confirmPartialNextUp(nextZone, players.length))) return;
+    const sorted = players.sort((a,b)=>(a.slot||99)-(b.slot||99));
+    sorted.forEach((p,i) => { p.zone = court; p.slot = i+1; p.updatedAt = nowIso(); });
+    const names = sorted.map(p=>p.name);
+    state.settings.lastCallPlayers = names;
+    state.settings.lastCallCourt = court;
+    logAction('nextUp',court,names,`${zoneLabel(nextZone)} 上場到 ${zoneLabel(court)}`);
+    markCourtCallTarget(court);
+    saveState();
+    showToast(`${zoneLabel(nextZone)} 已上場`);
+    render();
+    if(state.settings.autoCallEnabled) callPlayers(names, court);
+  }
+
+  async function autoNextUpToCourt(nextZone, court, fromCourtDown){
+    const players = zonePlayers(nextZone);
+    if(players.length === 0){
+      if(fromCourtDown) await alertDialog('Next 1 無人上場', '下場後 Next 1 沒有人可自動上場，剛空出的 Court 保持空場。');
+      return false;
+    }
+    if(!(await confirmPartialNextUp(nextZone, players.length))) return false;
+    const sorted = players.sort((a,b)=>(a.slot||99)-(b.slot||99));
+    sorted.forEach((p,i) => { p.zone = court; p.slot = i+1; p.updatedAt = nowIso(); });
+    const names = sorted.map(p=>p.name);
+    state.settings.lastCallPlayers = names;
+    state.settings.lastCallCourt = court;
+    shiftNextForwardAfter(nextZone);
+    logAction('autoNextUp',court,names,`${zoneLabel(nextZone)} 上場到 ${zoneLabel(court)}，Next 向前遞補`);
+    markCourtCallTarget(court);
+    showToast(`${zoneLabel(nextZone)} 已上場`);
+    if(state.settings.autoCallEnabled) callPlayers(names, court);
+    return true;
+  }
+
+  function shiftNextForwardAfter(nextZone){
+    const nexts = activeNexts();
+    const start = nexts.indexOf(nextZone);
+    if(start < 0) return;
+    for(let i=start + 1;i<nexts.length;i++){
+      const from = nexts[i];
+      const to = nexts[i - 1];
+      zonePlayers(from).forEach(p => {
+        p.zone = to;
+        p.updatedAt = nowIso();
+      });
+    }
+  }
+
+  function addPlayer(name){
+    name = String(name||'').trim();
+    if(!name){ showToast('請輸入姓名'); return; }
+    const p = { id:uid('P'), name, games:0, color:selectedNewPlayerColor, zone:'rest', slot:null, isActive:true, sortOrder:Date.now(), createdAt:nowIso(), updatedAt:nowIso() };
+    state.players.push(p);
+    logAction('addPlayer','rest',[name],'新增球員');
+    saveState();
+    $('newPlayerInput').value = '';
+    showToast(`已新增：${name}`);
+    render();
+  }
+
+  function renameSelected(){
+    const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
+    if(!p){ showToast('請先選取球員'); return; }
+    const name = $('renamePlayerInput').value.trim();
+    if(!name){ showToast('請輸入新姓名'); return; }
+    const old = p.name;
+    p.name = name;
+    p.updatedAt = nowIso();
+    selectedPlayer.name = name;
+    saveSelectedPlayer();
+    logAction('renamePlayer',p.zone,[name],`${old} → ${name}`);
+    saveState();
+    showToast('已修改姓名');
+    render();
+  }
+
+  async function deleteSelected(){
+    const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
+    if(!p){ showToast('請先選取球員'); return; }
+    const ok = await confirmDialog('刪除球員', `確定刪除 ${p.name}？`, '');
+    if(!ok) return;
+    p.isActive = false;
+    p.updatedAt = nowIso();
+    logAction('deletePlayer',p.zone,[p.name],'刪除球員');
+    setSelectedPlayer(null);
+    saveState();
+    showToast('已刪除');
+    render();
+  }
+
+  function adjustSelectedGames(delta){
+    const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
+    if(!p){ showToast('請先選取球員'); return; }
+    p.games = Math.max(0, (Number(p.games)||0) + delta);
+    p.updatedAt = nowIso();
+    logAction('adjustGames',p.zone,[p.name],`場次 ${delta>0?'+':''}${delta}`);
+    saveState();
+    render();
+  }
+
+  function zeroSelectedGames(){
+    const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
+    if(!p){ showToast('請先選取球員'); return; }
+    p.games = 0;
+    p.updatedAt = nowIso();
+    logAction('zeroPlayerGames',p.zone,[p.name],'單一球員場次歸零');
+    saveState();
+    render();
+  }
+
+  async function resetAllGames(){
+    const ok = await confirmDialog('全部場次歸零','確定將所有球員已打場次歸零？','');
+    if(!ok) return;
+    activePlayers().forEach(p => { p.games = 0; p.updatedAt = nowIso(); });
+    logAction('resetAllGames','all',[], '全部場次歸零');
+    saveState();
+    showToast('全部場次已歸零');
+    render();
+  }
+
+  async function resetToday(){
+    const ok = await confirmDialog('今日重新開始','所有人會回到休息區，場次歸零，Court / Next 清空。是否繼續？','');
+    if(!ok) return;
+    activePlayers().forEach(p => { p.zone='rest'; p.slot=null; p.games=0; p.updatedAt=nowIso(); });
+    setSelectedPlayer(null);
+    state.settings.lastCallPlayers = [];
+    state.settings.lastCallCourt = null;
+    logAction('resetToday','all',[], '今日重新開始');
+    saveState();
+    showToast('已重新開始');
+    render();
+  }
+
+  async function clearAll(){
+    const ok = await confirmDialog('清空全部資料','這會刪除所有球員與紀錄。建議先匯出球員名單 JSON。是否繼續？','');
+    if(!ok) return;
+    const ok2 = await confirmDialog('再次確認','真的要清空全部資料？此動作無法復原。','');
+    if(!ok2) return;
+    state = defaultState();
+    setSelectedPlayer(null);
+    isAdmin = false;
+    clearAdminUnlock();
+    saveState();
+    showToast('已清空全部資料');
+    render();
+  }
+
+  async function setCourtMode(count){
+    const mode = count === 2 ? '2x2' : '3x3';
+    if(currentMode() === mode){
+      showToast(`目前已是 ${mode} 模式`);
+      return;
+    }
+    if(!isBoardEmpty()){
+      await alertDialog('無法切換模式', '切換模式前，請先執行「今日重新開始」，確保 Court 與 Next 都是空的。');
+      return;
+    }
+    state.settings.courtCount = count === 2 ? 2 : 3;
+    state.settings.nextCount = activeNextCountForSettings(state.settings);
+    logAction('changeCourtMode','system',[],`切換為 ${mode}`);
+    saveState();
+    showToast(`已切換為 ${mode}`);
+    render();
+  }
+
+  async function setNextCount(count){
+    if(isLegacyIpadRuntime()){
+      await alertDialog('暫不支援', '舊 iPad 版預備區數量稍後另外調整，目前維持固定數量。');
+      return;
+    }
+    const modeCount = Number(state.settings.courtCount) === 2 ? 2 : 3;
+    const nextCount = normalizeNextCount(modeCount, count);
+    if(activeNextCountForSettings(state.settings) === nextCount){
+      showToast(`預備區目前已是 ${nextCount} 個`);
+      return;
+    }
+    if(!isBoardEmpty()){
+      await alertDialog('無法修改預備區數量', '修改前請先執行「今日重新開始」，確保 Court 與預備區都是空的。');
+      return;
+    }
+    if(modeCount === 2) state.settings.nextCount2x2 = nextCount;
+    else state.settings.nextCount3x3 = nextCount;
+    state.settings.nextCount = nextCount;
+    logAction('changeNextCount','system',[],`${currentMode()} 預備區數量改為 ${nextCount}`);
+    saveState();
+    showToast(`預備區數量已改為 ${nextCount}`);
+    render();
+  }
+
+  async function randomFillCourts(){
+    const empty = [];
+    activeCourts().concat(activeNexts()).forEach(z => SLOTS.forEach(slot => { if(!occupant(z, slot)) empty.push({zone:z, slot}); }));
+    if(empty.length === 0){ await alertDialog('場地已滿', 'Court 與 Next 都已滿，所有位置不動。'); return; }
+    const rest = restPlayers();
+    if(rest.length === 0){ showToast('休息區目前沒有人'); return; }
+    const shuffled = rest.slice().sort(() => Math.random() - 0.5);
+    const count = Math.min(empty.length, shuffled.length);
+    const moved = [];
+    for(let i=0;i<count;i++){
+      const p = shuffled[i];
+      p.zone = empty[i].zone;
+      p.slot = empty[i].slot;
+      p.updatedAt = nowIso();
+      moved.push(p.name);
+    }
+    logAction('randomFillCourts','courts-next',moved,'隨機填滿 Court 與 Next 空格');
+    saveState();
+    render();
+    if(count < shuffled.length) await alertDialog('場地已滿', '場地已滿，剩餘人員留在休息區。');
+    else if(count < empty.length) showToast('休息區人數不足，已填入可用球員');
+    else showToast('已隨機填滿場地');
+  }
+
+  function courtVoiceName(courtZone){
+    const map = {court1:'一號場', court2:'二號場', court3:'三號場'};
+    return map[courtZone] || '';
+  }
+
+  function detectNameLanguage(name){
+    const text = String(name || '');
+    if(/[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/.test(text)) return 'zh-TW';
+    if(/[A-Za-z]/.test(text)) return 'en-US';
+    return 'zh-TW';
+  }
+
+  function speechRate(){
+    const rate = state.settings.voiceRate;
+    return rate === 'slow' ? 0.78 : rate === 'fast' ? 1.18 : 0.95;
+  }
+
+  function speechPitch(){
+    const pitch = state.settings.voicePitch;
+    return pitch === 'low' ? 0.82 : pitch === 'high' ? 1.18 : 1;
+  }
+
+  function availableVoices(){
+    try{
+      return window.speechSynthesis && window.speechSynthesis.getVoices ? (window.speechSynthesis.getVoices() || []) : [];
+    }catch(err){
+      return [];
+    }
+  }
+
+  function voiceText(voice){
+    return String((voice && voice.lang ? voice.lang : '') + ' ' + (voice && voice.name ? voice.name : ''));
+  }
+
+  function voiceId(voice){
+    if(!voice) return '';
+    return voice.voiceURI ? String(voice.voiceURI) : String((voice.name || '') + '|' + (voice.lang || ''));
+  }
+
+  function isChineseVoice(voice){
+    return /zh|cmn|mandarin|chinese|taiwan/i.test(voiceText(voice));
+  }
+
+  function isEnglishVoice(voice){
+    return /(^|\s)en[-_]|english/i.test(voiceText(voice));
+  }
+
+  function uniqueVoices(filterFn){
+    const voices = availableVoices();
+    const seen = {};
+    const result = [];
+    for(let i = 0; i < voices.length; i += 1){
+      const voice = voices[i];
+      if(!filterFn(voice)) continue;
+      const id = voiceId(voice);
+      if(!id || seen[id]) continue;
+      seen[id] = true;
+      result.push(voice);
+    }
+    return result;
+  }
+
+  function findVoiceById(id){
+    if(!id) return null;
+    const voices = availableVoices();
+    for(let i = 0; i < voices.length; i += 1){
+      if(voiceId(voices[i]) === id) return voices[i];
+    }
+    return null;
+  }
+
+  function findPreferredVoice(lang){
+    const voices = availableVoices();
+    if(!voices.length) return null;
+    const exactLang = String(lang || '').toLowerCase();
+    function exact(voice){ return String(voice.lang || '').toLowerCase() === exactLang; }
+    const exactLocal = voices.find(function(voice){ return exact(voice) && voice.localService; });
+    if(exactLocal) return exactLocal;
+    const exactAny = voices.find(exact);
+    if(exactAny) return exactAny;
+
+    const fallbackPattern = lang === 'en-US' ? /(^|\s)en[-_]|english/i : /zh|cmn|mandarin|chinese|taiwan/i;
+    const fallbackLocal = voices.find(function(voice){ return fallbackPattern.test(voiceText(voice)) && voice.localService; });
+    if(fallbackLocal) return fallbackLocal;
+    return voices.find(function(voice){ return fallbackPattern.test(voiceText(voice)); }) || null;
+  }
+
+  function findSelectedVoice(lang){
+    const id = lang === 'en-US' ? state.settings.enVoiceId : state.settings.zhVoiceId;
+    const selected = findVoiceById(id);
+    if(selected) return selected;
+    return findPreferredVoice(lang);
+  }
+
+  function createCallUtterance(text, lang){
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = lang;
+    utter.rate = speechRate();
+    utter.pitch = speechPitch();
+    const voice = findSelectedVoice(lang);
+    if(voice) utter.voice = voice;
+    return utter;
+  }
+
+  function populateVoiceSelect(selectId, selectedId, filterFn){
+    const select = $(selectId);
+    if(!select) return;
+    const current = select.value || selectedId || '';
+    const voices = uniqueVoices(filterFn);
+    let html = '<option value="">自動推薦</option>';
+    for(let i = 0; i < voices.length; i += 1){
+      const voice = voices[i];
+      const id = voiceId(voice);
+      html += '<option value="' + escapeHtml(id) + '">' + escapeHtml((voice.name || '未命名') + ' | ' + (voice.lang || '')) + '</option>';
+    }
+    select.innerHTML = html;
+    select.value = voices.some(function(voice){ return voiceId(voice) === current; }) ? current : '';
+  }
+
+  function populateVoiceSelects(){
+    populateVoiceSelect('zhVoiceSelect', state.settings.zhVoiceId || '', isChineseVoice);
+    populateVoiceSelect('enVoiceSelect', state.settings.enVoiceId || '', isEnglishVoice);
+  }
+
+  function speakCallSequence(names, courtZone){
+    const synth = window.speechSynthesis;
+    if(!synth || !synth.speak || typeof SpeechSynthesisUtterance === 'undefined') return;
+    const token = ++speechCallToken;
+    const courtName = courtVoiceName(courtZone);
+    const parts = names.map(function(name){
+      return {text:String(name || ''), lang:detectNameLanguage(name)};
+    }).filter(function(part){ return part.text.trim(); });
+    parts.push({text:courtName ? '請上，' + courtName + '。' : '請上場。', lang:'zh-TW'});
+    try{
+      if(synth.cancel) synth.cancel();
+    }catch(err){}
+    function speakNext(index){
+      if(token !== speechCallToken || index >= parts.length) return;
+      let utter;
+      try{
+        utter = createCallUtterance(parts[index].text, parts[index].lang);
+      }catch(err){
+        console.error(err);
+        return;
+      }
+      let finished = false;
+      let fallbackTimer = null;
+      const next = function(){
+        if(finished) return;
+        finished = true;
+        if(fallbackTimer) clearTimeout(fallbackTimer);
+        if(token !== speechCallToken) return;
+        setTimeout(function(){ speakNext(index + 1); }, 110);
+      };
+      utter.onend = next;
+      utter.onerror = next;
+      try{
+        synth.speak(utter);
+        fallbackTimer = setTimeout(next, 1500);
+      }catch(err){
+        console.error(err);
+        next();
+      }
+    }
+    speakNext(0);
+  }
+
+  function callPlayers(names, courtZone=null){
+    if(!Array.isArray(names) || !names.length){ showToast('目前沒有可呼叫的人員'); return; }
+    state.settings.lastCallPlayers = names.slice();
+    state.settings.lastCallCourt = courtZone || null;
+    saveState();
+    try{
+      speakCallSequence(names, courtZone);
+    }catch(err){ console.error(err); }
+  }
+
+  function repeatLastCall(){
+    const names = state.settings.lastCallPlayers || [];
+    if(!names.length){ showToast('目前沒有可重複呼叫的人員'); return; }
+    callPlayers(names, state.settings.lastCallCourt || null);
+  }
+
+  function setCallEffectEnabled(enabled){
+    state.settings.callEffectEnabled = !!enabled;
+    if(!enabled){
+      courtHighlightZone = null;
+      if(courtHighlightTimer) clearTimeout(courtHighlightTimer);
+      courtHighlightTimer = null;
+    }
+    saveState();
+    render();
+  }
+
+  function setCallMarqueeEnabled(enabled){
+    state.settings.callEffectMarquee = !!enabled;
+    saveState();
+    render();
+  }
+
+  function saveVoiceSettings(){
+    state.settings.voiceRate = $('voiceRateSelect').value;
+    state.settings.voicePitch = $('voicePitchSelect').value;
+    state.settings.zhVoiceId = $('zhVoiceSelect') ? $('zhVoiceSelect').value : '';
+    state.settings.enVoiceId = $('enVoiceSelect') ? $('enVoiceSelect').value : '';
+    state.settings.callEffectDuration = Number($('callEffectDurationSelect').value) || 5;
+    state.settings.callEffectIntensity = $('callEffectIntensitySelect').value || 'medium';
+    state.settings.callEffectColor = $('callEffectColorSelect').value || 'yellow';
+    state.settings.callEffectMarquee = $('callMarqueeSelect') ? $('callMarqueeSelect').value !== 'off' : state.settings.callEffectMarquee !== false;
+    state.settings.playerNameScale = Number($('playerNameScaleSelect') ? $('playerNameScaleSelect').value : state.settings.playerNameScale) || 100;
+    state.settings.playerNameFont = $('playerNameFontSelect') ? $('playerNameFontSelect').value : state.settings.playerNameFont;
+    saveState();
+    showToast('語音與提醒設定已儲存');
+    render();
+  }
+
+  function savePlayerNameDisplaySettings(){
+    if($('playerNameScaleSelect')) state.settings.playerNameScale = Number($('playerNameScaleSelect').value) || 100;
+    if($('playerNameFontSelect')) state.settings.playerNameFont = $('playerNameFontSelect').value || 'system';
+    for(const key in playerNameFitCache) delete playerNameFitCache[key];
+    saveState();
+    renderZones();
+    fitPlayerNameText();
+  }
+
+  function exportJson(){
+    const payload = {
+      app:'badminton-court-player-list',
+      backupType:'player-list',
+      version:APP_VERSION,
+      exportedAt:nowIso(),
+      players:activePlayers()
+        .slice()
+        .sort((a,b) => (a.sortOrder - b.sortOrder) || String(a.name).localeCompare(String(b.name), 'zh-Hant'))
+        .map((p, index) => ({
+          name:p.name,
+          games:Number(p.games) || 0,
+          color:p.color || COLORS[index % COLORS.length],
+          sortOrder:Number.isFinite(Number(p.sortOrder)) ? Number(p.sortOrder) : index + 1
+        }))
+    };
+    downloadText(`badminton-player-list-${localStamp()}.json`, JSON.stringify(payload, null, 2), 'application/json');
+    showToast('球員名單備份已下載');
+  }
+
+  function exportLogCsv(){
+    const rows = [['logId','time','action','zone','players','note']].concat(state.gameLog.map(function(l){ return [l.logId,l.time,l.action,l.zone,(l.players||[]).join('、'),l.note||'']; }));
+    const csv = rows.map(function(r){ return r.map(function(v){ return '"' + String(v == null ? '' : v).replace(/"/g,'""') + '"'; }).join(','); }).join('\n');
+    downloadText(`badminton-3x3-log-${localStamp()}.csv`, '\ufeff' + csv, 'text/csv;charset=utf-8');
+  }
+
+  function downloadText(filename, text, type){
+    if(isOldIosSafari()){
+      showExportText(filename, text);
+      return;
+    }
+    const blob = new Blob([text], {type});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      if(a.parentNode) a.parentNode.removeChild(a);
+    }, 400);
+  }
+
+  function showExportText(filename, text){
+    $('modalTitle').textContent = '匯出名單';
+    $('modalMessage').textContent = '舊 iPad Safari 不支援直接下載，請複製下方內容保存。檔名：' + filename;
+    $('modalExtra').innerHTML = '<textarea id="exportTextArea" style="width:100%;min-height:260px;border:1px solid #cbd5e1;border-radius:12px;padding:10px;font:14px/1.35 monospace;"></textarea>';
+    $('modalCancelBtn').style.display = '';
+    $('modalCancelBtn').textContent = '複製內容';
+    $('modalOkBtn').textContent = '關閉';
+    $('modalMask').classList.add('show');
+    const area = $('exportTextArea');
+    area.value = text;
+    setTimeout(function(){ area.focus(); area.select(); }, 0);
+    $('modalCancelBtn').onclick = function(){
+      area.focus();
+      area.select();
+      try{
+        document.execCommand('copy');
+        showToast('已複製');
+      }catch(err){
+        showToast('請手動複製');
+      }
+    };
+    $('modalOkBtn').onclick = function(){
+      $('modalMask').classList.remove('show');
+      $('modalCancelBtn').style.display = '';
+      $('modalCancelBtn').textContent = '取消';
+      $('modalOkBtn').textContent = '確認';
+      $('modalCancelBtn').onclick = null;
+      $('modalOkBtn').onclick = null;
+      $('modalExtra').innerHTML = '';
+    };
+  }
+
+  function readFileText(file){
+    return new Promise(function(resolve, reject){
+      if(typeof file.text === 'function'){
+        file.text().then(resolve).catch(reject);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(){ resolve(String(reader.result || '')); };
+      reader.onerror = function(){ reject(reader.error || new Error('read file failed')); };
+      reader.readAsText(file);
+    });
+  }
+
+  async function handleImportFile(file){
+    if(!file) return;
+    try{
+      const text = await readFileText(file);
+      const data = JSON.parse(text);
+      const playerCount = Array.isArray(data.players) ? data.players.length : 0;
+      const exportedAt = data.exportedAt || data.updatedAt || '未知';
+      const hasBoardPlayers = !isBoardEmpty();
+      const extra = `<div class="backup-summary">版本：${escapeHtml(data.version || '未知')}<br>匯出時間：${escapeHtml(exportedAt)}<br>球員數：${playerCount}<br>目前模式：${currentMode()}</div>`;
+      const message = hasBoardPlayers
+        ? '匯入球員名單會清空目前 Court / Next，並覆蓋現有球員名單。是否繼續？'
+        : '匯入球員名單會覆蓋現有球員名單，所有球員會放回休息區。是否繼續？';
+      const ok = await confirmDialog('匯入球員名單 JSON', message, extra);
+      if(!ok) return;
+      const importedPlayers = normalizeImportedPlayers(data.players);
+      if(!importedPlayers.length && playerCount > 0) throw new Error('格式錯誤');
+      const keepSettings = clone(state.settings);
+      state.players = importedPlayers;
+      state.settings = keepSettings;
+      state.settings.lastCallPlayers = [];
+      state.settings.lastCallCourt = null;
+      setSelectedPlayer(null);
+      logAction('importPlayerList','rest',importedPlayers.map(p=>p.name),'匯入球員名單，所有人回休息區');
+      saveState();
+      showToast('匯入完成');
+      render();
+    }catch(err){
+      console.error(err);
+      showToast('匯入失敗，請確認 JSON 檔格式');
+    }finally{
+      $('importFileInput').value = '';
+    }
+  }
+
+  function playerListPayload(){
+    return {
+      app:'badminton-player-list-v1',
+      version:APP_VERSION,
+      exportedAt:nowIso(),
+      players:activePlayers()
+        .slice()
+        .sort((a,b) => (a.sortOrder - b.sortOrder) || String(a.name).localeCompare(String(b.name), 'zh-Hant'))
+        .map((p) => ({
+          name:p.name,
+          color:p.color || COLORS[0]
+        }))
+    };
+  }
+
+  function exportJson(){
+    showExportText('複製名單', playerNamesText());
+  }
+
+  function playerNamesText(){
+    return activePlayers()
+      .slice()
+      .sort(function(a,b){ return (a.sortOrder - b.sortOrder) || String(a.name).localeCompare(String(b.name), 'zh-Hant'); })
+      .map(function(p){ return p.name; })
+      .join('\n');
+  }
+
+  function showExportText(title, text){
+    resetModalButtons();
+    $('modalTitle').textContent = title;
+    $('modalMessage').textContent = '每行一位球員，複製後保存。';
+    $('modalExtra').innerHTML = '<textarea id="exportTextArea" style="width:100%;min-height:260px;border:1px solid #cbd5e1;border-radius:12px;padding:10px;font:14px/1.35 monospace;"></textarea>';
+    $('modalCancelBtn').textContent = '複製';
+    $('modalOkBtn').textContent = '關閉';
+    $('modalMask').classList.add('show');
+    const area = $('exportTextArea');
+    area.value = text;
+    setTimeout(function(){ area.focus(); area.select(); }, 0);
+    setTap($('modalCancelBtn'), function(){
+      area.focus();
+      area.select();
+      try{
+        document.execCommand('copy');
+        showToast('已複製');
+      }catch(err){
+        showToast('請手動複製');
+      }
+    });
+    setTap($('modalOkBtn'), closeModal);
+  }
+
+  function showImportPasteDialog(){
+    resetModalButtons();
+    $('modalTitle').textContent = '貼上名單';
+    $('modalMessage').textContent = '每行一位球員，可貼 A、B、C 或 [A]、[B]、[C]。';
+    $('modalExtra').innerHTML = '<textarea id="importPasteTextArea" style="width:100%;min-height:260px;border:1px solid #cbd5e1;border-radius:12px;padding:10px;font:18px/1.45 monospace;" placeholder="A&#10;B&#10;C"></textarea>';
+    $('modalCancelBtn').textContent = '取消';
+    $('modalOkBtn').textContent = '匯入';
+    $('modalMask').classList.add('show');
+    const area = $('importPasteTextArea');
+    setTimeout(function(){ area.focus(); }, 0);
+    setTap($('modalCancelBtn'), closeModal);
+    setTap($('modalOkBtn'), function(){
+      importPlayersFromText(area.value);
+    });
+  }
+
+  function importPlayersFromText(text){
+    try{
+      const source = parsePlayerListText(text);
+      const importedPlayers = normalizeImportedPlayers(source);
+      if(!importedPlayers.length){
+        showToast('沒有球員');
+        return;
+      }
+      const keepSettings = clone(state.settings);
+      state.players = importedPlayers;
+      state.settings = keepSettings;
+      state.settings.lastCallPlayers = [];
+      state.settings.lastCallCourt = null;
+      setSelectedPlayer(null);
+      logAction('importPlayerList','rest',importedPlayers.map(p=>p.name),'paste JSON');
+      saveState();
+      closeModal();
+      showToast('已匯入');
+      render();
+    }catch(err){
+      console.error(err);
+      showToast('名單格式錯誤');
+    }
+  }
+
+  function parsePlayerListText(text){
+    const raw = String(text || '').trim();
+    if(!raw) return [];
+    try{
+      const data = JSON.parse(raw);
+      if(Array.isArray(data)) return data.map(normalizePastedPlayerItem).filter(function(p){ return !!p; });
+      if(data && Array.isArray(data.players)) return data.players;
+    }catch(err){}
+    return raw
+      .split(/\r?\n/)
+      .map(function(line){ return line.replace(/^\s*\[(.*)\]\s*$/, '$1').trim(); })
+      .filter(function(name){ return !!name; })
+      .map(function(name){ return {name:name, color:COLORS[0]}; });
+  }
+
+  function normalizePastedPlayerItem(item){
+    if(typeof item === 'string') return {name:item.trim(), color:COLORS[0]};
+    if(item && item.name) return item;
+    return null;
+  }
+
+  function rosterApiUrl(){
+    return ROSTER_SOURCE_PAGE;
+  }
+
+  function showRosterApiUrlDialog(nextAction){
+    resetModalButtons();
+    $('modalTitle').textContent = '日安名單來源';
+    $('modalMessage').textContent = '目前固定使用日安報名頁，不需要手動輸入 API URL。';
+    $('modalExtra').innerHTML = '<input id="rosterApiUrlInput" type="text" readonly style="width:100%;min-height:46px;border:1px solid #cbd5e1;border-radius:12px;padding:8px 10px;font-size:16px;background:#f8fafc;color:#334155;" value="' + escapeHtml(rosterApiUrl()) + '"><div class="backup-summary">更新日安名單會直接讀取正取名單。</div>';
+    $('modalCancelBtn').textContent = '取消';
+    $('modalOkBtn').textContent = '關閉';
+    $('modalMask').classList.add('show');
+    const input = $('rosterApiUrlInput');
+    input.value = rosterApiUrl();
+    setTap($('modalCancelBtn'), closeModal);
+    setTap($('modalOkBtn'), function(){
+      state.settings.rosterApiUrl = ROSTER_SOURCE_PAGE;
+      saveState();
+      closeModal();
+      showToast('已使用日安名單來源');
+      if(nextAction) setTimeout(nextAction, 30);
+    });
+  }
+
+  function buildQueryUrl(baseUrl, params){
+    const parts = [];
+    Object.keys(params || {}).forEach(function(key){
+      if(params[key] === undefined || params[key] === null || params[key] === '') return;
+      parts.push(encodeURIComponent(key) + '=' + encodeURIComponent(String(params[key])));
+    });
+    return baseUrl + (baseUrl.indexOf('?') >= 0 ? '&' : '?') + parts.join('&');
+  }
+
+  function requestRosterApi(action, params){
+    return requestShuttleRosterApi(action, params);
+  }
+
+  function requestShuttleRosterApi(action, params){
+    if(action === 'listEvents'){
+      return fetchRosterJson(SHUTTLE_ROSTER_API_BASE + '/sites/' + encodeURIComponent(ROSTER_SITE) + '/events', {
+        status:'open',
+        from:todayKey(),
+        limit:20,
+        _ts:Date.now()
+      }).then(function(data){
+        const rawEvents = rosterArray(data, 'events');
+        return {
+          ok:true,
+          source:ROSTER_SOURCE_PAGE,
+          events:rawEvents.map(normalizeRosterEvent).filter(function(event){ return !!event.eventId; })
+        };
+      });
+    }
+    if(action === 'previewRoster'){
+      const eventId = params && params.eventId ? String(params.eventId).trim() : '';
+      if(!eventId) return Promise.reject(new Error('缺少聚會 ID'));
+      return fetchRosterJson(SHUTTLE_ROSTER_API_BASE + '/events/' + encodeURIComponent(eventId) + '/roster', {
+        _ts:Date.now()
+      }).then(function(data){
+        const event = normalizeRosterEvent(data && data.event ? data.event : {});
+        if(!event.eventId) event.eventId = eventId;
+        const players = rosterConfirmedPlayers(data);
+        return {
+          ok:true,
+          source:ROSTER_SOURCE_PAGE,
+          event:event,
+          players:players,
+          summary:data && data.summary ? data.summary : {}
+        };
+      });
+    }
+    return Promise.reject(new Error('不支援的報名 API 動作'));
+  }
+
+  function rosterArray(data, key){
+    if(Array.isArray(data)) return data;
+    if(data && Array.isArray(data[key])) return data[key];
+    if(data && data.data) return rosterArray(data.data, key);
+    return [];
+  }
+
+  function normalizeRosterEvent(event){
+    event = event || {};
+    const eventId = event.eventId || event.id || event.event_id || '';
+    const date = event.date || event.eventDate || event.event_date || '';
+    const title = event.title || event.name || event.eventName || event.event_name || '日安';
+    return {
+      eventId:String(eventId),
+      date:String(date),
+      title:String(title),
+      status:String(event.status || ''),
+      confirmedCount:Number(event.confirmedCount || event.confirmed_count || 0),
+      waitingCount:Number(event.waitingCount || event.waiting_count || 0),
+      maxPeople:Number(event.maxPeople || event.max_people || 0)
+    };
+  }
+
+  function rosterConfirmedPlayers(data){
+    const lists = [];
+    if(data && Array.isArray(data.confirmed)) lists.push(data.confirmed);
+    if(data && Array.isArray(data.fixedConfirmed)) lists.push(data.fixedConfirmed);
+    if(data && Array.isArray(data.tempConfirmed)) lists.push(data.tempConfirmed);
+    const players = [];
+    lists.forEach(function(list){
+      list.forEach(function(item){ players.push(item); });
+    });
+    return players
+      .filter(function(player){ return player && String(player.name || '').trim(); })
+      .sort(function(a, b){
+        const ao = Number(a.orderNo || a.order || 999999);
+        const bo = Number(b.orderNo || b.order || 999999);
+        if(ao !== bo) return ao - bo;
+        return String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hant');
+      })
+      .map(function(player){
+        return {
+          name:String(player.name || '').trim(),
+          sourceId:String(player.id || player.memberId || ''),
+          signupType:String(player.signupType || '')
+        };
+      });
+  }
+
+  function fetchRosterJson(url, params){
+    if(!window.fetch) return Promise.reject(new Error('fetch unavailable'));
+    return window.fetch(buildQueryUrl(url, params), { cache:'no-store' }).then(function(response){
+      if(!response || !response.ok) throw new Error('HTTP ' + (response ? response.status : ''));
+      return response.json();
+    }).then(function(data){
+      if(!data || data.ok === false){
+        const message = data && data.error && data.error.message ? data.error.message : (data && data.error ? data.error : '報名 API 回傳失敗');
+        throw new Error(message);
+      }
+      return data && data.data ? data.data : data;
+    });
+  }
+
+  function jsonpRosterJson(url, params){
+    return new Promise(function(resolve, reject){
+      const callbackName = '__badmintonRosterJsonp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      const script = document.createElement('script');
+      const cleanup = function(){
+        try{ delete window[callbackName]; }catch(err){ window[callbackName] = null; }
+        if(script.parentNode) script.parentNode.removeChild(script);
+      };
+      const timer = setTimeout(function(){
+        cleanup();
+        reject(new Error('JSONP timeout'));
+      }, 10000);
+      window[callbackName] = function(data){
+        clearTimeout(timer);
+        cleanup();
+        resolve(data);
+      };
+      script.onerror = function(){
+        clearTimeout(timer);
+        cleanup();
+        reject(new Error('JSONP failed'));
+      };
+      const query = Object.assign({}, params || {}, { callback:callbackName });
+      script.src = buildQueryUrl(url, query);
+      document.body.appendChild(script);
+    });
+  }
+
+  function showRosterImportDialog(){
+    resetModalButtons();
+    $('modalTitle').textContent = '更新日安名單';
+    $('modalMessage').textContent = '讀取日安目前開放聚會中...';
+    $('modalExtra').innerHTML = '';
+    $('modalCancelBtn').textContent = '取消';
+    $('modalOkBtn').textContent = '關閉';
+    $('modalMask').classList.add('show');
+    setTap($('modalCancelBtn'), closeModal);
+    setTap($('modalOkBtn'), closeModal);
+    requestRosterApi('listEvents', {}).then(showRosterEventList).catch(function(err){
+      console.error(err);
+      $('modalMessage').textContent = '讀取聚會失敗。請確認報名頁 API 或網路狀態。';
+      $('modalExtra').innerHTML = '<div class="backup-summary">' + escapeHtml(err.message || String(err)) + '</div>';
+      $('modalOkBtn').textContent = '重新讀取';
+      setTap($('modalOkBtn'), showRosterImportDialog);
+    });
+  }
+
+  function showRosterEventList(data){
+    const events = Array.isArray(data.events) ? data.events : [];
+    if(!events.length){
+      $('modalMessage').textContent = '目前沒有可匯入聚會。';
+      $('modalExtra').innerHTML = '';
+      $('modalOkBtn').textContent = '重新讀取';
+      setTap($('modalOkBtn'), showRosterImportDialog);
+      return;
+    }
+    const options = events.map(function(event){
+      const countText = event.confirmedCount || event.maxPeople ? '正取 ' + event.confirmedCount + (event.maxPeople ? '/' + event.maxPeople : '') : '';
+      const label = [event.date || '', event.title || '未命名聚會', countText, event.status || ''].filter(Boolean).join('｜');
+      return '<option value="' + escapeHtml(event.eventId) + '">' + escapeHtml(label) + '</option>';
+    }).join('');
+    $('modalMessage').textContent = '請選擇要匯入的日安聚會。';
+    $('modalExtra').innerHTML = '<select id="rosterEventSelect" style="width:100%;min-height:46px;border:1px solid #cbd5e1;border-radius:12px;padding:8px 10px;font-size:16px;">' + options + '</select><div class="backup-summary">來源：日安報名頁｜共 ' + events.length + ' 場開放聚會<br>' + escapeHtml(rosterApiUrl()) + '</div>';
+    $('modalOkBtn').textContent = '預覽名單';
+    setTap($('modalOkBtn'), previewSelectedRoster);
+  }
+
+  function previewSelectedRoster(){
+    const select = $('rosterEventSelect');
+    const eventId = select ? String(select.value || '').trim() : '';
+    if(!eventId){ showToast('請選擇聚會'); return; }
+    $('modalMessage').textContent = '讀取正式名單中...';
+    $('modalOkBtn').textContent = '讀取中';
+    clearTap($('modalOkBtn'));
+    requestRosterApi('previewRoster', { eventId:eventId }).then(showRosterPreview).catch(function(err){
+      console.error(err);
+      $('modalMessage').textContent = '讀取名單失敗，現有資料未變更。';
+      $('modalExtra').innerHTML = '<div class="backup-summary">' + escapeHtml(err.message || String(err)) + '</div>';
+      $('modalOkBtn').textContent = '重新讀取';
+      setTap($('modalOkBtn'), showRosterImportDialog);
+    });
+  }
+
+  function extractRosterPlayers(data){
+    if(!data) return [];
+    if(Array.isArray(data.players)) return data.players;
+    if(Array.isArray(data.roster)) return data.roster;
+    return [];
+  }
+
+  function showRosterPreview(data){
+    const rosterPlayers = extractRosterPlayers(data);
+    if(!rosterPlayers.length){
+      $('modalMessage').textContent = '正式名單為空，現有資料未變更。';
+      $('modalExtra').innerHTML = data && data.warnings && data.warnings.length ? '<div class="backup-summary">' + escapeHtml(data.warnings.join('、')) + '</div>' : '';
+      $('modalOkBtn').textContent = '返回';
+      setTap($('modalOkBtn'), showRosterImportDialog);
+      return;
+    }
+    const names = rosterPlayers.map(function(p){ return String(p && p.name ? p.name : '').trim(); }).filter(Boolean);
+    const event = data.event || {};
+    $('modalMessage').textContent = '確認匯入後會清空目前球員名單，全部放回休息區。';
+    $('modalExtra').innerHTML = '<div class="backup-summary">聚會：' + escapeHtml(event.title || '') + '<br>日期：' + escapeHtml(event.date || '') + '<br>正式名單：' + names.length + ' 人<br>' + escapeHtml(names.slice(0, 30).join('、')) + (names.length > 30 ? '...' : '') + '</div>';
+    $('modalOkBtn').textContent = '確認匯入';
+    setTap($('modalOkBtn'), function(){ importRosterPlayers(rosterPlayers, event); });
+  }
+
+  function importRosterPlayers(players, event){
+    const importedPlayers = normalizeRosterPlayers(players);
+    if(!importedPlayers.length){
+      showToast('沒有可匯入球員');
+      return false;
+    }
+    const keepSettings = clone(state.settings);
+    state.players = importedPlayers;
+    state.settings = keepSettings;
+    state.settings.lastCallPlayers = [];
+    state.settings.lastCallCourt = null;
+    setSelectedPlayer(null);
+    logAction('importRoster','rest',importedPlayers.map(function(p){ return p.name; }), 'roster API ' + (event && event.title ? event.title : ''));
+    saveState();
+    closeModal();
+    showToast('報名名單已匯入');
+    render();
+    return true;
+  }
+
+  function normalizeRosterPlayers(players){
+    if(!Array.isArray(players)) return [];
+    return players
+      .map(function(p, index){
+        const name = String(p && p.name ? p.name : '').trim();
+        if(!name) return null;
+        return {
+          id:uid('P'),
+          name:name,
+          games:0,
+          color:COLORS[0],
+          zone:'rest',
+          slot:null,
+          sortOrder:index + 1,
+          isActive:true,
+          createdAt:nowIso(),
+          updatedAt:nowIso()
+        };
+      })
+      .filter(function(p){ return !!p; });
+  }
+
+  function normalizeImportedPlayers(players){
+    if(!Array.isArray(players)) return [];
+    return players
+      .filter(p => p && p.isActive !== false && String(p.name || '').trim())
+      .map((p, index) => ({
+        id:uid('P'),
+        name:String(p.name || '').trim(),
+        games:0,
+        color:p.color || COLORS[index % COLORS.length],
+        zone:'rest',
+        slot:null,
+        sortOrder:Number.isFinite(Number(p.sortOrder)) ? Number(p.sortOrder) : index + 1,
+        isActive:true,
+        createdAt:nowIso(),
+        updatedAt:nowIso()
+      }))
+      .sort((a,b) => (a.sortOrder - b.sortOrder) || String(a.name).localeCompare(String(b.name), 'zh-Hant'));
+  }
+
+  function setPanel(open){
+    panelOpen = open;
+    $('floatPanel').classList.toggle('open', panelOpen);
+  }
+  function openPanel(){ setPanel(true); renderPanel(); }
+  function closePanel(){ setPanel(false); }
+  function floatingDragThreshold(){
+    return document.documentElement.classList.contains('legacyIpad') ? LEGACY_FLOAT_DRAG_THRESHOLD : FLOAT_DRAG_THRESHOLD;
+  }
+  function toggleFloatingPanel(){
+    const now = Date.now();
+    if(now < floatingToggleLockedUntil) return;
+    floatingToggleLockedUntil = now + 300;
+    panelOpen ? closePanel() : openPanel();
+  }
+
+  function initPanelScrollGuard(){
+    const panel = $('floatPanel');
+    if(!panel) return;
+    function pointFromTouch(e){
+      const t = e.touches && e.touches.length ? e.touches[0] : (e.changedTouches && e.changedTouches.length ? e.changedTouches[0] : e);
+      return {x:t.clientX || 0, y:t.clientY || 0};
+    }
+    panel.addEventListener('touchstart', function(e){
+      const p = pointFromTouch(e);
+      panelTouch = {active:true, moved:false, x:p.x, y:p.y, blockUntil:0};
+    }, true);
+    panel.addEventListener('touchmove', function(e){
+      if(!panelTouch.active) return;
+      const p = pointFromTouch(e);
+      const dx = Math.abs(p.x - panelTouch.x);
+      const dy = Math.abs(p.y - panelTouch.y);
+      if(dx > 12 || dy > 12){
+        panelTouch.moved = true;
+        panelTouch.blockUntil = Date.now() + 450;
+      }
+    }, true);
+    panel.addEventListener('touchend', function(){
+      if(panelTouch.moved) panelTouch.blockUntil = Date.now() + 450;
+      panelTouch.active = false;
+    }, true);
+  }
+
+  function initFloatingButton(){
+    const btn = $('floatButton');
+    const pos = state.settings.floating || {side:'left', y:0.45};
+    const y = Math.max(74, Math.min(floatingMaxTop(btn), window.innerHeight * (Number(pos.y)||0.45)));
+    btn.style.top = y + 'px';
+    btn.style.left = pos.side === 'right' ? 'auto' : '12px';
+    btn.style.right = pos.side === 'right' ? '12px' : 'auto';
+    positionSpeakerButton();
+
+    function pointFromEvent(e){
+      const touch = e.touches && e.touches.length ? e.touches[0] : (e.changedTouches && e.changedTouches.length ? e.changedTouches[0] : e);
+      return {x:touch.clientX, y:touch.clientY};
+    }
+    function startDrag(e){
+      const point = pointFromEvent(e);
+      floatingDrag = {active:true, moved:false, startX:point.x, startY:point.y, dx:point.x - btn.getBoundingClientRect().left, dy:point.y - btn.getBoundingClientRect().top};
+      if(btn.setPointerCapture && e.pointerId != null) btn.setPointerCapture(e.pointerId);
+    }
+    function moveDrag(e){
+      if(!floatingDrag.active) return;
+      const point = pointFromEvent(e);
+      const moveX = Math.abs(point.x - floatingDrag.startX);
+      const moveY = Math.abs(point.y - floatingDrag.startY);
+      const threshold = floatingDragThreshold();
+      if(!floatingDrag.moved && moveX < threshold && moveY < threshold) return;
+      floatingDrag.moved = true;
+      const x = Math.max(4, Math.min(window.innerWidth - btn.offsetWidth - 4, point.x - floatingDrag.dx));
+      const y2 = Math.max(54, Math.min(floatingMaxTop(btn), point.y - floatingDrag.dy));
+      btn.style.left = x + 'px'; btn.style.right = 'auto'; btn.style.top = y2 + 'px';
+      positionSpeakerButton();
+      if(e.cancelable) e.preventDefault();
+    }
+    function endDrag(e){
+      if(!floatingDrag.active) return;
+      if(btn.releasePointerCapture && e.pointerId != null) btn.releasePointerCapture(e.pointerId);
+      const wasMoved = floatingDrag.moved;
+      floatingDrag.active = false;
+      if(wasMoved){
+        snapFloatingButton();
+        setTimeout(function(){ floatingDrag.moved = false; }, 0);
+        return;
+      }
+      floatingTapHandledAt = Date.now();
+      toggleFloatingPanel();
+    }
+    if(window.PointerEvent){
+      btn.addEventListener('pointerdown', startDrag);
+      btn.addEventListener('pointermove', moveDrag);
+      btn.addEventListener('pointerup', endDrag);
+    }else{
+      btn.addEventListener('touchstart', startDrag, {passive:false});
+      btn.addEventListener('touchmove', moveDrag, {passive:false});
+      btn.addEventListener('touchend', endDrag);
+      btn.addEventListener('mousedown', startDrag);
+      document.addEventListener('mousemove', moveDrag);
+      document.addEventListener('mouseup', endDrag);
+    }
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if(Date.now() - floatingTapHandledAt < 500) return;
+      if(floatingDrag.moved) return;
+      toggleFloatingPanel();
+    });
+  }
+
+  function snapFloatingButton(){
+    const btn = $('floatButton');
+    const rect = btn.getBoundingClientRect();
+    const side = rect.left + rect.width/2 < window.innerWidth/2 ? 'left' : 'right';
+    btn.style.left = side === 'left' ? '12px' : 'auto';
+    btn.style.right = side === 'right' ? '12px' : 'auto';
+    const y = Math.max(54, Math.min(floatingMaxTop(btn), rect.top));
+    btn.style.top = y + 'px';
+    state.settings.floating = {side, y: y / window.innerHeight};
+    positionSpeakerButton();
+    saveState();
+  }
+
+  function positionSpeakerButton(){
+    const btn = $('floatButton');
+    const speaker = $('speakerButton');
+    if(!btn || !speaker) return;
+    const rect = btn.getBoundingClientRect();
+    const side = rect.left + rect.width/2 < window.innerWidth/2 ? 'left' : 'right';
+    const gap = 8;
+    const top = Math.max(54, Math.min(window.innerHeight - rect.height - 8, rect.top + rect.height + gap));
+    speaker.style.top = top + 'px';
+    speaker.style.left = side === 'left' ? (btn.style.left || '12px') : 'auto';
+    speaker.style.right = side === 'right' ? (btn.style.right || '12px') : 'auto';
+  }
+
+  function floatingMaxTop(btn){
+    const height = (btn && (btn.offsetHeight || btn.getBoundingClientRect().height)) || 64;
+    const reserve = state.settings.autoCallEnabled ? height + 16 : 8;
+    return window.innerHeight - height - reserve;
+  }
+
+  async function handleBoardInteraction(e){
+    const zoneHead = closestByClass(e.target, 'zone-head');
+    if(zoneHead && dataAttr(zoneHead, 'court')){
+      if(e.cancelable) e.preventDefault();
+      e.stopPropagation();
+      debugLog('zone-head courtDown', dataAttr(zoneHead, 'court'));
+      await courtDown(dataAttr(zoneHead, 'court'));
+      return true;
+    }
+    if(zoneHead && dataAttr(zoneHead, 'next')){
+      if(e.cancelable) e.preventDefault();
+      e.stopPropagation();
+      debugLog('zone-head nextUp', dataAttr(zoneHead, 'next'));
+      await nextUp(dataAttr(zoneHead, 'next'));
+      return true;
+    }
+    if(zoneHead && dataAttr(zoneHead, 'rest-target')){
+      if(e.cancelable) e.preventDefault();
+      e.stopPropagation();
+      if(!selectedPlayer){
+        showToast('請先點選球員');
+        return true;
+      }
+      const moved = movePlayer(selectedPlayer.playerId, 'rest', null);
+      if(moved){
+        debugLog('rest head move success', selectedPlayer.playerId + ' -> rest');
+        setSelectedPlayer(null);
+        showToast('已回到休息區');
+        render();
+      }else{
+        debugLog('rest head move fail', selectedPlayer.playerId + ' -> rest');
+        showToast('移動失敗');
+      }
+      return true;
+    }
+
+    const slot = closestByClass(e.target, 'slot');
+    if(slot){
+      if(e.cancelable) e.preventDefault();
+      e.stopPropagation();
+      const chipInSlot = closestByClass(e.target, 'player-chip');
+      if(!selectedPlayer){
+        if(chipInSlot){
+          debugLog('slot select chip', dataAttr(chipInSlot, 'player-id') + ' -> ' + dataAttr(slot, 'zone') + ':' + dataAttr(slot, 'slot'));
+          selectPlayer(dataAttr(chipInSlot, 'player-id'), {closePanelAfterSelect:false});
+        }else{
+          debugLog('slot empty no selected', dataAttr(slot, 'zone') + ':' + dataAttr(slot, 'slot'));
+          showToast('請先點選球員');
+        }
+        return true;
+      }
+      const targetZone = dataAttr(slot, 'zone');
+      const targetSlot = Number(dataAttr(slot, 'slot'));
+      const moved = movePlayer(selectedPlayer.playerId, targetZone, targetSlot);
+      if(moved){
+        debugLog('slot move success', selectedPlayer.playerId + ' -> ' + targetZone + ':' + targetSlot);
+        setSelectedPlayer(null);
+        showToast('已移動');
+        render();
+      }else{
+        debugLog('slot move fail', selectedPlayer.playerId + ' -> ' + targetZone + ':' + targetSlot);
+        showToast('移動失敗');
+      }
+      return true;
+    }
+
+    const chip = closestByClass(e.target, 'player-chip');
+    if(chip){
+      if(e.cancelable) e.preventDefault();
+      e.stopPropagation();
+      const inRest = !!closestById(chip, 'restList') || !!closestByClass(chip, 'rest-board-card');
+      debugLog(inRest ? 'chip rest select' : 'chip board select', dataAttr(chip, 'player-id'));
+      selectPlayer(dataAttr(chip, 'player-id'), {closePanelAfterSelect:!!closestById(chip, 'restList')});
+      return true;
+    }
+
+    const restTarget = closestByClass(e.target, 'rest-board-drop');
+    if(restTarget){
+      if(e.cancelable) e.preventDefault();
+      e.stopPropagation();
+      if(!selectedPlayer){
+        showToast('請先點選球員');
+        return true;
+      }
+      const moved = movePlayer(selectedPlayer.playerId, 'rest', null);
+      if(moved){
+        debugLog('rest card move success', selectedPlayer.playerId + ' -> rest');
+        setSelectedPlayer(null);
+        showToast('已回到休息區');
+        render();
+      }else{
+        debugLog('rest card move fail', selectedPlayer.playerId + ' -> rest');
+        showToast('移動失敗');
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function bindEvents(){
+    function isBoardTarget(target){
+      return !!(closestByClass(target, 'zone-head') || closestByClass(target, 'slot') || closestByClass(target, 'player-chip') || closestByClass(target, 'rest-board-drop'));
+    }
+    function runBoardInteraction(e){
+      if(e.type === 'touchend' && isBoardTarget(e.target)){
+        lastTouchHandledAt = Date.now();
+        if(e.cancelable) e.preventDefault();
+      }
+      handleBoardInteraction(e).catch(function(err){
+        console.error(err);
+        debugLog('board action error', err && err.message ? err.message : String(err));
+        showToast('操作失敗，請重試');
+      });
+    }
+    document.addEventListener('touchend', runBoardInteraction, false);
+    document.addEventListener('click', (e) => {
+      if(Date.now() - lastTouchHandledAt < 500) return;
+      runBoardInteraction(e);
+    });
+
+    function moveSelectedToRest(){
+      const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
+      if(!p){ showToast('請先選球員'); return; }
+      if(p.zone === 'rest'){ showToast('已在休息區'); return; }
+      if(movePlayer(p.id,'rest',null)){ setSelectedPlayer(null); showToast('已回休息區'); render(); }
+    }
+    function adminLogin(){
+      if($('adminPasswordInput').value !== state.settings.adminPassword){
+        showToast('密碼錯誤');
+        return;
+      }
+      isAdmin = true;
+      saveAdminUnlock();
+      $('adminPasswordInput').value='';
+      collapsedSections.delete('adminSectionBody');
+      saveCollapsedSections();
+      showToast('已登入');
+      renderPanel();
+    }
+    function tap(id, handler){
+      const el = $(id);
+      if(el) setTap(el, handler);
+    }
+
+    tap('cancelSelectBtn', () => clearSelected('已取消選取'));
+    tap('closePanelBtn', closePanel);
+    setStableTap($('speakerButton'), repeatLastCall);
+    tap('moveRestBtn', moveSelectedToRest);
+    tap('adminLoginBtn', adminLogin);
+    tap('freeModeBtn', () => { state.settings.freePlayMode=true; state.settings.autoArrangeMode=false; saveState(); renderPanel(); });
+    tap('autoModeBtn', () => { state.settings.freePlayMode=false; state.settings.autoArrangeMode=true; saveState(); showToast('已切換'); renderPanel(); });
+    tap('randomFillBtn', randomFillCourts);
+    tap('fetchRosterBtn', showRosterImportDialog);
+    tap('autoCallOffBtn', () => { state.settings.autoCallEnabled=false; saveState(); renderPanel(); });
+    tap('autoCallOnBtn', () => { state.settings.autoCallEnabled=true; saveState(); renderPanel(); });
+    tap('callEffectOffBtn', () => setCallEffectEnabled(false));
+    tap('callEffectOnBtn', () => setCallEffectEnabled(true));
+    tap('callMarqueeOffBtn', () => setCallMarqueeEnabled(false));
+    tap('callMarqueeOnBtn', () => setCallMarqueeEnabled(true));
+    tap('voiceTestBtn', () => callPlayers(['雅雯','Kevin'], 'court1'));
+    tap('saveVoiceBtn', saveVoiceSettings);
+    if($('playerNameScaleSelect')) $('playerNameScaleSelect').addEventListener('change', savePlayerNameDisplaySettings);
+    if($('playerNameFontSelect')) $('playerNameFontSelect').addEventListener('change', savePlayerNameDisplaySettings);
+    tap('addPlayerBtn', () => addPlayer($('newPlayerInput').value));
+    $('newPlayerInput').addEventListener('keydown', e => { if(e.key==='Enter') addPlayer($('newPlayerInput').value); });
+    tap('renamePlayerBtn', renameSelected);
+    tap('deletePlayerBtn', deleteSelected);
+    tap('plusGameBtn', () => adjustSelectedGames(1));
+    tap('minusGameBtn', () => adjustSelectedGames(-1));
+    tap('zeroPlayerBtn', zeroSelectedGames);
+    tap('resetAllGamesBtn', resetAllGames);
+    tap('resetTodayBtn', resetToday);
+    tap('clearAllBtn', clearAll);
+    tap('use3x3Btn', () => setCourtMode(3));
+    tap('use2x2Btn', () => setCourtMode(2));
+    tap('nextCountMinBtn', () => setNextCount(Number(dataAttr($('nextCountMinBtn'), 'next-count-value'))));
+    tap('nextCountMidBtn', () => setNextCount(Number(dataAttr($('nextCountMidBtn'), 'next-count-value'))));
+    tap('nextCountMaxBtn', () => setNextCount(Number(dataAttr($('nextCountMaxBtn'), 'next-count-value'))));
+    tap('exportBackupBtn', exportJson);
+    tap('exportLogBtn', exportLogCsv);
+    tap('importBackupBtn', showImportPasteDialog);
+    $('importFileInput').addEventListener('change', function(e){ handleImportFile(e.target.files && e.target.files[0] ? e.target.files[0] : null); });
+    setTap($('newPlayerColorGrid'), (e) => {
+      const swatch = closestByClass(e.target, 'color-swatch');
+      if(!swatch) return;
+      const color = dataAttr(swatch, 'color') || COLORS[0];
+      if(selectedPlayer && getPlayer(selectedPlayer.playerId)) setSelectedPlayerColor(color);
+      else{
+        selectedNewPlayerColor = color;
+        renderColorPicker();
+      }
+    });
+    const collapseButtons = document.querySelectorAll('[data-collapse-target]');
+    for(let i = 0; i < collapseButtons.length; i += 1){
+      const btn = collapseButtons[i];
+      setTap(btn, () => {
+        const target = dataAttr(btn, 'collapse-target');
+        if(collapsedSections.has(target)) collapsedSections.delete(target);
+        else collapsedSections.add(target);
+        saveCollapsedSections();
+        renderCollapsedSections();
+      });
+    }
+
+    if(window.speechSynthesis){
+      if(window.speechSynthesis.addEventListener) window.speechSynthesis.addEventListener('voiceschanged', populateVoiceSelects);
+      window.speechSynthesis.onvoiceschanged = populateVoiceSelects;
+    }
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => { snapFloatingButton(); }, 150);
+    });
+  }
+
+  function registerServiceWorker(){
+    if('serviceWorker' in navigator){
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(console.warn);
+      });
+    }
+  }
+
+  function simplifyLabels(){
+    if($('fetchRosterBtn')) $('fetchRosterBtn').textContent = '更新日安名單';
+    if($('exportBackupBtn')) $('exportBackupBtn').textContent = '複製名單';
+    if($('importBackupBtn')) $('importBackupBtn').textContent = '貼上名單';
+    if($('resetTodayBtn')) $('resetTodayBtn').textContent = '今日重新開始';
+  }
+
+  function exposeDebugApi(){
+    if(!DEBUG_MODE) return;
+    window.__badmintonIpadV1 = {
+      getState:function(){ return clone(state); },
+      setState:function(nextState){
+        state = normalizeState(nextState || {});
+        setSelectedPlayer(null);
+        saveState();
+        render();
+      },
+      tap:function(id){
+        const el = $(id);
+        if(!el) throw new Error('missing element ' + id);
+        const event = {
+          type:'touchend',
+          target:el,
+          cancelable:true,
+          preventDefault:function(){},
+          stopPropagation:function(){}
+        };
+        el.dispatchEvent(event);
+      },
+      handleBoardInteraction:handleBoardInteraction,
+      courtDown:courtDown,
+      nextUp:nextUp,
+      setCourtMode:setCourtMode,
+      setNextCount:setNextCount,
+      resetToday:resetToday,
+      clearAll:clearAll,
+      importPlayersFromText:importPlayersFromText,
+      importRosterPlayers:importRosterPlayers,
+      setSelectedPlayerColor:setSelectedPlayerColor,
+      requestRosterApi:requestRosterApi,
+      showRosterImportDialog:showRosterImportDialog,
+      showRosterEventList:showRosterEventList,
+      showRosterPreview:showRosterPreview,
+      exportJson:exportJson,
+      exportLogCsv:exportLogCsv,
+      callPlayers:callPlayers,
+      repeatLastCall:repeatLastCall,
+      detectNameLanguage:detectNameLanguage,
+      populateVoiceSelects:populateVoiceSelects
+    };
+  }
+
+  function init(){
+    isAdmin = isAdminUnlocked();
+    simplifyLabels();
+    bindEvents();
+    initPanelScrollGuard();
+    initFloatingButton();
+    populateVoiceSelects();
+    render();
+    exposeDebugApi();
+    registerServiceWorker();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
