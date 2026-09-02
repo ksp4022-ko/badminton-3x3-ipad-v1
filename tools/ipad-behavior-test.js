@@ -240,6 +240,8 @@ function baseState(players, extraSettings) {
     settings: Object.assign({
       courtCount: 3,
       nextCount: 3,
+      nextCount2x2: 2,
+      nextCount3x3: 3,
       playersPerCourt: 4,
       adminPassword: '1111',
       freePlayMode: true,
@@ -288,6 +290,29 @@ async function run() {
   vm.runInContext(mainScript, context);
   const api = context.window.__badmintonIpadV1;
   assert('debug api exposed', !!api);
+
+  api.setState(baseState([]));
+  await api.setNextCount(5);
+  assert('modern 3x3 next count can increase to five', api.getState().settings.nextCount3x3 === 5 && (context.document.getElementById('nextRow').innerHTML.match(/data-zone-card=/g) || []).length === 5);
+  await api.setCourtMode(2);
+  await api.setNextCount(4);
+  assert('modern 2x2 next count can increase to four', api.getState().settings.nextCount2x2 === 4 && (context.document.getElementById('nextRow').innerHTML.match(/data-zone-card=/g) || []).length === 4);
+  await api.setCourtMode(3);
+  assert('next count is remembered separately per mode', api.getState().settings.nextCount3x3 === 5 && (context.document.getElementById('nextRow').innerHTML.match(/data-zone-card=/g) || []).length === 5);
+
+  api.setState(baseState([player('busy1', 'Busy', 'court1', 1)], { nextCount3x3: 3 }));
+  const blockedNextCount = api.setNextCount(5);
+  api.tap('modalOkBtn');
+  await blockedNextCount;
+  assert('next count change requires empty board', api.getState().settings.nextCount3x3 === 3);
+
+  const legacyNextContext = createContext();
+  vm.createContext(legacyNextContext);
+  vm.runInContext(mainScript, legacyNextContext);
+  legacyNextContext.document.documentElement.classList.add('legacyIpad');
+  const legacyNextApi = legacyNextContext.window.__badmintonIpadV1;
+  legacyNextApi.setState(baseState([], { nextCount3x3: 5 }));
+  assert('legacy iPad keeps fixed next count for now', (legacyNextContext.document.getElementById('nextRow').innerHTML.match(/data-zone-card=/g) || []).length === 3);
 
   context.__voices = [
     { name: 'Taiwan Local', lang: 'zh-TW', localService: true },

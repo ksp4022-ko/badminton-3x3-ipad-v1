@@ -41,5 +41,8 @@ assert('admin tools have inner side padding', html.includes('#adminTools{padding
 assert('compact admin rows exist', html.includes('compact-state-row') && html.includes('player-admin-row') && html.includes('system-mode-row') && html.includes('admin-button-row four'));
 assert('player add row has fixed button and compact swatches', html.includes('.player-add-row{grid-template-columns:56px minmax(160px,1fr) 332px 108px;}') && html.includes('grid-template-columns:repeat(12,24px)') && html.includes('width:24px'));
 assert('system mode status is not duplicated', html.includes("textContent = '場地模式'") && !html.includes('場地模式：${currentMode()}'));
+assert('modern next row can scroll horizontally', cssRuleIncludes('.zone-row.next-scroll', 'overflow-x:auto') && html.includes("classList.toggle('next-scroll'"));
+assert('next zones support up to five areas', html.includes("const NEXTS = ['next1','next2','next3','next4','next5']"));
+assert('next count admin controls exist', html.includes('id="nextCountControls"') && html.includes('data-next-count-option="min"') && html.includes('function setNextCount'));
 assert('zone labels are localized', html.includes("return '場地 '") && html.includes("return '預備區 '"));
 assert('roster import defaults to blue', html.includes('color:COLORS[0]'));

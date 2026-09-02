@@ -107,6 +107,8 @@
     .section-title{display:none;}
     .zone-row{height:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;min-width:0;min-height:0;}
     .zone-row.mode-2{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .zone-row.next-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:3px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
+    .zone-row.next-scroll .zone-card{min-width:0;}
     .zone-card{background:rgba(255,255,255,.96);border:1px solid #bae6fd;border-radius:var(--radius);box-shadow:0 10px 22px rgba(15,23,42,.1);padding:8px;min-width:0;min-height:0;display:flex;flex-direction:column;}
     .zone-card.call-target{animation:courtCallPulse 1.6s ease-in-out 0s 2;border-color:var(--call-border,#facc15);box-shadow:0 0 0 var(--call-ring,4px) var(--call-soft,rgba(250,204,21,.45)),0 10px 22px rgba(15,23,42,.16);}
     .zone-card.call-target .zone-head{box-shadow:inset 0 0 0 3px rgba(255,255,255,.85);}
@@ -205,6 +207,9 @@
     .admin-button-row.four{grid-template-columns:repeat(4,minmax(0,1fr));}
     .system-mode-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end;margin:4px 0 6px;}
     .segmented-group{display:grid;grid-template-columns:76px 1fr;gap:8px;align-items:center;}
+    .next-count-group{margin:6px 0;}
+    .next-count-group .compact-row-label{min-width:76px;}
+    .next-count-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;}
     #adminTools .mode-row{gap:4px;}
     .help{font-size:14px;line-height:1.35;color:#64748b;font-weight:700;margin:6px 0 0;}
     .mode-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -277,6 +282,7 @@
     html.legacyIpadLandscape .app-shell{max-width:none;padding:2px max(4px,var(--safe-right)) max(4px,var(--safe-bottom)) max(4px,var(--safe-left));gap:3px;grid-template-rows:minmax(0,1fr) minmax(0,1fr);}
     html.legacyIpadLandscape .board-section{min-height:0;overflow:hidden;}
     html.legacyIpadLandscape .zone-row{gap:3px;min-height:0;}
+    html.legacyIpadLandscape .zone-row.next-scroll{overflow:hidden;padding-bottom:0;}
     html.legacyIpadLandscape .zone-card{padding:3px;border-radius:12px;box-shadow:0 3px 10px rgba(15,23,42,.12);overflow:hidden;display:grid;grid-template-rows:60px minmax(0,calc(100% - 62px));row-gap:2px;}
     html.legacyIpadLandscape .zone-head{height:60px;min-height:60px;margin-bottom:0;padding:9px 11px;border-radius:10px;}
     html.legacyIpadLandscape .zone-title{font-size:30px;line-height:1;}
@@ -478,6 +484,14 @@
                   </div>
                 </div>
               </div>
+              <div class="segmented-group next-count-group" id="nextCountControls">
+                <div class="compact-row-label">預備區數量</div>
+                <div class="next-count-choices">
+                  <button id="nextCountMinBtn" data-next-count-option="min">3</button>
+                  <button id="nextCountMidBtn" data-next-count-option="mid">4</button>
+                  <button id="nextCountMaxBtn" data-next-count-option="max">5</button>
+                </div>
+              </div>
               <div class="admin-button-row three">
                 <button id="randomFillBtn">隨機填滿</button>
                 <button class="primary" id="fetchRosterBtn">更新日安名單</button>
@@ -526,7 +540,7 @@
   const SHUTTLE_ROSTER_API_BASE = 'https://badminton-signup-v6-alpha.badminton-signup-v6-worker.workers.dev/api/v7-shuttle';
   const DEBUG_MODE = location.search.indexOf('debug=1') >= 0;
   const COURTS = ['court1','court2','court3'];
-  const NEXTS = ['next1','next2','next3'];
+  const NEXTS = ['next1','next2','next3','next4','next5'];
   const SLOTS = [1,2,3,4];
   const COLORS = ['#bfdbfe','#bbf7d0','#fde68a','#fecaca','#ddd6fe','#fed7aa','#bae6fd','#fbcfe8','#ccfbf1','#e9d5ff','#d9f99d','#fef3c7'];
   const DEFAULT_COLLAPSED_SECTIONS = ['restSectionBody','adminSectionBody','autoCallBody','playerManageBody','gamesManageBody','systemOpsBody'];
@@ -769,6 +783,8 @@
       settings:{
         courtCount:3,
         nextCount:3,
+        nextCount2x2:2,
+        nextCount3x3:3,
         playersPerCourt:4,
         adminPassword:'1111',
         freePlayMode:false,
@@ -813,7 +829,9 @@
     const merged = Object.assign(base, data || {});
     merged.settings = Object.assign(base.settings, data && data.settings ? data.settings : {});
     merged.settings.courtCount = Number(merged.settings.courtCount) === 2 ? 2 : 3;
-    merged.settings.nextCount = merged.settings.courtCount;
+    merged.settings.nextCount2x2 = normalizeNextCount(2, merged.settings.nextCount2x2 || (merged.settings.courtCount === 2 ? merged.settings.nextCount : 2));
+    merged.settings.nextCount3x3 = normalizeNextCount(3, merged.settings.nextCount3x3 || (merged.settings.courtCount === 3 ? merged.settings.nextCount : 3));
+    merged.settings.nextCount = activeNextCountForSettings(merged.settings);
     merged.settings.collapsedSections = Array.isArray(merged.settings.collapsedSections)
       ? merged.settings.collapsedSections.filter(id => DEFAULT_COLLAPSED_SECTIONS.includes(id))
       : DEFAULT_COLLAPSED_SECTIONS.slice();
@@ -851,7 +869,28 @@
 
   function validZone(zone){ return zone === 'rest' || COURTS.includes(zone) || NEXTS.includes(zone); }
   function activeCourts(){ return COURTS.slice(0, Number(state.settings.courtCount) === 2 ? 2 : 3); }
-  function activeNexts(){ return NEXTS.slice(0, Number(state.settings.nextCount) === 2 ? 2 : 3); }
+  function normalizeNextCount(modeCount, value){
+    const count = Number(value);
+    const min = modeCount === 2 ? 2 : 3;
+    const max = modeCount === 2 ? 4 : 5;
+    if(!Number.isFinite(count)) return min;
+    return Math.max(min, Math.min(max, Math.round(count)));
+  }
+  function activeNextCountForSettings(settings){
+    const modeCount = Number(settings.courtCount) === 2 ? 2 : 3;
+    return modeCount === 2 ? normalizeNextCount(2, settings.nextCount2x2) : normalizeNextCount(3, settings.nextCount3x3);
+  }
+  function isLegacyIpadRuntime(){
+    return document.documentElement.classList.contains('legacyIpad');
+  }
+  function activeNextCount(){
+    if(isLegacyIpadRuntime()) return Number(state.settings.courtCount) === 2 ? 2 : 3;
+    return activeNextCountForSettings(state.settings);
+  }
+  function activeNexts(){ return NEXTS.slice(0, activeNextCount()); }
+  function nextCountOptionsForMode(){
+    return Number(state.settings.courtCount) === 2 ? [2,3,4] : [3,4,5];
+  }
   function currentMode(){ return Number(state.settings.courtCount) === 2 ? '2x2' : '3x3'; }
   function boardPlayers(){ return activePlayers().filter(p => COURTS.includes(p.zone) || NEXTS.includes(p.zone)); }
   function isBoardEmpty(){ return boardPlayers().length === 0; }
@@ -1072,9 +1111,18 @@
 
   function renderZones(){
     $('courtRow').classList.toggle('mode-2', activeCourts().length === 2);
-    $('nextRow').classList.toggle('mode-2', activeNexts().length === 2);
+    const nexts = activeNexts();
+    const nextCount = nexts.length;
+    $('nextRow').classList.toggle('mode-2', nextCount === 2);
+    $('nextRow').classList.toggle('next-scroll', !isLegacyIpadRuntime() && nextCount > activeCourts().length);
+    if(!isLegacyIpadRuntime() && nextCount > activeCourts().length){
+      const minWidth = currentMode() === '2x2' ? 310 : 300;
+      $('nextRow').style.gridTemplateColumns = 'repeat(' + nextCount + ', minmax(' + minWidth + 'px, 1fr))';
+    }else{
+      $('nextRow').style.gridTemplateColumns = '';
+    }
     $('courtRow').innerHTML = activeCourts().map(z => renderZoneCard(z, true)).join('');
-    $('nextRow').innerHTML = activeNexts().map(z => renderZoneCard(z, false)).join('');
+    $('nextRow').innerHTML = nexts.map(z => renderZoneCard(z, false)).join('');
   }
 
   function renderZoneCard(zone, isCourt){
@@ -1190,11 +1238,29 @@
     if($('courtModeStatus')) $('courtModeStatus').textContent = '場地模式';
     if($('use3x3Btn')) $('use3x3Btn').classList.toggle('active', currentMode() === '3x3');
     if($('use2x2Btn')) $('use2x2Btn').classList.toggle('active', currentMode() === '2x2');
+    renderNextCountControls();
     $('voiceRateSelect').value = state.settings.voiceRate || 'normal';
     $('voicePitchSelect').value = state.settings.voicePitch || 'normal';
     populateVoiceSelects();
     const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
     $('renamePlayerInput').value = p ? p.name : '';
+  }
+
+  function renderNextCountControls(){
+    const box = $('nextCountControls');
+    if(!box) return;
+    const legacy = isLegacyIpadRuntime();
+    box.style.display = legacy ? 'none' : '';
+    if(legacy) return;
+    const options = nextCountOptionsForMode();
+    const buttons = [$('nextCountMinBtn'), $('nextCountMidBtn'), $('nextCountMaxBtn')];
+    const current = activeNextCountForSettings(state.settings);
+    for(let i = 0; i < buttons.length; i += 1){
+      if(!buttons[i]) continue;
+      buttons[i].textContent = String(options[i]);
+      buttons[i].setAttribute('data-next-count-value', String(options[i]));
+      buttons[i].classList.toggle('active', options[i] === current);
+    }
   }
 
   function renderColorPicker(){
@@ -1532,10 +1598,34 @@
       return;
     }
     state.settings.courtCount = count === 2 ? 2 : 3;
-    state.settings.nextCount = count === 2 ? 2 : 3;
+    state.settings.nextCount = activeNextCountForSettings(state.settings);
     logAction('changeCourtMode','system',[],`切換為 ${mode}`);
     saveState();
     showToast(`已切換為 ${mode}`);
+    render();
+  }
+
+  async function setNextCount(count){
+    if(isLegacyIpadRuntime()){
+      await alertDialog('暫不支援', '舊 iPad 版預備區數量稍後另外調整，目前維持固定數量。');
+      return;
+    }
+    const modeCount = Number(state.settings.courtCount) === 2 ? 2 : 3;
+    const nextCount = normalizeNextCount(modeCount, count);
+    if(activeNextCountForSettings(state.settings) === nextCount){
+      showToast(`預備區目前已是 ${nextCount} 個`);
+      return;
+    }
+    if(!isBoardEmpty()){
+      await alertDialog('無法修改預備區數量', '修改前請先執行「今日重新開始」，確保 Court 與預備區都是空的。');
+      return;
+    }
+    if(modeCount === 2) state.settings.nextCount2x2 = nextCount;
+    else state.settings.nextCount3x3 = nextCount;
+    state.settings.nextCount = nextCount;
+    logAction('changeNextCount','system',[],`${currentMode()} 預備區數量改為 ${nextCount}`);
+    saveState();
+    showToast(`預備區數量已改為 ${nextCount}`);
     render();
   }
 
@@ -2604,6 +2694,9 @@
     tap('clearAllBtn', clearAll);
     tap('use3x3Btn', () => setCourtMode(3));
     tap('use2x2Btn', () => setCourtMode(2));
+    tap('nextCountMinBtn', () => setNextCount(Number(dataAttr($('nextCountMinBtn'), 'next-count-value'))));
+    tap('nextCountMidBtn', () => setNextCount(Number(dataAttr($('nextCountMidBtn'), 'next-count-value'))));
+    tap('nextCountMaxBtn', () => setNextCount(Number(dataAttr($('nextCountMaxBtn'), 'next-count-value'))));
     tap('exportBackupBtn', exportJson);
     tap('exportLogBtn', exportLogCsv);
     tap('importBackupBtn', showImportPasteDialog);
@@ -2682,6 +2775,8 @@
       handleBoardInteraction:handleBoardInteraction,
       courtDown:courtDown,
       nextUp:nextUp,
+      setCourtMode:setCourtMode,
+      setNextCount:setNextCount,
       resetToday:resetToday,
       clearAll:clearAll,
       importPlayersFromText:importPlayersFromText,
