@@ -226,14 +226,32 @@ function installFakeAudio(context) {
   context.Audio = function Audio(src) {
     this.src = src;
     this.preload = '';
+    this.readyState = 0;
+    this.oncanplaythrough = null;
+    this.oncanplay = null;
+    this.onloadeddata = null;
     this.onended = null;
     this.onerror = null;
+    this.onplay = null;
+    this.onplaying = null;
     context.__audioCreated.push(src);
+    this.load = function () {
+      setTimeout(() => {
+        if (context.__audioOk[src]) {
+          this.readyState = 2;
+          if (typeof this.onloadeddata === 'function') this.onloadeddata({ type: 'loadeddata' });
+        } else if (typeof this.onerror === 'function') {
+          this.onerror({ type: 'error' });
+        }
+      }, 0);
+    };
     this.play = function () {
       return new Promise((resolve, reject) => {
         setTimeout(() => {
           if (context.__audioOk[src]) {
             context.__playedAudio.push(src);
+            if (typeof this.onplay === 'function') this.onplay({ type: 'play' });
+            if (typeof this.onplaying === 'function') this.onplaying({ type: 'playing' });
             if (typeof this.onended === 'function') this.onended({ type: 'ended' });
             resolve();
           } else {
@@ -410,7 +428,8 @@ async function run() {
     './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3': true,
     './voice-poc/zh-TW-HsiaoChenNeural/ge.mp3': true,
     './voice-poc/zh-TW-HsiaoChenNeural/jie.mp3': true,
-    './voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3': true
+    './voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3': true,
+    './voice-poc/zh-TW-HsiaoChenNeural/go-court-3.mp3': true
   };
   api.callPlayers(['柯'], 'court1');
   await wait(700);
@@ -420,20 +439,44 @@ async function run() {
   context.__playedAudio = [];
   api.callPlayers(['Chris 哥'], 'court2');
   await wait(900);
-  assert('english name plus ge uses english mp3 then ge mp3', context.__playedAudio.join('|') === './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3|./voice-poc/zh-TW-HsiaoChenNeural/ge.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3');
+  assert('english name plus ge uses english mp3 then ge mp3', context.__playedAudio.join('|') === './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3|./voice-poc/zh-TW-HsiaoChenNeural/ge.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3' && context.__spokenUtterances.length === 0);
 
   context.__spokenUtterances = [];
   context.__playedAudio = [];
   api.callPlayers(['Chris 姊'], 'court2');
   await wait(900);
-  assert('english name plus jie uses english mp3 then jie mp3', context.__playedAudio.join('|') === './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3|./voice-poc/zh-TW-HsiaoChenNeural/jie.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3');
+  assert('english name plus jie uses english mp3 then jie mp3', context.__playedAudio.join('|') === './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3|./voice-poc/zh-TW-HsiaoChenNeural/jie.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3' && context.__spokenUtterances.length === 0);
   context.__playedAudio = [];
+  context.__spokenUtterances = [];
   api.repeatLastCall();
   await wait(900);
-  assert('repeat last call reuses fixed audio path', context.__playedAudio.join('|') === './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3|./voice-poc/zh-TW-HsiaoChenNeural/jie.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3');
+  assert('repeat last call reuses fixed audio path', context.__playedAudio.join('|') === './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3|./voice-poc/zh-TW-HsiaoChenNeural/jie.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3' && context.__spokenUtterances.length === 0);
 
   context.__spokenUtterances = [];
   context.__playedAudio = [];
+  api.callPlayers(['柯'], 'court3');
+  await wait(900);
+  assert('mp3 court 3 uses fixed audio without speech', context.__playedAudio.join('|') === './voice-poc/zh-TW-HsiaoChenNeural/ke.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-3.mp3' && context.__spokenUtterances.length === 0);
+
+  context.__spokenUtterances = [];
+  context.__playedAudio = [];
+  context.__audioOk = {
+    './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3': true,
+    './voice-poc/zh-TW-HsiaoChenNeural/ge.mp3': false,
+    './voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3': true
+  };
+  api.callPlayers(['Chris 哥'], 'court2');
+  await wait(900);
+  assert('incomplete english suffix fixed audio falls back without partial playback', context.__playedAudio.join('|') === './voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3' && context.__spokenUtterances.length === 1 && context.__spokenUtterances[0].text === 'Chris 哥');
+
+  context.__spokenUtterances = [];
+  context.__playedAudio = [];
+  context.__audioOk = {
+    './voice-poc/zh-TW-HsiaoChenNeural/ke.mp3': true,
+    './voice-poc/zh-TW-HsiaoChenNeural/go-court-1.mp3': true,
+    './voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3': true,
+    './voice-poc/zh-TW-HsiaoChenNeural/go-court-3.mp3': true
+  };
   api.callPlayers(['Bobo 哥'], 'court1');
   await wait(500);
   assert('missing english mp3 falls back to original full name', context.__spokenUtterances[0].text === 'Bobo 哥');
@@ -444,6 +487,13 @@ async function run() {
   api.callPlayers(['柯'], 'court1');
   await wait(900);
   assert('missing court phrase falls back to court label speech', context.__spokenUtterances.some((u) => u.text === '請到場地A。'));
+
+  context.__spokenUtterances = [];
+  context.__playedAudio = [];
+  api.setState(baseState([], { courtLabels: { court1: '5', court2: '2', court3: '3' } }));
+  api.callPlayers(['柯'], 'court1');
+  await wait(900);
+  assert('court 5 phrase falls back to browser speech once', context.__spokenUtterances.filter((u) => u.text === '請到場地5。').length === 1 && !context.__playedAudio.includes('./voice-poc/zh-TW-HsiaoChenNeural/go-court-5.mp3'));
 
   context.__spokenUtterances = [];
   context.__playedAudio = [];

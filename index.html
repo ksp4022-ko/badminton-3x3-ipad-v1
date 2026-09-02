@@ -625,8 +625,7 @@
     courtPhrases:{
       '1':'zh-TW-HsiaoChenNeural/go-court-1.mp3',
       '2':'zh-TW-HsiaoChenNeural/go-court-2.mp3',
-      '3':'zh-TW-HsiaoChenNeural/go-court-3.mp3',
-      '4':'zh-TW-HsiaoChenNeural/go-court-4.mp3'
+      '3':'zh-TW-HsiaoChenNeural/go-court-3.mp3'
     },
     nextPrepare:'zh-TW-HsiaoChenNeural/next-group-prepare.mp3'
   };
@@ -1935,13 +1934,23 @@
     if(!url || typeof Audio === 'undefined'){ done(false); return; }
     let audio;
     let finished = false;
-    let timer = null;
+    let startTimer = null;
     function finish(ok){
       if(finished) return;
       finished = true;
-      if(timer) clearTimeout(timer);
+      if(startTimer) clearTimeout(startTimer);
+      if(!ok && audio){
+        try{ audio.pause(); }catch(err){}
+        try{ audio.src = ''; }catch(err){}
+      }
       if(activeCallAudio === audio) activeCallAudio = null;
       done(!!ok);
+    }
+    function started(){
+      if(startTimer){
+        clearTimeout(startTimer);
+        startTimer = null;
+      }
     }
     try{
       audio = new Audio(url);
@@ -1949,12 +1958,57 @@
       audio.preload = 'auto';
       audio.onended = function(){ finish(true); };
       audio.onerror = function(){ finish(false); };
+      audio.onplay = started;
+      audio.onplaying = started;
       const played = audio.play();
-      if(played && played.catch) played.catch(function(){ finish(false); });
-      timer = setTimeout(function(){ finish(false); }, 2200);
+      if(played && played.then) played.then(started).catch(function(){ finish(false); });
+      startTimer = setTimeout(function(){ finish(false); }, 1800);
     }catch(err){
       finish(false);
     }
+  }
+
+  function validateAudioUrl(url, token, done){
+    if(!url || typeof Audio === 'undefined'){ done(false); return; }
+    let audio;
+    let finished = false;
+    let timer = null;
+    function finish(ok){
+      if(finished) return;
+      finished = true;
+      if(timer) clearTimeout(timer);
+      if(audio){
+        try{ audio.src = ''; }catch(err){}
+      }
+      done(!!ok && token === speechCallToken);
+    }
+    try{
+      audio = new Audio(url);
+      audio.preload = 'auto';
+      audio.oncanplaythrough = function(){ finish(true); };
+      audio.oncanplay = function(){ finish(true); };
+      audio.onloadeddata = function(){ finish(true); };
+      audio.onerror = function(){ finish(false); };
+      if(audio.readyState >= 2){ finish(true); return; }
+      if(audio.load) audio.load();
+      timer = setTimeout(function(){ finish(false); }, 1600);
+    }catch(err){
+      finish(false);
+    }
+  }
+
+  function validateAudioParts(urls, token, done){
+    let index = 0;
+    function next(){
+      if(token !== speechCallToken){ done(false); return; }
+      if(index >= urls.length){ done(true); return; }
+      validateAudioUrl(urls[index], token, function(ok){
+        if(!ok){ done(false); return; }
+        index += 1;
+        next();
+      });
+    }
+    next();
   }
 
   function speakTextPart(part, token, done){
@@ -2037,9 +2091,15 @@
         setTimeout(function(){ speakNext(index + 1); }, 110);
       };
       if(part.audio && part.audio.length){
-        playAudioParts(part.audio, token, function(ok){
-          if(ok) next();
-          else speakTextPart(part, token, next);
+        validateAudioParts(part.audio, token, function(valid){
+          if(!valid){
+            speakTextPart(part, token, next);
+            return;
+          }
+          playAudioParts(part.audio, token, function(ok){
+            if(ok) next();
+            else speakTextPart(part, token, next);
+          });
         });
         return;
       }
