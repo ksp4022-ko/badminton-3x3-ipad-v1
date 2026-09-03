@@ -2,8 +2,11 @@ const fs = require('fs');
 
 const html = fs.readFileSync('index.html', 'utf8');
 const sw = fs.readFileSync('sw.js', 'utf8');
+const manifest = JSON.parse(fs.readFileSync('manifest.webmanifest', 'utf8'));
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+const versionMatch = html.match(/const APP_VERSION = '([^']+)'/);
+const appVersion = versionMatch && versionMatch[1];
 
 function assert(name, condition) {
   if (!condition) throw new Error('FAIL: ' + name);
@@ -43,7 +46,7 @@ assert('admin unlock persisted', html.includes('saveAdminUnlock()') && html.incl
 assert('debug mode exists', html.includes("location.search.indexOf('debug=1')") && html.includes('function debugLog'));
 assert('debug mode tracks board actions', html.includes("debugLog('zone-head courtDown'") && html.includes("debugLog('slot move success'") && html.includes("debugLog(inRest ? 'chip rest select'"));
 assert('v1 storage key isolated', html.includes("badminton3x3.ipad.v1.state"));
-assert('release version synchronized', html.includes("const APP_VERSION = '1.1.0-ipad'") && pkg.version === '1.1.0-ipad' && lock.version === '1.1.0-ipad' && lock.packages[''].version === '1.1.0-ipad');
+assert('release version synchronized', appVersion === '1.2.0-ipad' && pkg.version === appVersion && lock.version === appVersion && lock.packages[''].version === appVersion && sw.includes('v1.2.0-ipad'));
 assert('copy paste player list exists', html.includes('function playerNamesText') && html.includes('function showImportPasteDialog') && html.includes('function importPlayersFromText'));
 assert('player list exports plain names', html.includes("showExportText('複製名單', playerNamesText())") && html.includes(".join('\\n')"));
 assert('player list import accepts plain lines', html.includes('function parsePlayerListText') && html.includes("placeholder=\"A&#10;B&#10;C\"") && html.includes("replace(/^\\s*\\[(.*)\\]\\s*$/, '$1')"));
@@ -76,7 +79,10 @@ assert('speaker repeat floating button exists', html.includes('id="speakerButton
 assert('stable speaker tap exists', html.includes('function bindStableTap') && html.includes('function setStableTap'));
 assert('speaker button uses purple tool color', html.includes('.floating-button.speaker-button{display:none;background:linear-gradient(135deg,#6d28d9,#4f46e5);color:#fff'));
 assert('selected floating button still turns yellow', html.includes('.floating-button.has-selected{background:linear-gradient(135deg,#f59e0b,#facc15);color:#422006;}'));
-assert('admin nested section titles are blue', html.includes('#adminTools .panel-section .collapse-head') && html.includes('color:#1d4ed8'));
+assert('admin v2 fullscreen header exists', html.includes('class="float-panel admin-v2"') && html.includes('‹ 返回排場') && !html.includes('id="closePanelBtn">×'));
+assert('admin v2 sections exist', ['今日操作','自動呼叫','球員與場次','場地與排場','視覺與顯示','系統與資料'].every((label) => html.includes(label)));
+assert('admin v2 uses detail views for player and games', html.includes('id="playerDetailView"') && html.includes('id="gamesDetailView"') && html.includes('function showAdminDetail'));
+assert('admin footer version exists', html.includes('id="adminVersion"') && html.includes("textContent = 'v' + APP_VERSION"));
 assert('bilingual speech helpers exist', html.includes('function detectNameLanguage') && html.includes('function findPreferredVoice') && html.includes('function speakCallSequence'));
 assert('court call speaks player names sequentially', html.includes('function callSequenceParts') && html.includes('function playAudioParts') && html.includes('function speakTextPart') && html.includes('const nameGap = 90') && html.includes('const courtGap = 110'));
 assert('auto call has mutually exclusive Edge and Browser modes', html.includes("autoCallMode:'off'") && html.includes('id="edgeCallBtn"') && html.includes('id="browserCallBtn"') && html.includes('function browserCallSequenceParts') && html.includes('function edgeCallSequenceParts'));
@@ -88,6 +94,7 @@ assert('voice selectors populate safely', html.includes('function populateVoiceS
 assert('selected voice fallback exists', html.includes('function findSelectedVoice') && html.includes('findVoiceById(id)') && html.includes('return findPreferredVoice(lang);'));
 assert('voice test uses browser bilingual one-court sample', html.includes("speakCallSequence(['雅雯','Kevin'], 'court1', 'browser')"));
 assert('player name display controls exist', html.includes('id="playerNameScaleSelect"') && html.includes('id="playerNameFontSelect"') && html.includes('function savePlayerNameDisplaySettings'));
+assert('player name scale options are practical admin v2 set', html.includes('小 85%') && html.includes('標準 92%') && html.includes('特大 108%') && html.includes('const supported = [85,92,100,108]'));
 assert('player name fit cache exists', html.includes('playerNameFitCache') && html.includes('playerNameFitKey'));
 assert('panel scroll tap guard exists', html.includes('function initPanelScrollGuard') && html.includes('panelTouch.blockUntil') && html.includes('isPanelScrollBlocked(el)'));
 assert('floating tap uses drag threshold', html.includes('const FLOAT_DRAG_THRESHOLD = 8') && html.includes('const LEGACY_FLOAT_DRAG_THRESHOLD = 20') && html.includes('function floatingDragThreshold') && html.includes('startX:point.x') && html.includes('floatingTapHandledAt'));
@@ -103,6 +110,8 @@ assert('roster import clears list into rest', html.includes('function importRost
 assert('fixed viewport layout exists', html.includes('overflow:hidden') && html.includes('position:fixed;top:0;right:0;bottom:0;left:0;inset:0') && html.includes('height:var(--safe-vh)'));
 assert('modal mask has old safari fixed fallback', html.includes('.modal-mask{position:fixed;top:0;right:0;bottom:0;left:0;inset:0'));
 assert('manager panel opens fullscreen', html.includes('.float-panel{position:fixed;z-index:49;top:0;right:0;bottom:0;left:0') && html.includes('html.legacyIpadLandscape .float-panel{left:0;right:0;top:0;bottom:0'));
+assert('manifest allows portrait admin in A2HS', manifest.orientation === 'any');
+assert('portrait court guard remains but admin can bypass it', html.includes('請將裝置橫放') && html.includes('body.admin-panel-open .portrait-warning.phone{display:none!important;}') && html.includes("document.body.classList.toggle('admin-panel-open', panelOpen)"));
 assert('legacy ipad classes exist', html.includes('function detectLegacyIpad') && html.includes('legacyIpadLandscape') && html.includes('html.legacyIpadLandscape'));
 assert('legacy ipad measured viewport height exists', html.includes('function measuredLegacyViewportHeight') && html.includes('--legacy-vh') && html.includes('height:var(--legacy-vh)'));
 assert('legacy ipad safari compact layout exists', html.includes('legacyIpadSafari') && html.includes('html.legacyIpadSafari.legacyIpadLandscape'));

@@ -160,6 +160,71 @@ async function runCase(browser, mode, scenario) {
   await context.close();
 }
 
+async function runAdminCase(browser, scenario) {
+  const context = await browser.newContext({
+    viewport: { width: scenario.width, height: scenario.height },
+    deviceScaleFactor: 3,
+    isMobile: true,
+    hasTouch: true,
+    userAgent: iPadAirIos12Ua
+  });
+  const page = await context.newPage();
+  await page.addInitScript(({ state, standalone }) => {
+    Object.defineProperty(window.navigator, 'standalone', { value: standalone, configurable: true });
+    const d = new Date();
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    window.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(state));
+    window.localStorage.setItem('badminton3x3.ipad.v1.state.adminUnlockedDate', key);
+  }, { state: stateForMode('3x3'), standalone: !!scenario.standalone });
+  await page.goto(appUrl + '?debug=1');
+  await page.waitForSelector('#floatButton');
+  await page.click('#floatButton', { force: true });
+  await page.waitForSelector('#floatPanel.open');
+  await page.waitForSelector('#adminTools');
+
+  const metrics = await page.evaluate(() => {
+    const style = (id) => window.getComputedStyle(document.getElementById(id));
+    const rect = (id) => {
+      const r = document.getElementById(id).getBoundingClientRect();
+      return { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+    };
+    return {
+      bodyClass: document.body.className,
+      portraitWarningDisplay: style('floatPanel') && window.getComputedStyle(document.querySelector('.portrait-warning.phone')).display,
+      panel: rect('floatPanel'),
+      title: document.getElementById('panelTitle').textContent,
+      back: document.getElementById('closePanelBtn').textContent,
+      adminToolsDisplay: style('adminTools').display,
+      sectionTitles: Array.prototype.map.call(document.querySelectorAll('#adminTools .admin-v2-card h3'), (el) => el.textContent),
+      redCloseExists: !!document.querySelector('.close-strong'),
+      playerDetailVisibleBefore: document.getElementById('playerDetailView').classList.contains('show')
+    };
+  });
+
+  const label = 'Admin V2 ' + scenario.name;
+  assert(label + ' body marks panel open', /admin-panel-open/.test(metrics.bodyClass), metrics.bodyClass);
+  assert(label + ' portrait warning is bypassed when open', metrics.portraitWarningDisplay === 'none', metrics.portraitWarningDisplay);
+  assert(label + ' panel fills viewport', metrics.panel.left <= 1 && metrics.panel.top <= 1 && metrics.panel.width >= scenario.width - 2 && metrics.panel.height >= scenario.height - 2, JSON.stringify(metrics.panel));
+  assert(label + ' header is compact nav', metrics.title === '管理員' && metrics.back.indexOf('返回排場') >= 0, JSON.stringify({ title: metrics.title, back: metrics.back }));
+  assert(label + ' admin tools visible after unlock', metrics.adminToolsDisplay !== 'none', metrics.adminToolsDisplay);
+  assert(label + ' all v2 sections visible', ['今日操作','自動呼叫','球員與場次','場地與排場','視覺與顯示','系統與資料'].every((title) => metrics.sectionTitles.indexOf(title) >= 0), JSON.stringify(metrics.sectionTitles));
+  assert(label + ' old red close removed', !metrics.redCloseExists);
+  assert(label + ' detail views are initially closed', metrics.playerDetailVisibleBefore === false);
+
+  await page.click('#showPlayerDetailBtn');
+  const detailVisible = await page.evaluate(() => document.getElementById('playerDetailView').classList.contains('show') && document.getElementById('adminDetailNav').style.display === 'none');
+  assert(label + ' player detail opens as subview', detailVisible);
+  await page.click('#hidePlayerDetailBtn');
+  const detailClosed = await page.evaluate(() => !document.getElementById('playerDetailView').classList.contains('show') && document.getElementById('adminDetailNav').style.display !== 'none');
+  assert(label + ' player detail returns to admin home', detailClosed);
+
+  await page.click('#closePanelBtn');
+  const closed = await page.evaluate(() => !document.getElementById('floatPanel').classList.contains('open') && !document.body.classList.contains('admin-panel-open'));
+  assert(label + ' back button closes admin', closed);
+
+  await context.close();
+}
+
 async function main() {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const scenarios = [
@@ -171,6 +236,9 @@ async function main() {
       await runCase(browser, '3x3', scenario);
       await runCase(browser, '2x2', scenario);
     }
+    await runAdminCase(browser, { name: 'Safari portrait', standalone: false, width: 390, height: 844 });
+    await runAdminCase(browser, { name: 'Standalone portrait', standalone: true, width: 390, height: 844 });
+    await runAdminCase(browser, { name: 'Safari landscape', standalone: false, width: 1024, height: 638 });
   } finally {
     await browser.close();
   }

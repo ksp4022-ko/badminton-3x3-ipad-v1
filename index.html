@@ -313,6 +313,7 @@
     }
     @media (max-width:700px) and (orientation:portrait){
       .portrait-warning.phone{display:flex;}
+      .floating-button{z-index:101;}
     }
     @media (min-width:701px) and (orientation:portrait){
       .app-shell{max-width:900px;}
@@ -359,12 +360,173 @@
     html.legacyIpadSafari.legacyIpadLandscape .player-chip .name{font-size:40px;}
     html.legacyIpadStandalone.legacyIpadLandscape .app-shell{padding-top:26px;}
     html.legacyIpadStandalone.legacyIpadLandscape .floating-button{top:58vh;top:58dvh;}
+
+    body.admin-panel-open .floating-button{display:none!important;}
+    body.admin-panel-open .portrait-warning.phone{display:none!important;}
+    .portrait-card .big{font-size:32px;}
+    .admin-v2.float-panel,
+    html.modernIpad .admin-v2.float-panel,
+    html.modernDesktop .admin-v2.float-panel,
+    html.legacyIpadLandscape .admin-v2.float-panel{
+      left:0;right:0;top:0;bottom:0;width:100vw;height:100vh;height:var(--safe-vh);max-height:var(--safe-vh);
+      border:0;border-radius:0;background:#0f1115;color:#f5f7fa;box-shadow:none;
+    }
+    .admin-v2 .panel-head{
+      position:sticky;top:0;z-index:3;
+      min-height:52px;padding:calc(8px + var(--safe-top)) calc(14px + var(--safe-right)) 8px calc(14px + var(--safe-left));
+      display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:1px solid #2e3442;background:rgba(15,17,21,.96);
+    }
+    .admin-v2 .panel-title{grid-column:2;font-size:20px;font-weight:900;color:#f5f7fa;text-align:center;}
+    .admin-back-btn{
+      grid-column:1;justify-self:start;min-height:44px;border:0;background:transparent;color:#4f8cff;
+      font-size:18px;font-weight:900;padding:4px 0;
+    }
+    .admin-v2 .panel-body{
+      padding:14px max(14px,var(--safe-right)) calc(24px + var(--safe-bottom)) max(14px,var(--safe-left));
+      background:#0f1115;color:#f5f7fa;
+    }
+    .admin-v2 .backup-summary,
+    .admin-status-card{
+      background:#171a21;border:1px solid #2e3442;border-radius:16px;color:#b7c0cd;
+      padding:12px 14px;font-size:16px;line-height:1.35;
+    }
+    .admin-v2 .quick-grid{display:none;}
+    .admin-v2 #restSection{display:none;}
+    .admin-v2 #adminSection{
+      margin:12px auto 0;padding:0;border:0;border-radius:0;background:transparent;max-width:980px;
+    }
+    .admin-v2 .admin-section-head{display:none;}
+    .admin-login-card{
+      max-width:440px;margin:22px auto;padding:18px;border-radius:22px;background:#171a21;border:1px solid #2e3442;
+    }
+    #adminTools{
+      padding:0;background:transparent;color:#f5f7fa;max-width:980px;margin:0 auto;
+    }
+    #adminTools .admin-v2-card{
+      margin:12px 0;padding:14px;border:0;border-radius:20px;background:#171a21;color:#f5f7fa;
+    }
+    #adminTools .admin-v2-card h3{
+      margin:0 0 12px;font-size:19px;line-height:1.2;color:#f5f7fa;font-weight:1000;
+    }
+    #adminTools label,
+    #adminTools .compact-row-label{
+      display:block;margin:0 0 6px;font-size:14px;line-height:1.2;color:#b7c0cd;font-weight:850;
+    }
+    #adminTools button,
+    #adminTools input,
+    #adminTools select{
+      min-height:44px;border-radius:12px;border:1px solid #2e3442;background:#232834;color:#f5f7fa;
+      font-size:16px;font-weight:850;padding:9px 12px;box-shadow:none;
+    }
+    #adminTools input,
+    #adminTools select{
+      width:100%;background:#1e222b;color:#f5f7fa;
+    }
+    #adminTools button{background:#2a303b;color:#f5f7fa;}
+    #adminTools button.primary{background:#30cfa3;color:#061411;border-color:#30cfa3;}
+    #adminTools button.active{background:#4f8cff;color:#fff;border-color:#4f8cff;}
+    #adminTools button.warn{background:#332616;color:#ffb84d;border-color:#8a621f;}
+    #adminTools button.danger{background:#3a1c22;color:#ff8b8b;border-color:#8f343f;}
+    #adminTools button:disabled{opacity:.45;}
+    #adminTools .help,
+    #adminTools .compact-help{color:#8892a0;font-size:14px;font-weight:750;line-height:1.35;}
+    .admin-action-grid,
+    .admin-button-row,
+    .admin-nav-grid,
+    .mode-row,
+    .three-state-row{
+      display:grid;gap:10px;
+    }
+    .admin-action-grid.four{grid-template-columns:repeat(4,minmax(0,1fr));}
+    .admin-button-row.three{grid-template-columns:repeat(3,minmax(0,1fr));}
+    .admin-button-row.four{grid-template-columns:repeat(4,minmax(0,1fr));}
+    .admin-button-row.single{grid-template-columns:1fr;}
+    .admin-nav-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .segmented-wide{grid-template-columns:repeat(3,minmax(0,1fr));}
+    .auto-call-content.mode-off .edge-settings,
+    .auto-call-content.mode-off .browser-settings{display:none;}
+    .auto-call-content.mode-edge .auto-off-status,
+    .auto-call-content.mode-edge .browser-settings{display:none;}
+    .auto-call-content.mode-browser .auto-off-status,
+    .auto-call-content.mode-browser .edge-settings{display:none;}
+    .auto-off-status{
+      margin-top:10px;padding:12px;border-radius:14px;background:#1e222b;color:#b7c0cd;font-weight:850;
+    }
+    .edge-settings,
+    .browser-settings{
+      margin-top:12px;padding-top:12px;border-top:1px solid #2e3442;
+    }
+    #adminTools .admin-subtitle{
+      display:block;margin:0 0 10px;padding:0;border:0;background:transparent;color:#b7c0cd;font-size:15px;font-weight:1000;
+    }
+    .edge-status{
+      margin:0 0 10px;padding:10px 12px;border-radius:14px;background:#1e222b;color:#b7c0cd;
+    }
+    .edge-status.is-ready{color:#30cfa3;}
+    .edge-status.is-missing,.edge-status.is-error,.edge-status.is-blocked{color:#ff8b8b;}
+    .edge-status.is-checking{color:#ffb84d;}
+    .voice-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 10px;}
+    .voice-grid div:nth-child(1),
+    .voice-grid div:nth-child(2){grid-column:auto;}
+    .effect-grid,
+    .player-text-grid,
+    .system-mode-row{
+      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px;
+    }
+    .compact-state-row{
+      display:grid;grid-template-columns:1fr minmax(96px,140px) minmax(96px,140px);gap:10px;align-items:end;margin:0;
+    }
+    .segmented-group{display:block;}
+    .mode-row{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .next-count-group{margin-top:12px;}
+    .next-count-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+    .court-label-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px;}
+    .admin-detail-view{display:none;margin-top:12px;padding-top:12px;border-top:1px solid #2e3442;}
+    .admin-detail-view.show{display:block;}
+    .detail-back{
+      margin-bottom:12px;background:transparent!important;color:#4f8cff!important;border-color:transparent!important;padding-left:0!important;
+    }
+    .player-admin-row{display:grid;gap:10px;align-items:end;margin:10px 0;}
+    .player-add-row{grid-template-columns:60px minmax(150px,1fr) minmax(240px,340px) minmax(96px,120px);}
+    .player-edit-row{grid-template-columns:60px minmax(170px,1fr) minmax(86px,110px) minmax(110px,130px);}
+    #adminTools .compact-colors{grid-template-columns:repeat(12,24px);gap:4px;overflow:hidden;}
+    #adminTools .compact-colors .color-swatch{width:24px;min-height:24px;border-radius:7px;padding:0;}
+    .admin-save-main{width:100%;margin-top:12px;}
+    .admin-version-footer{
+      padding:14px 0 2px;text-align:center;color:#8892a0;font-size:13px;font-weight:800;
+    }
+    @media (min-width:701px){
+      .voice-grid{grid-template-columns:minmax(0,1.4fr) minmax(0,1.4fr) minmax(120px,.6fr) minmax(120px,.6fr);}
+    }
+    @media (max-width:760px){
+      .admin-action-grid.four,
+      .admin-button-row.three,
+      .admin-button-row.four,
+      .admin-nav-grid,
+      .effect-grid,
+      .player-text-grid,
+      .system-mode-row,
+      .court-label-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+      .voice-grid{grid-template-columns:1fr;}
+      .voice-grid div:nth-child(3),
+      .voice-grid div:nth-child(4){grid-column:auto;}
+      .compact-state-row{grid-template-columns:1fr 1fr;}
+      .compact-state-row .compact-row-label{grid-column:1 / -1;}
+      .segmented-wide{grid-template-columns:1fr;}
+      .player-add-row,.player-edit-row{grid-template-columns:1fr;}
+      #adminTools .compact-colors{grid-template-columns:repeat(6,24px);}
+      .game-actions{grid-template-columns:repeat(2,minmax(0,1fr));}
+    }
+    @media (max-width:700px) and (orientation:portrait){
+      .portrait-warning.phone{display:flex;}
+      .portrait-card .big::after{content:"";}
+    }
   </style>
 </head>
 <body>
   <div class="portrait-warning phone">
     <div class="portrait-card">
-      <div class="big">請將手機轉為橫向使用</div>
+      <div class="big">請將裝置橫放</div>
       <div class="small">橫向後會顯示完整排場畫面</div>
     </div>
   </div>
@@ -387,10 +549,10 @@
   <button class="floating-button" id="floatButton" aria-label="管理員工具">•••</button>
   <button class="floating-button speaker-button" id="speakerButton" aria-label="再叫一次">📢</button>
 
-  <aside class="float-panel" id="floatPanel" aria-label="浮點管理員面板">
+  <aside class="float-panel admin-v2" id="floatPanel" aria-label="管理員工具">
     <div class="panel-head">
-      <div class="panel-title" id="panelTitle">管理員工具</div>
-      <button class="small close-strong" id="closePanelBtn">×</button>
+      <button class="admin-back-btn" id="closePanelBtn" type="button">‹ 返回排場</button>
+      <div class="panel-title" id="panelTitle">管理員</div>
     </div>
     <div class="panel-body" id="panelBody">
       <div class="quick-grid" id="quickMoveGrid">
@@ -408,29 +570,41 @@
       </section>
 
       <section class="panel-section" id="adminSection">
-        <button class="collapse-head" data-collapse-target="adminSectionBody" type="button" id="adminSectionHead">Admin</button>
-        <div class="collapsible-body" id="adminSectionBody">
-          <div id="adminLoginBox">
+        <div class="admin-section-head" id="adminSectionHead">Admin</div>
+        <div id="adminSectionBody">
+          <div class="admin-login-card" id="adminLoginBox">
             <label>管理員密碼</label>
             <input id="adminPasswordInput" type="password" inputmode="numeric" placeholder="" />
             <button class="primary" id="adminLoginBtn" style="width:100%;margin-top:8px">登入</button>
           </div>
           <div id="adminTools" style="display:none">
-            <div class="panel-section">
-              <button class="collapse-head" data-collapse-target="autoCallBody" type="button">自動呼叫</button>
-              <div class="collapsible-body" id="autoCallBody">
-              <div class="admin-subsection">
-                <div class="admin-subtitle">自動呼叫</div>
-                <div class="three-state-row">
+            <section class="admin-v2-card">
+              <h3>今日操作</h3>
+              <div class="admin-action-grid four">
+                <button id="repeatCallAdminBtn">📢 再叫一次</button>
+                <button id="randomFillBtn">隨機填滿</button>
+                <button class="primary" id="fetchRosterBtn">更新日安名單</button>
+                <button class="warn" id="resetTodayBtn">今日重新開始</button>
+              </div>
+            </section>
+
+            <section class="admin-v2-card">
+              <h3>自動呼叫</h3>
+              <div id="autoCallBody" class="auto-call-content">
+                <div class="three-state-row segmented-wide">
                   <button id="autoCallOffBtn">關閉</button>
                   <button id="edgeCallBtn">Edge 固定語音</button>
                   <button id="browserCallBtn">網頁合成語音</button>
                 </div>
-                <div class="compact-help edge-status" id="edgeReadyStatus">Edge 固定語音</div>
-              </div>
-              <div class="admin-subsection">
-                <div class="admin-subtitle">網頁合成語音設定</div>
-                <div class="voice-grid">
+                <div class="auto-off-status">自動呼叫目前關閉。</div>
+                <div class="edge-settings">
+                  <div class="admin-subtitle">Edge 固定語音</div>
+                  <div class="compact-help edge-status" id="edgeReadyStatus">Edge 固定語音</div>
+                  <button id="edgeTestBtn" disabled>試播 Edge</button>
+                </div>
+                <div class="browser-settings">
+                  <div class="admin-subtitle">網頁合成語音設定</div>
+                  <div class="voice-grid">
                   <div>
                     <label>中文人聲</label>
                     <select id="zhVoiceSelect"><option value="">自動推薦</option></select>
@@ -447,65 +621,22 @@
                     <label>音調</label>
                     <select id="voicePitchSelect"><option value="low">低</option><option value="normal">正常</option><option value="high">高</option></select>
                   </div>
-                </div>
-                <div class="admin-single-action">
+                  </div>
                   <button id="voiceTestBtn">試播網頁語音</button>
                 </div>
               </div>
-              <div class="admin-subsection">
-                <div class="admin-subtitle">Edge 區</div>
-                <div class="admin-single-action">
-                  <button id="edgeTestBtn" disabled>試播 Edge</button>
-                </div>
-              </div>
-              <div class="admin-subsection">
-                <div class="admin-subtitle">視覺提醒</div>
-                <div class="compact-state-row">
-                  <div class="compact-row-label">視覺提醒</div>
-                  <button id="callEffectOffBtn">關閉</button>
-                  <button id="callEffectOnBtn">開啟</button>
-                </div>
-                <div class="effect-grid">
-                  <div>
-                    <label>提醒時間</label>
-                    <select id="callEffectDurationSelect"><option value="3">3 秒</option><option value="5">5 秒</option><option value="8">8 秒</option><option value="10">10 秒</option></select>
-                  </div>
-                  <div>
-                    <label>特效強度</label>
-                    <select id="callEffectIntensitySelect"><option value="low">低</option><option value="medium">中</option><option value="high">高</option></select>
-                  </div>
-                  <div>
-                    <label>提醒顏色</label>
-                    <select id="callEffectColorSelect"><option value="yellow">黃</option><option value="green">綠</option><option value="blue">藍</option><option value="red">紅</option></select>
-                  </div>
-                  <div>
-                    <label>跑馬燈</label>
-                    <select id="callMarqueeSelect"><option value="on">開啟</option><option value="off">關閉</option></select>
-                  </div>
-                </div>
-              </div>
-              <div class="admin-subsection">
-                <div class="admin-subtitle">顯示設定</div>
-                <div class="player-text-grid">
-                  <div>
-                    <label>字級大小</label>
-                    <select id="playerNameScaleSelect"><option value="80">80%</option><option value="100">100%</option><option value="120">120%</option><option value="140">140%</option><option value="160">160%</option><option value="180">180%</option></select>
-                  </div>
-                  <div>
-                    <label>字體</label>
-                    <select id="playerNameFontSelect"><option value="system">系統黑體</option><option value="bold">粗黑體</option><option value="serif">明體</option></select>
-                  </div>
-                </div>
-              </div>
-              <div class="admin-subsection settings-save-section">
-                <button class="primary" id="saveVoiceBtn">儲存設定</button>
-              </div>
-              </div>
-            </div>
+            </section>
 
-          <div class="panel-section">
-            <button class="collapse-head" data-collapse-target="playerManageBody" type="button">球員管理</button>
-            <div class="collapsible-body" id="playerManageBody">
+            <section class="admin-v2-card">
+              <h3>球員與場次</h3>
+              <div class="admin-nav-grid" id="adminDetailNav">
+                <button id="showPlayerDetailBtn" type="button">球員管理 ›</button>
+                <button id="showGamesDetailBtn" type="button">場次管理 ›</button>
+              </div>
+              <div class="admin-detail-view" id="playerDetailView">
+                <button class="detail-back" id="hidePlayerDetailBtn" type="button">‹ 返回</button>
+                <div class="admin-subtitle">球員管理</div>
+                <div id="playerManageBody">
               <div class="player-admin-row player-add-row">
                 <div class="compact-row-label">新增</div>
                 <input id="newPlayerInput" type="text" placeholder="輸入姓名" />
@@ -520,67 +651,111 @@
               </div>
               <div id="sharedColorLabel" class="compact-help">貼紙底色</div>
             </div>
-          </div>
-
-          <div class="panel-section">
-            <button class="collapse-head" data-collapse-target="gamesManageBody" type="button">場次管理</button>
-            <div class="collapsible-body" id="gamesManageBody">
-              <div class="admin-button-row four">
+              </div>
+              <div class="admin-detail-view" id="gamesDetailView">
+                <button class="detail-back" id="hideGamesDetailBtn" type="button">‹ 返回</button>
+                <div class="admin-subtitle">場次管理</div>
+                <div id="gamesManageBody">
+                  <div class="admin-button-row four game-actions">
                 <button id="plusGameBtn">+1</button>
                 <button id="minusGameBtn">-1</button>
                 <button class="warn" id="zeroPlayerBtn">選取歸零</button>
                 <button class="warn strong-warn" id="resetAllGamesBtn">全部場次歸零</button>
               </div>
-            </div>
-          </div>
+                </div>
+              </div>
+            </section>
 
-          <div class="panel-section">
-            <button class="collapse-head" data-collapse-target="systemOpsBody" type="button">系統操作</button>
-            <div class="collapsible-body" id="systemOpsBody">
-              <div class="system-mode-row">
-                <div class="segmented-group">
-                  <div class="compact-row-label">模式</div>
-                  <div class="mode-row">
-                    <button id="freeModeBtn">自由暢打</button>
-                    <button id="autoModeBtn">自動排場</button>
+            <section class="admin-v2-card">
+              <h3>場地與排場</h3>
+              <div id="systemOpsBody">
+                <div class="system-mode-row">
+                  <div class="segmented-group">
+                    <div class="compact-row-label">排場模式</div>
+                    <div class="mode-row">
+                      <button id="freeModeBtn">自由暢打</button>
+                      <button id="autoModeBtn">自動排場</button>
+                    </div>
+                  </div>
+                  <div class="segmented-group" id="courtModeControls">
+                    <div class="compact-row-label" id="courtModeStatus">場地模式</div>
+                    <div class="mode-row">
+                      <button id="use3x3Btn">3x3</button>
+                      <button id="use2x2Btn">2x2</button>
+                    </div>
                   </div>
                 </div>
-                <div class="segmented-group" id="courtModeControls">
-                  <div class="compact-row-label" id="courtModeStatus">場地模式</div>
-                  <div class="mode-row">
-                    <button id="use3x3Btn">3x3</button>
-                    <button id="use2x2Btn">2x2</button>
+                <div class="segmented-group next-count-group" id="nextCountControls">
+                  <div class="compact-row-label">預備區數量</div>
+                  <div class="next-count-choices">
+                    <button id="nextCountMinBtn" data-next-count-option="min">3</button>
+                    <button id="nextCountMidBtn" data-next-count-option="mid">4</button>
+                    <button id="nextCountMaxBtn" data-next-count-option="max">5</button>
                   </div>
                 </div>
-              </div>
-              <div class="segmented-group next-count-group" id="nextCountControls">
-                <div class="compact-row-label">預備區數量</div>
-                <div class="next-count-choices">
-                  <button id="nextCountMinBtn" data-next-count-option="min">3</button>
-                  <button id="nextCountMidBtn" data-next-count-option="mid">4</button>
-                  <button id="nextCountMaxBtn" data-next-count-option="max">5</button>
+                <div class="court-label-grid" id="courtLabelControls">
+                  <label>場地1<input id="court1LabelInput" type="text" maxlength="12" /></label>
+                  <label>場地2<input id="court2LabelInput" type="text" maxlength="12" /></label>
+                  <label>場地3<input id="court3LabelInput" type="text" maxlength="12" /></label>
+                  <button class="primary" id="saveCourtLabelsBtn">儲存場名</button>
                 </div>
               </div>
-              <div class="court-label-grid" id="courtLabelControls">
-                <label>場地1<input id="court1LabelInput" type="text" maxlength="12" /></label>
-                <label>場地2<input id="court2LabelInput" type="text" maxlength="12" /></label>
-                <label>場地3<input id="court3LabelInput" type="text" maxlength="12" /></label>
-                <button class="primary" id="saveCourtLabelsBtn">儲存場名</button>
+            </section>
+
+            <section class="admin-v2-card">
+              <h3>視覺與顯示</h3>
+              <div class="compact-state-row">
+                <div class="compact-row-label">視覺提醒</div>
+                <button id="callEffectOffBtn">關閉</button>
+                <button id="callEffectOnBtn">開啟</button>
               </div>
+              <div class="effect-grid">
+                <div>
+                  <label>提醒時間</label>
+                  <select id="callEffectDurationSelect"><option value="3">3 秒</option><option value="5">5 秒</option><option value="8">8 秒</option><option value="10">10 秒</option></select>
+                </div>
+                <div>
+                  <label>特效強度</label>
+                  <select id="callEffectIntensitySelect"><option value="low">低</option><option value="medium">中</option><option value="high">高</option></select>
+                </div>
+                <div>
+                  <label>提醒顏色</label>
+                  <select id="callEffectColorSelect"><option value="yellow">黃</option><option value="green">綠</option><option value="blue">藍</option><option value="red">紅</option></select>
+                </div>
+                <div>
+                  <label>跑馬燈</label>
+                  <select id="callMarqueeSelect"><option value="on">開啟</option><option value="off">關閉</option></select>
+                </div>
+              </div>
+              <div class="player-text-grid">
+                <div>
+                  <label>球員姓名大小</label>
+                  <select id="playerNameScaleSelect"><option value="85">小 85%</option><option value="92">標準 92%</option><option value="100">大 100%</option><option value="108">特大 108%</option></select>
+                </div>
+                <div>
+                  <label>字體</label>
+                  <select id="playerNameFontSelect"><option value="system">系統黑體</option><option value="bold">粗黑體</option><option value="serif">明體</option></select>
+                </div>
+              </div>
+            </section>
+
+            <section class="admin-v2-card">
+              <h3>系統與資料</h3>
               <div class="admin-button-row three">
-                <button id="randomFillBtn">隨機填滿</button>
-                <button class="primary" id="fetchRosterBtn">更新日安名單</button>
-                <button class="warn" id="resetTodayBtn">今日重新開始</button>
-              </div>
-              <div class="admin-button-row four">
                 <button id="exportBackupBtn">複製名單</button>
                 <button id="importBackupBtn">貼上名單</button>
-                <button id="exportLogBtn">匯出CSV</button>
+                <button id="exportLogBtn">匯出 CSV</button>
+              </div>
+              <div class="admin-button-row single danger-row">
                 <button class="danger" id="clearAllBtn">清空全部</button>
               </div>
               <input class="file-input" id="importFileInput" type="file" accept=".json,application/json" />
               <div class="help">貼上名單會清空目前 Court / Next，球員回到休息區。</div>
             </div>
+            </section>
+
+            <button class="primary admin-save-main" id="saveVoiceBtn">儲存設定</button>
+            <div class="admin-version-footer" id="adminVersion">v1.2.0-ipad</div>
           </div>
         </div>
       </section>
@@ -606,7 +781,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.1.0-ipad';
+  const APP_VERSION = '1.2.0-ipad';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -634,6 +809,7 @@
   let activeCallAudio = null;
   let edgeCheckState = 'IDLE';
   let edgeCheckInProgress = false;
+  let adminDetailView = '';
   const FLOAT_DRAG_THRESHOLD = 8;
   const LEGACY_FLOAT_DRAG_THRESHOLD = 20;
   let courtHighlightZone = null;
@@ -1202,7 +1378,7 @@
 
   function normalizePlayerNameScale(value){
     const scale = Number(value);
-    const supported = [80,100,120,140,160,180];
+    const supported = [85,92,100,108];
     if(!Number.isFinite(scale)) return 100;
     let best = 100;
     let bestDistance = Math.abs(scale - best);
@@ -1353,7 +1529,7 @@
     }
     $('quickMoveGrid').style.display = legacy && p && p.zone !== 'rest' ? '' : 'none';
     $('restSection').style.display = legacy ? '' : 'none';
-    $('panelTitle').innerHTML = isAdmin ? `羽球排場 ${currentMode()} <span class="version-inline">| V ${APP_VERSION}</span>` : '管理員工具';
+    $('panelTitle').textContent = '管理員';
     renderRestList();
     renderAdminUi();
     renderColorPicker();
@@ -1393,6 +1569,11 @@
     $('adminSectionHead').textContent = isAdmin ? 'Admin 已登入' : 'Admin';
     $('adminLoginBox').style.display = isAdmin ? 'none' : '';
     $('adminTools').style.display = isAdmin ? '' : 'none';
+    const autoCallBody = $('autoCallBody');
+    if(autoCallBody){
+      autoCallBody.classList.remove('mode-off','mode-edge','mode-browser');
+      autoCallBody.classList.add('mode-' + currentAutoCallMode());
+    }
     $('freeModeBtn').classList.toggle('active', !!state.settings.freePlayMode);
     $('autoModeBtn').classList.toggle('active', !!state.settings.autoArrangeMode);
     $('autoCallOffBtn').classList.toggle('active', currentAutoCallMode() === 'off');
@@ -1410,7 +1591,7 @@
     if($('callEffectDurationSelect')) $('callEffectDurationSelect').value = String(state.settings.callEffectDuration || 5);
     if($('callEffectIntensitySelect')) $('callEffectIntensitySelect').value = state.settings.callEffectIntensity || 'medium';
     if($('callEffectColorSelect')) $('callEffectColorSelect').value = state.settings.callEffectColor || 'yellow';
-    if($('playerNameScaleSelect')) $('playerNameScaleSelect').value = String(state.settings.playerNameScale || 100);
+    if($('playerNameScaleSelect')) $('playerNameScaleSelect').value = String(normalizePlayerNameScale(state.settings.playerNameScale));
     if($('playerNameFontSelect')) $('playerNameFontSelect').value = state.settings.playerNameFont || 'system';
     renderCourtLabelControls();
     if($('courtModeStatus')) $('courtModeStatus').textContent = '場地模式';
@@ -1422,6 +1603,22 @@
     populateVoiceSelects();
     const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
     $('renamePlayerInput').value = p ? p.name : '';
+    renderAdminDetailViews();
+    if($('adminVersion')) $('adminVersion').textContent = 'v' + APP_VERSION;
+  }
+
+  function renderAdminDetailViews(){
+    const playerView = $('playerDetailView');
+    const gamesView = $('gamesDetailView');
+    const nav = $('adminDetailNav');
+    if(playerView) playerView.classList.toggle('show', adminDetailView === 'player');
+    if(gamesView) gamesView.classList.toggle('show', adminDetailView === 'games');
+    if(nav) nav.style.display = adminDetailView ? 'none' : '';
+  }
+
+  function showAdminDetail(view){
+    adminDetailView = view || '';
+    renderAdminDetailViews();
   }
 
   function renderNextCountControls(){
@@ -2374,7 +2571,7 @@
     state.settings.callEffectIntensity = $('callEffectIntensitySelect').value || 'medium';
     state.settings.callEffectColor = $('callEffectColorSelect').value || 'yellow';
     state.settings.callEffectMarquee = $('callMarqueeSelect') ? $('callMarqueeSelect').value !== 'off' : state.settings.callEffectMarquee !== false;
-    state.settings.playerNameScale = Number($('playerNameScaleSelect') ? $('playerNameScaleSelect').value : state.settings.playerNameScale) || 100;
+    state.settings.playerNameScale = normalizePlayerNameScale($('playerNameScaleSelect') ? $('playerNameScaleSelect').value : state.settings.playerNameScale);
     state.settings.playerNameFont = $('playerNameFontSelect') ? $('playerNameFontSelect').value : state.settings.playerNameFont;
     saveState();
     showToast('語音與提醒設定已儲存');
@@ -2382,7 +2579,7 @@
   }
 
   function savePlayerNameDisplaySettings(){
-    if($('playerNameScaleSelect')) state.settings.playerNameScale = Number($('playerNameScaleSelect').value) || 100;
+    if($('playerNameScaleSelect')) state.settings.playerNameScale = normalizePlayerNameScale($('playerNameScaleSelect').value);
     if($('playerNameFontSelect')) state.settings.playerNameFont = $('playerNameFontSelect').value || 'system';
     for(const key in playerNameFitCache) delete playerNameFitCache[key];
     saveState();
@@ -2934,6 +3131,8 @@
   function setPanel(open){
     panelOpen = open;
     $('floatPanel').classList.toggle('open', panelOpen);
+    document.body.classList.toggle('admin-panel-open', panelOpen);
+    if(!panelOpen) adminDetailView = '';
   }
   function openPanel(){ setPanel(true); renderPanel(); }
   function closePanel(){ setPanel(false); }
@@ -3218,6 +3417,11 @@
     tap('cancelSelectBtn', () => clearSelected('已取消選取'));
     tap('closePanelBtn', closePanel);
     setStableTap($('speakerButton'), repeatLastCall);
+    tap('repeatCallAdminBtn', repeatLastCall);
+    tap('showPlayerDetailBtn', () => showAdminDetail('player'));
+    tap('showGamesDetailBtn', () => showAdminDetail('games'));
+    tap('hidePlayerDetailBtn', () => showAdminDetail(''));
+    tap('hideGamesDetailBtn', () => showAdminDetail(''));
     tap('moveRestBtn', moveSelectedToRest);
     tap('adminLoginBtn', adminLogin);
     tap('freeModeBtn', () => { state.settings.freePlayMode=true; state.settings.autoArrangeMode=false; saveState(); renderPanel(); });
