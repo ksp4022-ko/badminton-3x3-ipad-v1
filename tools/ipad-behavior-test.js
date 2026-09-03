@@ -350,6 +350,10 @@ async function run() {
   context.document.getElementById('court3LabelInput').value = 'C';
   api.tap('saveCourtLabelsBtn');
   assert('admin saves court labels', api.getState().settings.courtLabels.court1 === '5' && api.getState().settings.courtLabels.court2 === 'A');
+  api.setState(baseState([], { courtCount: 2, courtLabels: { court1: '1', court2: '2', court3: 'C' } }));
+  assert('2x2 court label layout hides third label without clearing value', context.document.getElementById('court3LabelWrap').classList.contains('court-label-hidden') && context.document.getElementById('court3LabelInput').value === 'C');
+  api.setState(baseState([], { courtCount: 3, courtLabels: { court1: '1', court2: '2', court3: 'C' } }));
+  assert('3x3 court label layout restores third label in left second row', !context.document.getElementById('court3LabelWrap').classList.contains('court-label-hidden') && context.document.getElementById('court3LabelInput').value === 'C');
 
   api.setState(baseState([]));
   await api.setNextCount(5);
@@ -432,6 +436,25 @@ async function run() {
     './voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3': true,
     './voice-poc/zh-TW-HsiaoChenNeural/go-court-3.mp3': true
   };
+
+  api.setState(baseState([], { courtLabels: { court1: '1', court2: '2', court3: '3' } }));
+  api.setAutoCallModeForTest('off');
+  context.__audioCreated = [];
+  context.document.getElementById('court1LabelInput').value = '1';
+  context.document.getElementById('court2LabelInput').value = '2';
+  context.document.getElementById('court3LabelInput').value = '3';
+  await api.saveCourtLabels();
+  assert('court label save with auto-call off does not Edge check', context.__audioCreated.length === 0 && !/Edge 音源檢查中/.test(context.document.getElementById('edgeReadyStatus').textContent));
+
+  api.setAutoCallModeForTest('browser');
+  context.__audioCreated = [];
+  await api.saveCourtLabels();
+  assert('court label save with browser voice does not Edge check', context.__audioCreated.length === 0 && api.getState().settings.autoCallMode === 'browser' && !/Edge 音源檢查中/.test(context.document.getElementById('edgeReadyStatus').textContent));
+
+  api.setAutoCallModeForTest('edge');
+  context.__audioCreated = [];
+  await api.saveCourtLabels();
+  assert('court label save with Edge mode rechecks fixed audio', context.__audioCreated.indexOf('./voice-poc/zh-TW-HsiaoChenNeural/go-court-1.mp3') >= 0 && context.__audioCreated.indexOf('./voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3') >= 0 && context.__audioCreated.indexOf('./voice-poc/zh-TW-HsiaoChenNeural/go-court-3.mp3') >= 0);
 
   api.setState(baseState([
     player('court-player', '柯', 'court1', 1),
@@ -701,6 +724,11 @@ async function run() {
   await api.handleBoardInteraction(eventFor(sourceChip));
   assert('selected player saved to session storage', /"playerId":"p1"/.test(context.sessionStorage.getItem('badminton3x3.ipad.v1.state.selectedPlayer') || ''));
   assert('selected banner highlights player name', /class="selected-name">A<\/span>/.test(context.document.getElementById('selectedText').innerHTML || ''));
+  assert('selected admin bar shows read-only count name and cancel columns', context.document.getElementById('selectedAdminCount').textContent === '0' && context.document.getElementById('selectedAdminCount').classList.contains('show') && context.document.getElementById('selectedAdminName').textContent === 'A' && context.document.getElementById('selectedAdminCancelBtn').classList.contains('show'));
+  assert('selected admin bar does not add game edit controls', !context.document.getElementById('selectedAdminBar').innerHTML.includes('+1') && !context.document.getElementById('selectedAdminBar').innerHTML.includes('-1'));
+  api.tap('selectedAdminCancelBtn');
+  assert('selected admin cancel uses existing clear selection action', !context.sessionStorage.getItem('badminton3x3.ipad.v1.state.selectedPlayer') && !context.document.getElementById('selectedAdminCount').classList.contains('show'));
+  await api.handleBoardInteraction(eventFor(sourceChip));
   api.setSelectedPlayerColor('#fecaca');
   assert('selected player color can be changed', api.getState().players[0].color === '#fecaca');
   const targetSlot = new FakeElement('div');
@@ -724,6 +752,7 @@ async function run() {
   api.tap('modalOkBtn');
   await reset;
   assert('reset today clears locations and games', api.getState().players.every((p) => p.zone === 'rest' && p.slot === null && p.games === 0));
+  assert('reset today runs final board name fit after structural render', context.document.getElementById('courtRow').innerHTML.indexOf('data-player-id') < 0 && context.document.getElementById('nextRow').innerHTML.indexOf('data-zone-card="rest"') >= 0);
 
   api.setState(baseState([
     player('p1', 'CourtA', 'court1', 1, 5),
@@ -748,6 +777,7 @@ async function run() {
   const newPlayer = rosterState.players.find((p) => p.name === 'NewD');
   assert('today roster retained players preserve identity color games and location', retainedCourt && retainedCourt.name === 'CourtA' && retainedCourt.games === 5 && retainedCourt.zone === 'court1' && retainedCourt.slot === 1 && retainedNext && retainedNext.games === 3 && retainedNext.zone === 'next1' && retainedNext.slot === 2);
   assert('today roster added player enters rest', newPlayer && newPlayer.zone === 'rest' && newPlayer.slot === null && newPlayer.games === 0);
+  assert('today roster save returns to measurable board before final name fit', context.document.getElementById('courtRow').innerHTML.indexOf('CourtA') >= 0 && context.document.getElementById('nextRow').innerHTML.indexOf('NewD') >= 0);
 
   api.setState(baseState([
     player('p1', 'OldA', 'court1', 1, 5),

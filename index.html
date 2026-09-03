@@ -506,18 +506,20 @@
     .admin-header-version{
       grid-column:3;justify-self:end;color:#8892a0;font-size:15px;font-weight:900;
     }
-    .admin-v2 #panelHint{display:none!important;}
     .selected-admin-bar{
       min-height:54px;
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;gap:10px;
       margin:0 auto;padding:9px max(14px,var(--safe-right)) 9px max(14px,var(--safe-left));border-radius:0;
       background:#171a21;border:1px solid #2e3442;color:#f5f7fa;
     }
-    .selected-admin-line{display:flex;align-items:center;gap:10px;min-width:0;font-size:16px;font-weight:900;}
-    .selected-admin-name{display:none;max-width:min(42vw,360px);padding:7px 14px;border-radius:999px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:18px;font-weight:1000;}
+    .selected-admin-count{justify-self:end;display:none;align-items:center;justify-content:center;min-width:42px;height:42px;border-radius:999px;background:#fff;color:#0f172a;border:2px solid rgba(15,23,42,.08);font-size:26px;font-weight:1000;box-shadow:0 2px 8px rgba(15,23,42,.18);}
+    .selected-admin-count.show{display:flex;}
+    .selected-admin-line{display:flex;align-items:center;justify-content:center;gap:10px;min-width:0;font-size:16px;font-weight:900;}
+    .selected-admin-name{display:none;width:100%;max-width:100%;padding:8px 12px;border-radius:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;font-size:18px;font-weight:1000;}
     .selected-admin-name.show{display:inline-block;}
-    .selected-admin-help{flex:0 0 auto;color:#8892a0;font-size:14px;font-weight:850;}
-    body.helper-text-off .selected-admin-help,
+    .selected-admin-cancel{justify-self:end;display:none;min-height:44px;border-radius:12px;border:1px solid #2e3442;background:#232834;color:#f5f7fa;font-size:16px;font-weight:900;padding:8px 12px;}
+    .selected-admin-cancel.show{display:inline-flex;align-items:center;justify-content:center;}
+    .selected-admin-empty{grid-column:1 / -1;color:#b7c0cd;font-size:16px;font-weight:900;}
     body.helper-text-off .floating-label,
     body.helper-text-off .zone-count{display:none!important;}
     .floating-group{
@@ -541,7 +543,7 @@
     .admin-button-row.data-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     #exportLogBtn{grid-column:1 / 2;}
     .court-label-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
-    .court-label-grid label{display:flex;gap:8px;align-items:center;justify-content:flex-start;}
+    .court-label-grid label{display:flex;gap:8px;align-items:center;justify-content:space-between;width:100%;min-width:0;}
     #adminTools .court-label-grid input{width:88px;min-width:72px;max-width:96px;flex:0 0 auto;}
     .court-label-save{width:100%;margin-top:10px;}
     .court-label-hidden{display:none!important;}
@@ -620,8 +622,10 @@
       <div class="admin-header-version" id="adminHeaderVersion">v2.0.0</div>
     </div>
     <div id="selectedAdminBar" class="selected-admin-bar">
-      <div class="selected-admin-line"><span id="selectedAdminLabel">尚未選取球員</span><span id="selectedAdminName" class="selected-admin-name"></span></div>
-      <div class="selected-admin-help">可移動或球員管理</div>
+      <div class="selected-admin-empty" id="selectedAdminEmpty">尚未選取球員</div>
+      <div class="selected-admin-count" id="selectedAdminCount"></div>
+      <div class="selected-admin-line"><span id="selectedAdminName" class="selected-admin-name"></span></div>
+      <button class="selected-admin-cancel" id="selectedAdminCancelBtn" type="button">取消選取</button>
     </div>
     <div class="panel-body" id="panelBody">
       <div class="quick-grid" id="quickMoveGrid">
@@ -1604,23 +1608,31 @@
   }
 
   function renderSelectedAdminBar(){
-    const label = $('selectedAdminLabel');
+    const empty = $('selectedAdminEmpty');
+    const count = $('selectedAdminCount');
     const name = $('selectedAdminName');
-    if(!label || !name) return;
+    const cancel = $('selectedAdminCancelBtn');
+    if(!empty || !count || !name || !cancel) return;
     const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
     if(!p){
-      label.textContent = '尚未選取球員';
+      empty.style.display = '';
+      count.textContent = '';
+      count.classList.remove('show');
       name.textContent = '';
       name.classList.remove('show');
       name.style.background = '';
       name.style.color = '';
+      cancel.classList.remove('show');
       return;
     }
-    label.textContent = '已選取';
+    empty.style.display = 'none';
+    count.textContent = String(Number(p.games) || 0);
+    count.classList.add('show');
     name.textContent = p.name;
     name.style.background = p.color || COLORS[0];
     name.style.color = readableTextColor(p.color || COLORS[0]);
     name.classList.add('show');
+    cancel.classList.add('show');
   }
 
   function renderPanel(){
@@ -1769,7 +1781,11 @@
     });
     saveState();
     render();
-    await recheckEdgeCourtLabelsAfterSave();
+    if(currentAutoCallMode() === 'edge'){
+      await recheckEdgeCourtLabelsAfterSave();
+      return;
+    }
+    showToast('場地名稱已儲存');
   }
 
   function renderColorPicker(){
@@ -2079,8 +2095,8 @@
     state.settings.lastCallCourt = null;
     logAction('resetToday','all',[], '今日重新開始');
     saveState();
+    await refitAfterStructuralBoardRender();
     showToast('已重新開始');
-    render();
   }
 
   async function clearAll(){
@@ -2458,6 +2474,15 @@
       };
       check(5);
     });
+  }
+
+  async function refitAfterStructuralBoardRender(closeOverlay){
+    for(const key in playerNameFitCache) delete playerNameFitCache[key];
+    render();
+    if(typeof closeOverlay === 'function') closeOverlay();
+    await waitForMeasurablePlayerNames();
+    fitPlayerNameText();
+    scheduleFitPlayerNames();
   }
 
   function edgeAudioPartsForName(name){
@@ -3254,13 +3279,8 @@
       if(selectedPlayer && selectedPlayer.playerId === p.id) setSelectedPlayer(null);
     });
     saveState();
-    for(const key in playerNameFitCache) delete playerNameFitCache[key];
-    render();
-    closeModal();
-    await waitForMeasurablePlayerNames();
-    fitPlayerNameText();
+    await refitAfterStructuralBoardRender(closeModal);
     showToast('今日名單已更新');
-    scheduleFitPlayerNames();
     return true;
   }
 
@@ -3867,6 +3887,7 @@
     }
 
     tap('cancelSelectBtn', () => clearSelected('已取消選取'));
+    tap('selectedAdminCancelBtn', () => clearSelected('已取消選取'));
     tap('closePanelBtn', closePanel);
     setStableTap($('speakerButton'), repeatLastCall);
     setStableTap($('prepareButton'), prepareFirstNextGroupCall);
@@ -4025,6 +4046,7 @@
       enableAutoCallWithEdgeCheck:enableAutoCallWithEdgeCheck,
       enableBrowserAutoCall:enableBrowserAutoCall,
       disableAutoCall:disableAutoCall,
+      saveCourtLabels:saveCourtLabels,
       setAutoCallModeForTest:function(mode){ setAutoCallMode(mode); saveState(); renderPanel(); },
       populateVoiceSelects:populateVoiceSelects
     };
