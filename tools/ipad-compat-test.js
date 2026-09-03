@@ -46,7 +46,7 @@ assert('admin unlock persisted', html.includes('saveAdminUnlock()') && html.incl
 assert('debug mode exists', html.includes("location.search.indexOf('debug=1')") && html.includes('function debugLog'));
 assert('debug mode tracks board actions', html.includes("debugLog('zone-head courtDown'") && html.includes("debugLog('slot move success'") && html.includes("debugLog(inRest ? 'chip rest select'"));
 assert('v1 storage key isolated', html.includes("badminton3x3.ipad.v1.state"));
-assert('release version synchronized', appVersion === '1.2.0-ipad' && pkg.version === appVersion && lock.version === appVersion && lock.packages[''].version === appVersion && sw.includes('v1.2.0-ipad'));
+assert('release version synchronized', appVersion === '2.0.0' && pkg.version === appVersion && lock.version === appVersion && lock.packages[''].version === appVersion && sw.includes('v2.0.0'));
 assert('copy paste player list exists', html.includes('function playerNamesText') && html.includes('function showImportPasteDialog') && html.includes('function importPlayersFromText'));
 assert('player list exports plain names', html.includes("showExportText('複製名單', playerNamesText())") && html.includes(".join('\\n')"));
 assert('player list import accepts plain lines', html.includes('function parsePlayerListText') && html.includes("placeholder=\"A&#10;B&#10;C\"") && html.includes("replace(/^\\s*\\[(.*)\\]\\s*$/, '$1')"));

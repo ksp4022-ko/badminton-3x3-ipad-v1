@@ -428,6 +428,7 @@ async function run() {
     './voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3': true,
     './voice-poc/zh-TW-HsiaoChenNeural/ge.mp3': true,
     './voice-poc/zh-TW-HsiaoChenNeural/jie.mp3': true,
+    './voice-poc/zh-TW-HsiaoChenNeural/next-group-prepare.mp3': true,
     './voice-poc/zh-TW-HsiaoChenNeural/go-court-2.mp3': true,
     './voice-poc/zh-TW-HsiaoChenNeural/go-court-3.mp3': true
   };
@@ -495,6 +496,18 @@ async function run() {
   api.callPlayers(['柯'], 'court3');
   await wait(900);
   assert('mp3 court 3 uses fixed audio without speech', context.__playedAudio.join('|') === './voice-poc/zh-TW-HsiaoChenNeural/ke.mp3|./voice-poc/zh-TW-HsiaoChenNeural/go-court-3.mp3' && context.__spokenUtterances.length === 0);
+
+  context.__spokenUtterances = [];
+  context.__playedAudio = [];
+  api.setState(baseState([
+    player('next-a', '柯', 'next1', 1),
+    player('next-b', 'Chris', 'next1', 2),
+    player('next-c', 'Bobo', 'next2', 1)
+  ]));
+  api.setAutoCallModeForTest('edge');
+  await api.prepareFirstNextGroupCall();
+  await wait(900);
+  assert('prepare button calls only first Next group with fixed prepare audio', context.__playedAudio.join('|') === './voice-poc/zh-TW-HsiaoChenNeural/ke.mp3|./voice-poc/en-US-AriaNeural/rate-test/chris-rate-minus20.mp3|./voice-poc/zh-TW-HsiaoChenNeural/next-group-prepare.mp3' && context.__spokenUtterances.length === 0);
 
   context.__spokenUtterances = [];
   context.__playedAudio = [];
@@ -721,7 +734,7 @@ async function run() {
     player('p2', 'NextB', 'next1', 2, 3),
     player('p3', 'RestC', 'rest', null, 1)
   ]));
-  api.saveTodayRosterFromText('CourtA\nNextB\nRestC\nNewD');
+  await api.saveTodayRosterFromText('CourtA\nNextB\nRestC\nNewD');
   let rosterState = api.getState();
   const retainedCourt = rosterState.players.find((p) => p.id === 'p1');
   const retainedNext = rosterState.players.find((p) => p.id === 'p2');
@@ -733,7 +746,7 @@ async function run() {
     player('p1', 'OldA', 'court1', 1, 5),
     player('p2', 'OldB', 'next1', 2, 3)
   ]));
-  api.saveTodayRosterFromText('NewA\nOldB');
+  await api.saveTodayRosterFromText('NewA\nOldB');
   rosterState = api.getState();
   const renamed = rosterState.players.find((p) => p.id === 'p1');
   assert('today roster unambiguous rename preserves identity and location', renamed && renamed.name === 'NewA' && renamed.games === 5 && renamed.zone === 'court1' && renamed.slot === 1);
@@ -742,12 +755,19 @@ async function run() {
     player('p1', 'KeepA', 'court1', 1, 5),
     player('p2', 'RemoveB', 'next1', 2, 3)
   ]));
-  api.saveTodayRosterFromText('KeepA');
+  const cancelRemoval = api.saveTodayRosterFromText('KeepA');
+  api.tap('modalCancelBtn');
+  await cancelRemoval;
   rosterState = api.getState();
-  assert('today roster removal deactivates without clearing retained court', rosterState.players.find((p) => p.id === 'p1').zone === 'court1' && rosterState.players.find((p) => p.id === 'p2').isActive === false);
+  assert('today roster on-board removal cancel keeps roster unchanged', rosterState.players.find((p) => p.id === 'p2').isActive !== false && rosterState.players.find((p) => p.id === 'p2').zone === 'next1');
+  const confirmRemoval = api.saveTodayRosterFromText('KeepA');
+  api.tap('modalOkBtn');
+  await confirmRemoval;
+  rosterState = api.getState();
+  assert('today roster confirmed removal deactivates without clearing retained court', rosterState.players.find((p) => p.id === 'p1').zone === 'court1' && rosterState.players.find((p) => p.id === 'p2').isActive === false);
 
   api.setState(baseState([player('p1', 'A', 'court1', 1, 2)]));
-  api.saveTodayRosterFromText('A\nA');
+  await api.saveTodayRosterFromText('A\nA');
   assert('today roster duplicate names are blocked', api.getState().players.length === 1 && api.getState().players[0].zone === 'court1' && api.getState().players[0].games === 2);
 
   api.importPlayersFromText(JSON.stringify({ players: [{ name: '匯入A', color: '#fecaca' }, { name: '匯入B', games: 9 }] }));

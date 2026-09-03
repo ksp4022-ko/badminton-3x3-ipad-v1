@@ -501,6 +501,51 @@
     .admin-version-footer{
       padding:14px 0 2px;text-align:center;color:#8892a0;font-size:13px;font-weight:800;
     }
+    .admin-header-version{
+      grid-column:3;justify-self:end;color:#8892a0;font-size:15px;font-weight:900;
+    }
+    .selected-admin-bar{
+      position:sticky;top:calc(52px + var(--safe-top));z-index:2;min-height:54px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      margin:10px auto 12px;max-width:980px;padding:9px 12px;border-radius:16px;
+      background:#171a21;border:1px solid #2e3442;color:#f5f7fa;
+    }
+    .selected-admin-line{display:flex;align-items:center;gap:10px;min-width:0;font-size:16px;font-weight:900;}
+    .selected-admin-name{display:none;max-width:min(42vw,360px);padding:7px 14px;border-radius:999px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:18px;font-weight:1000;}
+    .selected-admin-name.show{display:inline-block;}
+    .selected-admin-help{flex:0 0 auto;color:#8892a0;font-size:14px;font-weight:850;}
+    body.helper-text-off .selected-admin-help,
+    body.helper-text-off .floating-label,
+    body.helper-text-off .zone-count{display:none!important;}
+    .floating-group{
+      position:fixed;z-index:60;display:flex;flex-direction:column;align-items:center;gap:8px;
+      left:12px;right:auto;top:45vh;opacity:.36;transition:opacity .18s ease;
+      touch-action:none;
+    }
+    .floating-group.awake{opacity:1;}
+    .floating-group .floating-button{
+      position:relative;left:auto!important;right:auto!important;top:auto!important;
+      display:flex;align-items:center;justify-content:center;gap:5px;width:auto;min-width:64px;height:64px;
+      border-radius:999px;border:0;background:linear-gradient(145deg,#7c3aed,#4f46e5);color:#fff;
+      box-shadow:var(--shadow);font-size:18px;font-weight:1000;padding:0 12px;touch-action:none;
+    }
+    .floating-group #floatButton{width:64px;padding:0;font-size:34px;letter-spacing:2px;}
+    .floating-group #floatButton.has-selected{background:linear-gradient(135deg,#f59e0b,#facc15);color:#422006;}
+    .floating-group .speaker-button,.floating-group .prepare-button{font-size:17px;}
+    body.helper-text-off .floating-group .speaker-button,
+    body.helper-text-off .floating-group .prepare-button{width:64px;min-width:64px;padding:0;font-size:28px;}
+    body.admin-panel-open .floating-group{display:none!important;}
+    .admin-button-row.data-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    #exportLogBtn{grid-column:1 / 2;}
+    .court-label-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .court-label-grid label{display:grid;grid-template-columns:auto minmax(72px,96px);gap:8px;align-items:center;}
+    .court-label-grid input{min-width:0;}
+    .court-label-grid button{grid-column:1 / -1;}
+    .court-label-hidden{display:none!important;}
+    #adminTools .compact-colors{
+      grid-template-columns:repeat(12,minmax(38px,1fr));gap:6px;width:100%;justify-content:stretch;
+    }
+    #adminTools .compact-colors .color-swatch{width:100%;min-height:44px;border-radius:10px;}
     .roster-editor-area{
       width:100%;min-height:280px;border:1px solid #2e3442;border-radius:16px;
       padding:12px;background:#1e222b;color:#f5f7fa;font:18px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;
@@ -526,12 +571,13 @@
       .segmented-wide{grid-template-columns:1fr;}
       #randomFillBtn,#resetTodayBtn{grid-column:auto;}
       .player-add-row,.player-edit-row{grid-template-columns:1fr;}
-      #adminTools .compact-colors{grid-template-columns:repeat(6,24px);}
+      #adminTools .compact-colors{grid-template-columns:repeat(6,minmax(38px,1fr));}
       .game-actions{grid-template-columns:repeat(2,minmax(0,1fr));}
     }
     @media (max-width:700px) and (orientation:portrait){
       .portrait-warning.phone{display:flex;}
       .portrait-card .big::after{content:"";}
+      .floating-group{z-index:101;}
     }
   </style>
 </head>
@@ -558,13 +604,17 @@
     </section>
   </main>
 
-  <button class="floating-button" id="floatButton" aria-label="管理員工具">•••</button>
-  <button class="floating-button speaker-button" id="speakerButton" aria-label="再叫一次">📢</button>
+  <div class="floating-group" id="floatingGroup">
+    <button class="floating-button" id="floatButton" aria-label="管理員">•••</button>
+    <button class="floating-button speaker-button" id="speakerButton" aria-label="重叫"><span class="floating-icon">↻</span><span class="floating-label">重叫</span></button>
+    <button class="floating-button prepare-button" id="prepareButton" aria-label="預備"><span class="floating-icon">🔔</span><span class="floating-label">預備</span></button>
+  </div>
 
   <aside class="float-panel admin-v2" id="floatPanel" aria-label="管理員工具">
     <div class="panel-head">
       <button class="admin-back-btn" id="closePanelBtn" type="button">‹ 返回排場</button>
       <div class="panel-title" id="panelTitle">管理員</div>
+      <div class="admin-header-version" id="adminHeaderVersion">v2.0.0</div>
     </div>
     <div class="panel-body" id="panelBody">
       <div class="quick-grid" id="quickMoveGrid">
@@ -572,6 +622,10 @@
       </div>
 
       <div id="panelHint" class="backup-summary">未選取球員。可從場地或休息區點選人名。</div>
+      <div id="selectedAdminBar" class="selected-admin-bar">
+        <div class="selected-admin-line"><span id="selectedAdminLabel">尚未選取球員</span><span id="selectedAdminName" class="selected-admin-name"></span></div>
+        <div class="selected-admin-help">可移動或球員管理</div>
+      </div>
 
       <section class="panel-section" id="restSection">
         <button class="collapse-head" data-collapse-target="restSectionBody" type="button" id="restSectionHead">休息區 0人</button>
@@ -696,6 +750,12 @@
                     </div>
                   </div>
                 </div>
+                <div class="court-label-grid" id="courtLabelControls">
+                  <label id="court1LabelWrap">場地1<input id="court1LabelInput" type="text" maxlength="12" /></label>
+                  <label id="court2LabelWrap">場地2<input id="court2LabelInput" type="text" maxlength="12" /></label>
+                  <label id="court3LabelWrap">場地3<input id="court3LabelInput" type="text" maxlength="12" /></label>
+                  <button class="primary" id="saveCourtLabelsBtn">儲存場名</button>
+                </div>
                 <div class="segmented-group next-count-group" id="nextCountControls">
                   <div class="compact-row-label">預備區數量</div>
                   <div class="next-count-choices">
@@ -703,12 +763,6 @@
                     <button id="nextCountMidBtn" data-next-count-option="mid">4</button>
                     <button id="nextCountMaxBtn" data-next-count-option="max">5</button>
                   </div>
-                </div>
-                <div class="court-label-grid" id="courtLabelControls">
-                  <label>場地1<input id="court1LabelInput" type="text" maxlength="12" /></label>
-                  <label>場地2<input id="court2LabelInput" type="text" maxlength="12" /></label>
-                  <label>場地3<input id="court3LabelInput" type="text" maxlength="12" /></label>
-                  <button class="primary" id="saveCourtLabelsBtn">儲存場名</button>
                 </div>
               </div>
             </section>
@@ -748,11 +802,16 @@
                   <select id="playerNameFontSelect"><option value="system">系統黑體</option><option value="bold">粗黑體</option><option value="serif">明體</option></select>
                 </div>
               </div>
+              <div class="compact-state-row">
+                <div class="compact-row-label">輔助文字</div>
+                <button id="helperTextOffBtn">關閉</button>
+                <button id="helperTextOnBtn">開啟</button>
+              </div>
             </section>
 
             <section class="admin-v2-card">
               <h3>系統與資料</h3>
-              <div class="admin-button-row three">
+              <div class="admin-button-row data-grid">
                 <button id="exportBackupBtn">複製名單</button>
                 <button id="importBackupBtn">貼上名單</button>
                 <button id="exportLogBtn">匯出 CSV</button>
@@ -765,8 +824,7 @@
             </div>
             </section>
 
-            <button class="primary admin-save-main" id="saveVoiceBtn">儲存設定</button>
-            <div class="admin-version-footer" id="adminVersion">v1.2.0-ipad</div>
+            <div class="admin-version-footer" id="adminVersion">v2.0.0</div>
           </div>
         </div>
       </section>
@@ -792,7 +850,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '1.2.0-ipad';
+  const APP_VERSION = '2.0.0';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -826,6 +884,7 @@
   let courtHighlightZone = null;
   let courtHighlightTimer = null;
   let panelTouch = { active:false, moved:false, x:0, y:0, blockUntil:0 };
+  let floatingFadeTimer = null;
 
   const $ = (id) => document.getElementById(id);
   const FIXED_AUDIO_BASE = './voice-poc/';
@@ -1098,6 +1157,7 @@
         callEffectIntensity:'medium',
         callEffectColor:'yellow',
         callEffectMarquee:true,
+        helperTextEnabled:true,
         rosterApiUrl:ROSTER_SOURCE_PAGE,
         lastCallPlayers:[],
         lastCallCourt:null,
@@ -1137,6 +1197,7 @@
     merged.settings.callEffectIntensity = ['low','medium','high'].indexOf(String(merged.settings.callEffectIntensity)) >= 0 ? String(merged.settings.callEffectIntensity) : 'medium';
     merged.settings.callEffectColor = ['yellow','green','blue','red'].indexOf(String(merged.settings.callEffectColor)) >= 0 ? String(merged.settings.callEffectColor) : 'yellow';
     merged.settings.callEffectMarquee = merged.settings.callEffectMarquee !== false;
+    merged.settings.helperTextEnabled = merged.settings.helperTextEnabled !== false;
     merged.settings.playerNameScale = normalizePlayerNameScale(merged.settings.playerNameScale);
     merged.settings.playerNameFont = ['system','bold','serif'].indexOf(String(merged.settings.playerNameFont)) >= 0 ? String(merged.settings.playerNameFont) : 'system';
     if(['off','edge','browser'].indexOf(String(merged.settings.autoCallMode)) < 0){
@@ -1343,6 +1404,7 @@
 
   function render(){
     if(console.time) console.time('render');
+    applyHelperTextClass();
     renderHeader();
     renderZones();
     renderSelectedBanner();
@@ -1352,6 +1414,10 @@
     scheduleFitPlayerNames();
     saveState();
     if(console.timeEnd) console.timeEnd('render');
+  }
+
+  function applyHelperTextClass(){
+    document.body.classList.toggle('helper-text-off', state.settings.helperTextEnabled === false);
   }
 
   let fitPlayerNameTimer = null;
@@ -1525,7 +1591,38 @@
     }
   }
 
+  function readableTextColor(color){
+    const hex = String(color || '').replace('#','');
+    if(hex.length !== 6) return '#0f172a';
+    const r = parseInt(hex.slice(0,2), 16);
+    const g = parseInt(hex.slice(2,4), 16);
+    const b = parseInt(hex.slice(4,6), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
+    return luminance > 150 ? '#0f172a' : '#ffffff';
+  }
+
+  function renderSelectedAdminBar(){
+    const label = $('selectedAdminLabel');
+    const name = $('selectedAdminName');
+    if(!label || !name) return;
+    const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
+    if(!p){
+      label.textContent = '尚未選取球員';
+      name.textContent = '';
+      name.classList.remove('show');
+      name.style.background = '';
+      name.style.color = '';
+      return;
+    }
+    label.textContent = '已選取';
+    name.textContent = p.name;
+    name.style.background = p.color || COLORS[0];
+    name.style.color = readableTextColor(p.color || COLORS[0]);
+    name.classList.add('show');
+  }
+
   function renderPanel(){
+    applyHelperTextClass();
     const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
     const hint = $('panelHint');
     const legacy = isLegacyIpadRuntime();
@@ -1543,29 +1640,24 @@
     $('panelTitle').textContent = '管理員';
     renderRestList();
     renderAdminUi();
+    renderSelectedAdminBar();
     renderColorPicker();
     renderCollapsedSections();
     renderSpeakerButton();
   }
 
   function renderSpeakerButton(){
+    const group = $('floatingGroup');
     const speaker = $('speakerButton');
-    if(!speaker) return;
-    const show = !!state.settings.autoCallEnabled;
-    speaker.classList.toggle('show', show);
-    if(show){
-      const btn = $('floatButton');
-      if(btn){
-        const rect = btn.getBoundingClientRect();
-        const y = Math.max(54, Math.min(floatingMaxTop(btn), rect.top));
-        if(Math.abs(y - rect.top) > 1){
-          btn.style.top = y + 'px';
-          state.settings.floating = Object.assign(state.settings.floating || {}, {y: y / window.innerHeight});
-          saveState();
-        }
-      }
+    if(!speaker || !group) return;
+    speaker.classList.add('show');
+    const rect = group.getBoundingClientRect();
+    const y = Math.max(54, Math.min(floatingMaxTop(group), rect.top));
+    if(Math.abs(y - rect.top) > 1){
+      group.style.top = y + 'px';
+      state.settings.floating = Object.assign(state.settings.floating || {}, {y: y / window.innerHeight});
+      saveState();
     }
-    positionSpeakerButton();
   }
 
   function renderRestList(){
@@ -1599,6 +1691,8 @@
     if($('callMarqueeOffBtn')) $('callMarqueeOffBtn').classList.toggle('active', state.settings.callEffectMarquee === false);
     if($('callMarqueeOnBtn')) $('callMarqueeOnBtn').classList.toggle('active', state.settings.callEffectMarquee !== false);
     if($('callMarqueeSelect')) $('callMarqueeSelect').value = state.settings.callEffectMarquee === false ? 'off' : 'on';
+    if($('helperTextOffBtn')) $('helperTextOffBtn').classList.toggle('active', state.settings.helperTextEnabled === false);
+    if($('helperTextOnBtn')) $('helperTextOnBtn').classList.toggle('active', state.settings.helperTextEnabled !== false);
     if($('callEffectDurationSelect')) $('callEffectDurationSelect').value = String(state.settings.callEffectDuration || 5);
     if($('callEffectIntensitySelect')) $('callEffectIntensitySelect').value = state.settings.callEffectIntensity || 'medium';
     if($('callEffectColorSelect')) $('callEffectColorSelect').value = state.settings.callEffectColor || 'yellow';
@@ -1614,8 +1708,10 @@
     populateVoiceSelects();
     const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
     $('renamePlayerInput').value = p ? p.name : '';
+    if($('zeroPlayerBtn')) $('zeroPlayerBtn').disabled = !p;
     renderAdminDetailViews();
     if($('adminVersion')) $('adminVersion').textContent = 'v' + APP_VERSION;
+    if($('adminHeaderVersion')) $('adminHeaderVersion').textContent = 'v' + APP_VERSION;
   }
 
   function renderAdminDetailViews(){
@@ -1654,17 +1750,18 @@
     if($('court1LabelInput')) $('court1LabelInput').value = labels.court1;
     if($('court2LabelInput')) $('court2LabelInput').value = labels.court2;
     if($('court3LabelInput')) $('court3LabelInput').value = labels.court3;
+    if($('court3LabelWrap')) $('court3LabelWrap').classList.toggle('court-label-hidden', currentMode() === '2x2');
   }
 
-  function saveCourtLabels(){
+  async function saveCourtLabels(){
     state.settings.courtLabels = normalizeCourtLabels({
       court1:$('court1LabelInput') ? $('court1LabelInput').value : '1',
       court2:$('court2LabelInput') ? $('court2LabelInput').value : '2',
       court3:$('court3LabelInput') ? $('court3LabelInput').value : '3'
     });
     saveState();
-    showToast('場地名稱已儲存');
     render();
+    await recheckEdgeCourtLabelsAfterSave();
   }
 
   function renderColorPicker(){
@@ -1694,6 +1791,7 @@
     saveState();
     updatePlayerChipColor(p.id, color);
     renderColorPicker();
+    renderSelectedAdminBar();
     showToast('貼紙顏色已更新');
   }
 
@@ -2320,6 +2418,16 @@
     el.className = 'compact-help edge-status' + (mode ? ' is-' + mode : '');
   }
 
+  function waitForPaint(){
+    return new Promise(function(resolve){
+      if(window.requestAnimationFrame){
+        window.requestAnimationFrame(function(){ window.requestAnimationFrame(resolve); });
+      }else{
+        setTimeout(resolve, 32);
+      }
+    });
+  }
+
   function edgeAudioPartsForName(name){
     const raw = String(name || '').replace(/^\s+|\s+$/g, '');
     if(!raw) return [];
@@ -2355,7 +2463,57 @@
         urls.push.apply(urls, audio);
       }
     }
+    const prepareUrl = fixedAudioUrl(FIXED_AUDIO.nextPrepare);
+    if(prepareUrl){
+      urls.push(prepareUrl);
+    }else{
+      missing.push('請準備');
+    }
     return {missing:missing, urls:urls};
+  }
+
+  function requiredEdgeCourtLabelParts(){
+    const missing = [];
+    const urls = [];
+    const courts = activeCourts();
+    for(let i = 0; i < courts.length; i += 1){
+      const court = courts[i];
+      const audio = fixedCourtAudioParts(court);
+      if(!audio.length) missing.push(courtLabel(court));
+      else urls.push.apply(urls, audio);
+    }
+    return {missing:missing, urls:urls};
+  }
+
+  async function recheckEdgeCourtLabelsAfterSave(){
+    edgeCheckState = 'CHECKING';
+    setAutoCallMode('off');
+    saveState();
+    setEdgeReadyStatus('Edge 音源檢查中…\n正在確認場地音源', 'checking');
+    renderPanel();
+    await waitForPaint();
+    const required = requiredEdgeCourtLabelParts();
+    if(required.missing.length){
+      edgeCheckState = 'MISSING';
+      setEdgeReadyStatus('⚠ Edge 缺少音源：' + required.missing.join('、') + '\nEdge 固定語音暫時無法使用。\n請先改用已有音源的場地名稱。', 'missing');
+      showToast('Edge 缺少場地音源');
+      saveState();
+      renderPanel();
+      return {ok:false, missing:required.missing};
+    }
+    const ok = await validateAudioPartsAsync(required.urls);
+    if(!ok){
+      edgeCheckState = 'ERROR';
+      setEdgeReadyStatus('Edge 音源檢查失敗，請重新嘗試', 'error');
+      showToast('Edge 音源檢查失敗');
+      renderPanel();
+      return {ok:false, missing:[]};
+    }
+    edgeCheckState = 'READY';
+    setEdgeReadyStatus('✓ 場地名稱已更新\n✓ Edge 場地音源 Ready', 'ready');
+    showToast('場地名稱已更新');
+    renderPanel();
+    return {ok:true, missing:[]};
   }
 
   async function checkEdgeReadyFromRest(){
@@ -2401,8 +2559,9 @@
     edgeCheckState = 'CHECKING';
     setAutoCallMode('off');
     saveState();
-    setEdgeReadyStatus('Edge 音源檢查中… 正在確認今日人員音源', 'checking');
+    setEdgeReadyStatus('Edge 音源檢查中…\n正在確認今日音源', 'checking');
     renderPanel();
+    await waitForPaint();
     const result = await checkEdgeReadyFromRest();
     edgeCheckInProgress = false;
     if(!result.ok){
@@ -2556,6 +2715,89 @@
     callPlayers(names, state.settings.lastCallCourt || null);
   }
 
+  function firstNextGroupNames(){
+    const first = activeNexts()[0];
+    if(!first) return [];
+    return zonePlayers(first).map(function(p){ return p.name; }).filter(Boolean);
+  }
+
+  function prepareSequenceParts(names, mode){
+    const parts = names.map(function(name){
+      const text = String(name || '').replace(/^\s+|\s+$/g, '');
+      return mode === 'edge'
+        ? {text:text, lang:detectNameLanguage(text), audio:edgeAudioPartsForName(text), type:'name'}
+        : {text:text, lang:detectNameLanguage(text), type:'name'};
+    }).filter(function(part){ return part.text; });
+    parts.push(mode === 'edge'
+      ? {text:'請準備', lang:'zh-TW', audio:[fixedAudioUrl(FIXED_AUDIO.nextPrepare)], type:'prepare'}
+      : {text:'請準備', lang:'zh-TW', type:'prepare'}
+    );
+    return parts;
+  }
+
+  function speakPartsSequence(parts, mode){
+    const token = ++speechCallToken;
+    const synth = window.speechSynthesis;
+    const nameGap = 90;
+    const prepareGap = 110;
+    stopCurrentCallAudio();
+    try{
+      if(synth && synth.cancel) synth.cancel();
+    }catch(err){}
+    function speakNext(index){
+      if(token !== speechCallToken || index >= parts.length) return;
+      const part = parts[index];
+      const next = function(){
+        if(token !== speechCallToken) return;
+        const isBeforeFinal = index === parts.length - 2;
+        setTimeout(function(){ speakNext(index + 1); }, isBeforeFinal ? prepareGap : nameGap);
+      };
+      if(mode === 'edge'){
+        if(!part.audio || !part.audio.length || !part.audio[0]){
+          setEdgeReadyStatus('Edge 缺少音源：' + part.text, 'missing');
+          return;
+        }
+        playAudioParts(part.audio, token, function(ok){
+          if(ok) next();
+          else setEdgeReadyStatus('Edge 音源檢查失敗，請重新嘗試', 'error');
+        }, 0);
+        return;
+      }
+      speakTextPart(part, token, next);
+    }
+    speakNext(0);
+  }
+
+  async function prepareFirstNextGroupCall(){
+    const names = firstNextGroupNames();
+    if(!names.length){
+      showToast('目前沒有預備球員');
+      return;
+    }
+    const mode = currentAutoCallMode() === 'edge' ? 'edge' : 'browser';
+    const parts = prepareSequenceParts(names, mode);
+    if(mode === 'edge'){
+      const missing = [];
+      const urls = [];
+      for(let i = 0; i < parts.length; i += 1){
+        if(!parts[i].audio || !parts[i].audio.length || !parts[i].audio[0]) missing.push(parts[i].text);
+        else urls.push.apply(urls, parts[i].audio);
+      }
+      if(missing.length){
+        setEdgeReadyStatus('Edge 缺少音源：' + missing.join('、'), 'missing');
+        showToast('Edge 缺少音源');
+        return;
+      }
+      const ok = await validateAudioPartsAsync(urls);
+      if(!ok){
+        setEdgeReadyStatus('Edge 音源檢查失敗，請重新嘗試', 'error');
+        showToast('Edge 音源檢查失敗');
+        return;
+      }
+    }
+    speakPartsSequence(parts, mode);
+  }
+
   function setCallEffectEnabled(enabled){
     state.settings.callEffectEnabled = !!enabled;
     if(!enabled){
@@ -2573,7 +2815,8 @@
     render();
   }
 
-  function saveVoiceSettings(){
+  function saveVoiceSettings(options){
+    const silent = options && options.silent === true;
     state.settings.voiceRate = $('voiceRateSelect').value;
     state.settings.voicePitch = $('voicePitchSelect').value;
     state.settings.zhVoiceId = $('zhVoiceSelect') ? $('zhVoiceSelect').value : '';
@@ -2585,7 +2828,17 @@
     state.settings.playerNameScale = normalizePlayerNameScale($('playerNameScaleSelect') ? $('playerNameScaleSelect').value : state.settings.playerNameScale);
     state.settings.playerNameFont = $('playerNameFontSelect') ? $('playerNameFontSelect').value : state.settings.playerNameFont;
     saveState();
-    showToast('語音與提醒設定已儲存');
+    if(!silent) showToast('語音與提醒設定已儲存');
+    render();
+  }
+
+  function saveVoiceSettingsSilently(){
+    saveVoiceSettings({silent:true});
+  }
+
+  function setHelperTextEnabled(enabled){
+    state.settings.helperTextEnabled = !!enabled;
+    saveState();
     render();
   }
 
@@ -2896,7 +3149,7 @@
     };
   }
 
-  function saveTodayRosterFromText(text){
+  async function saveTodayRosterFromText(text){
     const parsed = parseRosterEditorNames(text);
     if(parsed.duplicates.length){
       showToast('名單有重複姓名');
@@ -2910,17 +3163,39 @@
     const current = todayRosterPlayers();
     const byName = {};
     current.forEach(function(p){ byName[String(p.name || '').trim()] = p; });
-    const usedIds = {};
-    const unmatchedCurrent = [];
+    const unmatchedCurrentBase = [];
     current.forEach(function(p){
-      if(parsed.names.indexOf(String(p.name || '').trim()) < 0) unmatchedCurrent.push(p);
+      if(parsed.names.indexOf(String(p.name || '').trim()) < 0) unmatchedCurrentBase.push(p);
     });
     const unmatchedNames = parsed.names.filter(function(name){ return !byName[name]; });
-    const canPreserveRename = current.length === parsed.names.length && unmatchedCurrent.length === unmatchedNames.length;
+    const canPreserveRename = current.length === parsed.names.length && unmatchedCurrentBase.length === unmatchedNames.length;
+    const renameByName = {};
+    const renamedIds = {};
+    if(canPreserveRename){
+      for(let i = 0; i < unmatchedNames.length; i += 1){
+        const player = unmatchedCurrentBase[i];
+        renameByName[unmatchedNames[i]] = player;
+        renamedIds[player.id] = true;
+      }
+    }
+    const plannedRemoved = current.filter(function(p){
+      const currentName = String(p.name || '').trim();
+      return parsed.names.indexOf(currentName) < 0 && !renamedIds[p.id];
+    });
+    const boardRemoved = plannedRemoved.filter(function(p){ return p.zone !== 'rest'; });
+    if(boardRemoved.length){
+      const ok = await confirmDialog(
+        '移除場上球員',
+        '以下球員目前在場地或預備區，確認後只會移除這些球員，不會重排其他位置。',
+        '<div class="compact-help">' + escapeHtml(boardRemoved.map(function(p){ return p.name + '（' + zoneLabel(p.zone) + '）'; }).join('、')) + '</div>'
+      );
+      if(!ok) return false;
+    }
+    const usedIds = {};
     parsed.names.forEach(function(name, index){
       let player = byName[name] || null;
-      if(!player && canPreserveRename){
-        player = unmatchedCurrent.shift() || null;
+      if(!player && renameByName[name]){
+        player = renameByName[name];
         if(player){
           const old = player.name;
           player.name = name;
@@ -2949,7 +3224,9 @@
     saveState();
     closeModal();
     showToast('今日名單已更新');
+    for(const key in playerNameFitCache) delete playerNameFitCache[key];
     render();
+    scheduleFitPlayerNames();
     return true;
   }
 
@@ -3310,35 +3587,38 @@
   }
 
   function initFloatingButton(){
+    const group = $('floatingGroup');
     const btn = $('floatButton');
+    if(!group || !btn) return;
     const pos = state.settings.floating || {side:'left', y:0.45};
-    const y = Math.max(74, Math.min(floatingMaxTop(btn), window.innerHeight * (Number(pos.y)||0.45)));
-    btn.style.top = y + 'px';
-    btn.style.left = pos.side === 'right' ? 'auto' : '12px';
-    btn.style.right = pos.side === 'right' ? '12px' : 'auto';
-    positionSpeakerButton();
+    const y = Math.max(74, Math.min(floatingMaxTop(group), window.innerHeight * (Number(pos.y)||0.45)));
+    group.style.top = y + 'px';
+    group.style.left = pos.side === 'right' ? 'auto' : '12px';
+    group.style.right = pos.side === 'right' ? '12px' : 'auto';
+    wakeFloatingGroup();
 
     function pointFromEvent(e){
       const touch = e.touches && e.touches.length ? e.touches[0] : (e.changedTouches && e.changedTouches.length ? e.changedTouches[0] : e);
       return {x:touch.clientX, y:touch.clientY};
     }
     function startDrag(e){
+      wakeFloatingGroup();
       const point = pointFromEvent(e);
-      floatingDrag = {active:true, moved:false, startX:point.x, startY:point.y, dx:point.x - btn.getBoundingClientRect().left, dy:point.y - btn.getBoundingClientRect().top};
+      floatingDrag = {active:true, moved:false, startX:point.x, startY:point.y, dx:point.x - group.getBoundingClientRect().left, dy:point.y - group.getBoundingClientRect().top};
       if(btn.setPointerCapture && e.pointerId != null) btn.setPointerCapture(e.pointerId);
     }
     function moveDrag(e){
       if(!floatingDrag.active) return;
+      wakeFloatingGroup();
       const point = pointFromEvent(e);
       const moveX = Math.abs(point.x - floatingDrag.startX);
       const moveY = Math.abs(point.y - floatingDrag.startY);
       const threshold = floatingDragThreshold();
       if(!floatingDrag.moved && moveX < threshold && moveY < threshold) return;
       floatingDrag.moved = true;
-      const x = Math.max(4, Math.min(window.innerWidth - btn.offsetWidth - 4, point.x - floatingDrag.dx));
-      const y2 = Math.max(54, Math.min(floatingMaxTop(btn), point.y - floatingDrag.dy));
-      btn.style.left = x + 'px'; btn.style.right = 'auto'; btn.style.top = y2 + 'px';
-      positionSpeakerButton();
+      const x = Math.max(4, Math.min(window.innerWidth - group.offsetWidth - 4, point.x - floatingDrag.dx));
+      const y2 = Math.max(54, Math.min(floatingMaxTop(group), point.y - floatingDrag.dy));
+      group.style.left = x + 'px'; group.style.right = 'auto'; group.style.top = y2 + 'px';
       if(e.cancelable) e.preventDefault();
     }
     function endDrag(e){
@@ -3367,43 +3647,45 @@
       document.addEventListener('mouseup', endDrag);
     }
     btn.addEventListener('click', (e) => {
+      wakeFloatingGroup();
       e.stopPropagation();
       if(Date.now() - floatingTapHandledAt < 500) return;
       if(floatingDrag.moved) return;
       toggleFloatingPanel();
     });
+    group.addEventListener('touchstart', wakeFloatingGroup, {passive:true});
+    group.addEventListener('pointerdown', wakeFloatingGroup);
+    group.addEventListener('click', wakeFloatingGroup);
   }
 
   function snapFloatingButton(){
-    const btn = $('floatButton');
-    const rect = btn.getBoundingClientRect();
+    const group = $('floatingGroup') || $('floatButton');
+    if(!group) return;
+    const rect = group.getBoundingClientRect();
     const side = rect.left + rect.width/2 < window.innerWidth/2 ? 'left' : 'right';
-    btn.style.left = side === 'left' ? '12px' : 'auto';
-    btn.style.right = side === 'right' ? '12px' : 'auto';
-    const y = Math.max(54, Math.min(floatingMaxTop(btn), rect.top));
-    btn.style.top = y + 'px';
+    group.style.left = side === 'left' ? '12px' : 'auto';
+    group.style.right = side === 'right' ? '12px' : 'auto';
+    const y = Math.max(54, Math.min(floatingMaxTop(group), rect.top));
+    group.style.top = y + 'px';
     state.settings.floating = {side, y: y / window.innerHeight};
-    positionSpeakerButton();
     saveState();
   }
 
   function positionSpeakerButton(){
-    const btn = $('floatButton');
-    const speaker = $('speakerButton');
-    if(!btn || !speaker) return;
-    const rect = btn.getBoundingClientRect();
-    const side = rect.left + rect.width/2 < window.innerWidth/2 ? 'left' : 'right';
-    const gap = 8;
-    const top = Math.max(54, Math.min(window.innerHeight - rect.height - 8, rect.top + rect.height + gap));
-    speaker.style.top = top + 'px';
-    speaker.style.left = side === 'left' ? (btn.style.left || '12px') : 'auto';
-    speaker.style.right = side === 'right' ? (btn.style.right || '12px') : 'auto';
+    snapFloatingButton();
   }
 
-  function floatingMaxTop(btn){
-    const height = (btn && (btn.offsetHeight || btn.getBoundingClientRect().height)) || 64;
-    const reserve = state.settings.autoCallEnabled ? height + 16 : 8;
-    return window.innerHeight - height - reserve;
+  function wakeFloatingGroup(){
+    const group = $('floatingGroup');
+    if(!group) return;
+    group.classList.add('awake');
+    if(floatingFadeTimer) clearTimeout(floatingFadeTimer);
+    floatingFadeTimer = setTimeout(function(){ group.classList.remove('awake'); }, 2000);
+  }
+
+  function floatingMaxTop(el){
+    const height = (el && (el.offsetHeight || el.getBoundingClientRect().height)) || 64;
+    return window.innerHeight - height - 8;
   }
 
   async function handleBoardInteraction(e){
@@ -3553,6 +3835,7 @@
     tap('cancelSelectBtn', () => clearSelected('已取消選取'));
     tap('closePanelBtn', closePanel);
     setStableTap($('speakerButton'), repeatLastCall);
+    setStableTap($('prepareButton'), prepareFirstNextGroupCall);
     tap('repeatCallAdminBtn', repeatLastCall);
     tap('showPlayerDetailBtn', () => showAdminDetail('player'));
     tap('showGamesDetailBtn', () => showAdminDetail('games'));
@@ -3572,12 +3855,18 @@
     tap('callEffectOnBtn', () => setCallEffectEnabled(true));
     tap('callMarqueeOffBtn', () => setCallMarqueeEnabled(false));
     tap('callMarqueeOnBtn', () => setCallMarqueeEnabled(true));
+    tap('helperTextOffBtn', () => setHelperTextEnabled(false));
+    tap('helperTextOnBtn', () => setHelperTextEnabled(true));
     tap('voiceTestBtn', () => speakCallSequence(['雅雯','Kevin'], 'court1', 'browser'));
     tap('edgeTestBtn', () => {
       if(currentAutoCallMode() !== 'edge'){ showToast('Edge 尚未 Ready'); return; }
       callPlayers(restPlayerNamesForEdgeCheck().slice(0, 4), activeCourts()[0] || 'court1');
     });
     tap('saveVoiceBtn', saveVoiceSettings);
+    ['voiceRateSelect','voicePitchSelect','zhVoiceSelect','enVoiceSelect','callEffectDurationSelect','callEffectIntensitySelect','callEffectColorSelect','callMarqueeSelect'].forEach(function(id){
+      const el = $(id);
+      if(el) el.addEventListener('change', saveVoiceSettingsSilently);
+    });
     if($('playerNameScaleSelect')) $('playerNameScaleSelect').addEventListener('change', savePlayerNameDisplaySettings);
     if($('playerNameFontSelect')) $('playerNameFontSelect').addEventListener('change', savePlayerNameDisplaySettings);
     tap('addPlayerBtn', () => addPlayer($('newPlayerInput').value));
@@ -3692,6 +3981,7 @@
       exportLogCsv:exportLogCsv,
       callPlayers:callPlayers,
       repeatLastCall:repeatLastCall,
+      prepareFirstNextGroupCall:prepareFirstNextGroupCall,
       detectNameLanguage:detectNameLanguage,
       courtLabel:courtLabel,
       courtVoiceText:courtVoiceText,
