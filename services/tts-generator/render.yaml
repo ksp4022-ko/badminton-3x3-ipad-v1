@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: badminton-tts-generator
+    env: docker
+    plan: starter
+    healthCheckPath: /healthz
+    dockerfilePath: ./services/tts-generator/Dockerfile
+    envVars:
+      - key: TTS_GENERATOR_SECRET
+        sync: false

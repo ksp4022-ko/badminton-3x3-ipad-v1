@@ -5,7 +5,8 @@
   "scripts": {
     "test": "node tools/ipad-compat-test.js && node tools/ipad-layout-test.js && node tools/ipad-behavior-test.js && node tools/voice-sync-test.js",
     "voice:sync": "node tools/voice-sync.js",
-    "test:visual": "node tools/ipad-visual-test.js"
+    "test:visual": "node tools/ipad-visual-test.js",
+    "test:tts-generator": "python -m unittest discover -s services/tts-generator/tests -t services/tts-generator"
   },
   "devDependencies": {
     "playwright": "^1.61.1"
