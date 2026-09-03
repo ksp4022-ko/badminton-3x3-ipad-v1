@@ -500,7 +500,13 @@ async function run() {
   ]));
   await seedLocalVoices(api, api.requiredLocalVoiceAssets(['柯'], true, true));
   const missingEdge = await api.enableAutoCallWithEdgeCheck();
-  assert('missing rest MP3 blocks Edge ready and lists name', !missingEdge.ok && missingEdge.missing.join('|') === 'Missing Voice' && api.getState().settings.autoCallEnabled === false && /Missing Voice/.test(context.document.getElementById('edgeReadyStatus').textContent));
+  assert('missing rest MP3 blocks Edge ready with count summary', !missingEdge.ok && missingEdge.missing.join('|') === 'Missing Voice' && api.getState().settings.autoCallEnabled === false && /Edge 缺少 1 個本機音源/.test(missingEdge.message) && !/Missing Voice/.test(missingEdge.message));
+  await api.refreshLocalVoiceStatus();
+  assert('generate missing button remains accessible outside collapsed details', context.document.getElementById('generateMissingVoicesBtn').style.display !== 'none' && context.document.getElementById('localVoiceList').style.display === 'none');
+  api.tap('toggleLocalVoiceDetailsBtn');
+  await api.refreshLocalVoiceStatus();
+  assert('expanded local voice details show full missing names', context.document.getElementById('localVoiceList').style.display !== 'none' && /Missing Voice/.test(context.document.getElementById('localVoiceList').innerHTML));
+  api.tap('toggleLocalVoiceDetailsBtn');
 
   context.__spokenUtterances = [];
   api.callPlayers(['Missing Voice'], 'court1');
@@ -565,7 +571,7 @@ async function run() {
   await seedLocalVoices(api, api.requiredLocalVoiceAssets(['柯'], true, true));
   api.callPlayers(['Bobo 哥'], 'court1');
   await wait(500);
-  assert('Edge missing english mp3 does not fall back to browser', context.__playedAudio.length === 0 && context.__spokenUtterances.length === 0 && /Bobo/.test(context.document.getElementById('edgeReadyStatus').textContent));
+  assert('Edge missing english mp3 does not fall back to browser', context.__playedAudio.length === 0 && context.__spokenUtterances.length === 0 && /Edge 缺少 1 個本機音源/.test(context.document.getElementById('edgeReadyStatus').textContent));
 
   context.__spokenUtterances = [];
   context.__playedAudio = [];
@@ -574,7 +580,7 @@ async function run() {
   await seedLocalVoices(api, api.requiredLocalVoiceAssets(['柯'], false, false));
   api.callPlayers(['柯'], 'court1');
   await wait(900);
-  assert('Edge missing court phrase does not fall back to browser', context.__playedAudio.length === 1 && context.__playedAudio[0] === 'blob:test' && context.__spokenUtterances.length === 0 && /請到A號場/.test(context.document.getElementById('edgeReadyStatus').textContent));
+  assert('Edge missing court phrase does not fall back to browser', context.__playedAudio.length === 1 && context.__playedAudio[0] === 'blob:test' && context.__spokenUtterances.length === 0 && /場地 1/.test(context.document.getElementById('edgeReadyStatus').textContent));
 
   api.setState(baseState([player('gen1', 'Bobo 哥', 'rest', null)], { courtLabels: { court1: '1', court2: '2', court3: '3' } }));
   await api.localVoiceClear();

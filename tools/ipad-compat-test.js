@@ -93,6 +93,9 @@ assert('auto call has mutually exclusive Edge and Browser modes', html.includes(
 assert('edge checking state keeps status visible', html.includes('mode-checking') && html.includes("edgeCheckInProgress || edgeCheckState === 'CHECKING'") && html.includes('.auto-call-content.mode-checking .browser-settings'));
 assert('local Edge voice uses IndexedDB and production generator', html.includes("badminton-local-voice") && html.includes("voiceAssets") && html.includes("local-voice-v1") && html.includes("en-US-AnaNeural") && html.includes("zh-TW-HsiaoChenNeural") && html.includes("api/voice/generate"));
 assert('Edge Ready checks local assets and preload', html.includes('function preloadLocalVoiceDescriptors') && html.includes('function generateMissingVoiceAssets') && html.includes('function localVoiceCheck') && html.includes('IndexedDB'));
+const edgeSettingsBlock = html.slice(html.indexOf('<div class="edge-settings">'), html.indexOf('<div class="browser-settings">'));
+const localVoiceBlock = html.slice(html.indexOf('<h3>本機音源</h3>'), html.indexOf('<h3>球員與場次</h3>'));
+assert('missing voice generation button lives in local voice card', !edgeSettingsBlock.includes('generateMissingVoicesBtn') && localVoiceBlock.includes('generateMissingVoicesBtn') && localVoiceBlock.includes('toggleLocalVoiceDetailsBtn'));
 assert('court call no longer uses single combined zh sentence', !html.includes("names.join('、')} 請上") && !html.includes("'請上場：' + names.join('、')"));
 assert('repeat call reuses callPlayers path', html.includes('function repeatLastCall') && html.includes('callPlayers(names, state.settings.lastCallCourt || null);'));
 assert('selectable bilingual voice controls exist', html.includes('id="zhVoiceSelect"') && html.includes('id="enVoiceSelect"') && html.includes('zhVoiceId') && html.includes('enVoiceId'));

@@ -684,8 +684,6 @@
                   <div class="admin-subtitle">Edge 固定語音</div>
                   <div class="compact-help edge-status" id="edgeReadyStatus">Edge 固定語音</div>
                   <button id="edgeTestBtn" disabled>試播 Edge</button>
-                  <button class="primary" id="generateMissingVoicesBtn">產生缺少音源</button>
-                  <div class="compact-help voice-progress" id="voiceGenerateStatus"></div>
                 </div>
                 <div class="browser-settings">
                   <div class="admin-subtitle">網頁合成語音設定</div>
@@ -715,8 +713,11 @@
             <section class="admin-v2-card">
               <h3>本機音源</h3>
               <div class="compact-help voice-progress" id="localVoiceSummary">本機音源尚未檢查</div>
-              <div class="voice-asset-list" id="localVoiceList"></div>
-              <div class="admin-button-row two">
+              <button class="primary" id="generateMissingVoicesBtn">產生缺少音源</button>
+              <div class="compact-help voice-progress" id="voiceGenerateStatus"></div>
+              <button id="toggleLocalVoiceDetailsBtn">查看音源明細 ▾</button>
+              <div class="voice-asset-list" id="localVoiceList" style="display:none"></div>
+              <div class="admin-button-row two" id="localVoiceDangerActions" style="display:none">
                 <button class="warn" id="clearPlayerVoiceAssetsBtn">清除球員音源</button>
                 <button class="danger" id="clearAllVoiceAssetsBtn">清除全部本機音源</button>
               </div>
@@ -950,6 +951,8 @@
   };
   let localVoiceDbPromise = null;
   let memoryVoiceAssets = {};
+  let localVoiceDetailsExpanded = false;
+  let localVoiceGenerating = false;
 
   function nowIso(){ return new Date().toISOString(); }
   function pad(n){ return String(n).padStart(2,'0'); }
@@ -1734,7 +1737,7 @@
       $('browserCallBtn').disabled = edgeCheckInProgress;
     }
     if($('edgeTestBtn')) $('edgeTestBtn').disabled = currentAutoCallMode() !== 'edge' || edgeCheckInProgress;
-    if($('generateMissingVoicesBtn')) $('generateMissingVoicesBtn').disabled = edgeCheckInProgress;
+    if($('generateMissingVoicesBtn')) $('generateMissingVoicesBtn').disabled = edgeCheckInProgress || localVoiceGenerating;
     if($('callEffectOffBtn')) $('callEffectOffBtn').classList.toggle('active', state.settings.callEffectEnabled === false);
     if($('callEffectOnBtn')) $('callEffectOnBtn').classList.toggle('active', state.settings.callEffectEnabled !== false);
     if($('callMarqueeOffBtn')) $('callMarqueeOffBtn').classList.toggle('active', state.settings.callEffectMarquee === false);
@@ -2477,27 +2480,55 @@
     return {ready:ready, missing:missing, total:descs.length};
   }
 
+  function localVoiceCounts(descs, ready){
+    const counts = {system:0, player:0, court:0, systemReady:0, playerReady:0, courtReady:0};
+    (descs || []).forEach(function(desc){ counts[desc.type] += 1; });
+    (ready || []).forEach(function(desc){ counts[desc.type + 'Ready'] += 1; });
+    counts.systemMissing = counts.system - counts.systemReady;
+    counts.playerMissing = counts.player - counts.playerReady;
+    counts.courtMissing = counts.court - counts.courtReady;
+    return counts;
+  }
+
+  function missingVoiceSummary(descs, missingDescriptors){
+    const missing = missingDescriptors || [];
+    const counts = localVoiceCounts(descs, descs.filter(function(desc){
+      return missing.indexOf(desc) < 0;
+    }));
+    return 'Edge 缺少 ' + missing.length + ' 個本機音源\n球員 ' + counts.playerMissing + '　場地 ' + counts.courtMissing + '　系統 ' + counts.systemMissing + '\n請至「本機音源」產生';
+  }
+
   async function refreshLocalVoiceStatus(){
     const summary = $('localVoiceSummary');
     const list = $('localVoiceList');
+    const generateBtn = $('generateMissingVoicesBtn');
+    const toggleBtn = $('toggleLocalVoiceDetailsBtn');
+    const dangerActions = $('localVoiceDangerActions');
     if(!summary && !list) return null;
     const descs = requiredLocalVoiceAssetsForToday();
     const check = await localVoiceCheck(descs);
-    const counts = {system:0, player:0, court:0, systemReady:0, playerReady:0, courtReady:0};
-    descs.forEach(function(desc){ counts[desc.type] += 1; });
-    check.ready.forEach(function(desc){ counts[desc.type + 'Ready'] += 1; });
+    const counts = localVoiceCounts(descs, check.ready);
     if(summary){
       summary.textContent = check.missing.length
         ? '本機音源 Missing ' + check.ready.length + '/' + check.total + '\n系統 ' + counts.systemReady + '/' + counts.system + '，球員 ' + counts.playerReady + '/' + counts.player + '，場地 ' + counts.courtReady + '/' + counts.court
         : '✓ 本機音源 Ready ' + check.total + '/' + check.total + '\n系統 ' + counts.systemReady + '/' + counts.system + '，球員 ' + counts.playerReady + '/' + counts.player + '，場地 ' + counts.courtReady + '/' + counts.court;
     }
+    if(generateBtn){
+      generateBtn.style.display = check.missing.length ? '' : 'none';
+      generateBtn.disabled = localVoiceGenerating || !check.missing.length;
+    }
+    if(toggleBtn){
+      toggleBtn.textContent = localVoiceDetailsExpanded ? '收合明細 ▴' : '查看音源明細 ▾';
+    }
     if(list){
+      list.style.display = localVoiceDetailsExpanded ? '' : 'none';
       const rows = check.missing.length ? check.missing : check.ready;
       list.innerHTML = rows.map(function(desc){
         const status = check.missing.length ? '缺少' : 'Ready';
         return '<div class="voice-asset-row" data-voice-key="' + escapeHtml(desc.key) + '"><div><div>' + escapeHtml(descriptorLabel(desc)) + '</div><div class="voice-asset-meta">' + escapeHtml(desc.language + ' | ' + desc.voice + ' | ' + desc.rate + ' | ' + status) + '</div></div><button class="danger" data-delete-voice-key="' + escapeHtml(desc.key) + '">刪除</button></div>';
       }).join('');
     }
+    if(dangerActions) dangerActions.style.display = localVoiceDetailsExpanded ? '' : 'none';
     return check;
   }
 
@@ -2516,32 +2547,41 @@
 
   async function generateMissingVoiceAssets(){
     const status = $('voiceGenerateStatus');
+    if(localVoiceGenerating) return {ok:false, reason:'generating'};
     if(navigator.onLine === false){
       if(status) status.textContent = '目前沒有網路連線，請連線後產生音源。';
       showToast('目前沒有網路連線');
       return {ok:false, reason:'offline'};
     }
+    localVoiceGenerating = true;
+    renderPanel();
     const descs = requiredLocalVoiceAssetsForToday();
     const initial = await localVoiceCheck(descs);
     if(!initial.missing.length){
       if(status) status.textContent = '本機音源已完整';
       await refreshLocalVoiceStatus();
+      localVoiceGenerating = false;
+      renderPanel();
       return {ok:true, generated:0, failed:[]};
     }
     const failed = [];
     let generated = 0;
-    for(let i = 0; i < initial.missing.length; i += 1){
-      const desc = initial.missing[i];
-      if(status) status.textContent = '正在建立音源 ' + (i + 1) + ' / ' + initial.missing.length + '\n' + desc.spokenText;
-      try{
-        const blob = await fetchGeneratedVoice(desc);
-        await localVoicePut(Object.assign({}, desc, {blob:blob, createdAt:nowIso()}));
-        generated += 1;
-      }catch(err){
-        console.error(err);
-        failed.push(desc.spokenText);
+    try{
+      for(let i = 0; i < initial.missing.length; i += 1){
+        const desc = initial.missing[i];
+        if(status) status.textContent = '正在建立音源 ' + (i + 1) + ' / ' + initial.missing.length + '\n' + desc.spokenText;
+        try{
+          const blob = await fetchGeneratedVoice(desc);
+          await localVoicePut(Object.assign({}, desc, {blob:blob, createdAt:nowIso()}));
+          generated += 1;
+        }catch(err){
+          console.error(err);
+          failed.push(desc.spokenText);
+        }
+        await refreshLocalVoiceStatus();
       }
-      await refreshLocalVoiceStatus();
+    }finally{
+      localVoiceGenerating = false;
     }
     const finalCheck = await localVoiceCheck(descs);
     if(status){
@@ -2552,9 +2592,13 @@
     if(currentAutoCallMode() === 'edge'){
       if(finalCheck.missing.length){
         edgeCheckState = 'MISSING';
-        setEdgeReadyStatus('Edge 缺少音源：' + finalCheck.missing.map(function(desc){ return desc.spokenText; }).join('、'), 'missing');
+        setAutoCallMode('off');
+        saveState();
+        setEdgeReadyStatus(missingVoiceSummary(descs, finalCheck.missing), 'missing');
       }else{
         edgeCheckState = 'READY';
+        setAutoCallMode('edge');
+        saveState();
         setEdgeReadyStatus('✓ 本機音源 Ready\n✓ Edge 固定語音已啟用\n目前音源已完整，你可以離線作業。', 'ready');
       }
     }
@@ -2631,21 +2675,25 @@
   async function localVoiceUrlsForDescriptors(descs){
     const urls = [];
     const missing = [];
+    const missingDescriptors = [];
     for(let i = 0; i < descs.length; i += 1){
       const desc = descs[i];
       const url = await localVoiceUrlForDescriptor(desc);
       if(url) urls.push(url);
-      else missing.push(desc.spokenText);
+      else{
+        missing.push(desc.spokenText);
+        missingDescriptors.push(desc);
+      }
     }
-    return {urls:urls, missing:missing};
+    return {urls:urls, missing:missing, missingDescriptors:missingDescriptors};
   }
 
   async function preloadLocalVoiceDescriptors(descs){
     const local = await localVoiceUrlsForDescriptors(descs);
-    if(local.missing.length) return {ok:false, reason:'missing', missing:local.missing, urls:local.urls};
-    if(!local.urls.length) return {ok:true, reason:'ready', missing:[], urls:local.urls};
+    if(local.missing.length) return {ok:false, reason:'missing', missing:local.missing, missingDescriptors:local.missingDescriptors, urls:local.urls};
+    if(!local.urls.length) return {ok:true, reason:'ready', missing:[], missingDescriptors:[], urls:local.urls};
     const ok = await validateAudioPartsAsync(local.urls);
-    return {ok:ok, reason:ok ? 'ready' : 'error', missing:[], urls:local.urls};
+    return {ok:ok, reason:ok ? 'ready' : 'error', missing:[], missingDescriptors:[], urls:local.urls};
   }
 
   function browserCallSequenceParts(names, courtZone){
@@ -2862,7 +2910,7 @@
     if(local.missing.length){
       edgeCheckState = 'MISSING';
       setAutoCallMode('off');
-      setEdgeReadyStatus('⚠ Edge 缺少音源：' + local.missing.join('、') + '\nEdge 固定語音暫時無法使用。\n請先改用已有音源的場地名稱。', 'missing');
+      setEdgeReadyStatus(missingVoiceSummary(required.descriptors, local.missingDescriptors), 'missing');
       showToast('Edge 缺少場地音源');
       saveState();
       renderPanel();
@@ -2918,7 +2966,7 @@
       total:required.descriptors.length,
       ready:required.descriptors.length - missing.length,
       missing:missing,
-      message:missing.length ? ('Edge 缺少音源：' + missing.join('、')) : ('本機音源 Ready ' + required.descriptors.length + '/' + required.descriptors.length)
+      message:missing.length ? missingVoiceSummary(required.descriptors, local.missingDescriptors) : ('本機音源 Ready ' + required.descriptors.length + '/' + required.descriptors.length)
     };
   }
 
@@ -3055,7 +3103,7 @@
       if(mode === 'edge'){
         const local = await localVoiceUrlsForDescriptors(part.descriptors || []);
         if(local.missing.length){
-          setEdgeReadyStatus('Edge 缺少音源：' + local.missing.join('、'), 'missing');
+          setEdgeReadyStatus(missingVoiceSummary(part.descriptors || [], local.missingDescriptors), 'missing');
           return;
         }
         playAudioParts(local.urls, token, function(ok){
@@ -3126,7 +3174,7 @@
       if(mode === 'edge'){
         const local = await localVoiceUrlsForDescriptors(part.descriptors || []);
         if(local.missing.length){
-          setEdgeReadyStatus('Edge 缺少音源：' + local.missing.join('、'), 'missing');
+          setEdgeReadyStatus(missingVoiceSummary(part.descriptors || [], local.missingDescriptors), 'missing');
           return;
         }
         playAudioParts(local.urls, token, function(ok){
@@ -3159,7 +3207,7 @@
       local.urls.forEach(function(url){ try{ URL.revokeObjectURL(url); }catch(err){} });
       missing.push.apply(missing, local.missing);
       if(missing.length){
-        setEdgeReadyStatus('Edge 缺少音源：' + missing.join('、'), 'missing');
+        setEdgeReadyStatus(missingVoiceSummary(descriptors, local.missingDescriptors), 'missing');
         showToast('Edge 缺少音源');
         return;
       }
@@ -4221,6 +4269,10 @@
     tap('generateMissingVoicesBtn', generateMissingVoiceAssets);
     tap('clearPlayerVoiceAssetsBtn', clearPlayerVoiceAssets);
     tap('clearAllVoiceAssetsBtn', clearAllLocalVoiceAssets);
+    tap('toggleLocalVoiceDetailsBtn', () => {
+      localVoiceDetailsExpanded = !localVoiceDetailsExpanded;
+      refreshLocalVoiceStatus();
+    });
     tap('callEffectOffBtn', () => setCallEffectEnabled(false));
     tap('callEffectOnBtn', () => setCallEffectEnabled(true));
     tap('callMarqueeOffBtn', () => setCallMarqueeEnabled(false));
