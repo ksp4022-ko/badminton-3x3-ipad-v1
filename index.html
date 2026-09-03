@@ -438,6 +438,11 @@
       display:grid;gap:10px;
     }
     .admin-action-grid.four{grid-template-columns:repeat(4,minmax(0,1fr));}
+    .today-mode-control{min-width:0;}
+    .admin-action-grid .today-mode-control,
+    #updateTodayRosterBtn{grid-column:1 / -1;}
+    #randomFillBtn{grid-column:1 / 3;}
+    #resetTodayBtn{grid-column:3 / 5;}
     .admin-button-row.three{grid-template-columns:repeat(3,minmax(0,1fr));}
     .admin-button-row.four{grid-template-columns:repeat(4,minmax(0,1fr));}
     .admin-button-row.single{grid-template-columns:1fr;}
@@ -473,6 +478,7 @@
     .system-mode-row{
       display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px;
     }
+    .system-mode-row #courtModeControls{grid-column:1 / -1;}
     .compact-state-row{
       display:grid;grid-template-columns:1fr minmax(96px,140px) minmax(96px,140px);gap:10px;align-items:end;margin:0;
     }
@@ -495,6 +501,11 @@
     .admin-version-footer{
       padding:14px 0 2px;text-align:center;color:#8892a0;font-size:13px;font-weight:800;
     }
+    .roster-editor-area{
+      width:100%;min-height:280px;border:1px solid #2e3442;border-radius:16px;
+      padding:12px;background:#1e222b;color:#f5f7fa;font:18px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;
+    }
+    .roster-editor-note{margin-top:8px;color:#8892a0;font-weight:800;line-height:1.4;}
     @media (min-width:701px){
       .voice-grid{grid-template-columns:minmax(0,1.4fr) minmax(0,1.4fr) minmax(120px,.6fr) minmax(120px,.6fr);}
     }
@@ -513,6 +524,7 @@
       .compact-state-row{grid-template-columns:1fr 1fr;}
       .compact-state-row .compact-row-label{grid-column:1 / -1;}
       .segmented-wide{grid-template-columns:1fr;}
+      #randomFillBtn,#resetTodayBtn{grid-column:auto;}
       .player-add-row,.player-edit-row{grid-template-columns:1fr;}
       #adminTools .compact-colors{grid-template-columns:repeat(6,24px);}
       .game-actions{grid-template-columns:repeat(2,minmax(0,1fr));}
@@ -581,9 +593,15 @@
             <section class="admin-v2-card">
               <h3>今日操作</h3>
               <div class="admin-action-grid four">
-                <button id="repeatCallAdminBtn">📢 再叫一次</button>
+                <div class="today-mode-control">
+                  <div class="compact-row-label">排場模式</div>
+                  <div class="mode-row">
+                    <button id="freeModeBtn">自由暢打</button>
+                    <button id="autoModeBtn">自動排場</button>
+                  </div>
+                </div>
+                <button class="primary" id="updateTodayRosterBtn">更新名單</button>
                 <button id="randomFillBtn">隨機填滿</button>
-                <button class="primary" id="fetchRosterBtn">更新日安名單</button>
                 <button class="warn" id="resetTodayBtn">今日重新開始</button>
               </div>
             </section>
@@ -670,13 +688,6 @@
               <h3>場地與排場</h3>
               <div id="systemOpsBody">
                 <div class="system-mode-row">
-                  <div class="segmented-group">
-                    <div class="compact-row-label">排場模式</div>
-                    <div class="mode-row">
-                      <button id="freeModeBtn">自由暢打</button>
-                      <button id="autoModeBtn">自動排場</button>
-                    </div>
-                  </div>
                   <div class="segmented-group" id="courtModeControls">
                     <div class="compact-row-label" id="courtModeStatus">場地模式</div>
                     <div class="mode-row">
@@ -2817,6 +2828,131 @@
       .map(function(name){ return {name:name, color:COLORS[0]}; });
   }
 
+  function parseRosterEditorNames(text){
+    const raw = String(text || '');
+    const names = raw
+      .split(/\r?\n/)
+      .map(function(line){ return line.replace(/^\s*\[(.*)\]\s*$/, '$1').trim(); })
+      .filter(function(name){ return !!name; });
+    const seen = {};
+    const duplicates = [];
+    names.forEach(function(name){
+      if(seen[name] && duplicates.indexOf(name) < 0) duplicates.push(name);
+      seen[name] = true;
+    });
+    return {names:names, duplicates:duplicates};
+  }
+
+  function todayRosterPlayers(){
+    return activePlayers().slice().sort(function(a,b){
+      return (Number(a.sortOrder) - Number(b.sortOrder)) || String(a.name).localeCompare(String(b.name), 'zh-Hant');
+    });
+  }
+
+  function todayRosterText(){
+    return todayRosterPlayers().map(function(p){ return p.name; }).join('\n');
+  }
+
+  function duplicateActiveRosterNames(){
+    const seen = {};
+    const duplicates = [];
+    todayRosterPlayers().forEach(function(p){
+      const name = String(p.name || '').trim();
+      if(!name) return;
+      if(seen[name] && duplicates.indexOf(name) < 0) duplicates.push(name);
+      seen[name] = true;
+    });
+    return duplicates;
+  }
+
+  function showTodayRosterEditor(){
+    resetModalButtons();
+    const players = todayRosterPlayers();
+    $('modalTitle').textContent = '更新今日名單';
+    $('modalMessage').textContent = players.length ? '一行一位，可直接新增、刪除、修改。' : '尚無今日名單。請輸入球員姓名，一行一位。';
+    $('modalExtra').innerHTML = '<textarea id="todayRosterTextArea" class="roster-editor-area" placeholder="A&#10;B&#10;C"></textarea><div class="roster-editor-note">會保留同名球員的顏色、場次與目前位置；新增球員會放入休息區。</div>';
+    $('modalCancelBtn').textContent = '取消';
+    $('modalOkBtn').textContent = '儲存名單';
+    $('modalMask').classList.add('show');
+    const area = $('todayRosterTextArea');
+    area.value = todayRosterText();
+    setTimeout(function(){ area.focus(); }, 0);
+    setTap($('modalCancelBtn'), closeModal);
+    setTap($('modalOkBtn'), function(){ saveTodayRosterFromText(area.value); });
+  }
+
+  function makeRosterPlayer(name, sortOrder){
+    return {
+      id:uid('P'),
+      name:name,
+      games:0,
+      color:COLORS[0],
+      zone:'rest',
+      slot:null,
+      sortOrder:sortOrder,
+      isActive:true,
+      createdAt:nowIso(),
+      updatedAt:nowIso()
+    };
+  }
+
+  function saveTodayRosterFromText(text){
+    const parsed = parseRosterEditorNames(text);
+    if(parsed.duplicates.length){
+      showToast('名單有重複姓名');
+      return false;
+    }
+    const currentDuplicates = duplicateActiveRosterNames();
+    if(currentDuplicates.length){
+      showToast('目前名單有重複姓名，請先修正');
+      return false;
+    }
+    const current = todayRosterPlayers();
+    const byName = {};
+    current.forEach(function(p){ byName[String(p.name || '').trim()] = p; });
+    const usedIds = {};
+    const unmatchedCurrent = [];
+    current.forEach(function(p){
+      if(parsed.names.indexOf(String(p.name || '').trim()) < 0) unmatchedCurrent.push(p);
+    });
+    const unmatchedNames = parsed.names.filter(function(name){ return !byName[name]; });
+    const canPreserveRename = current.length === parsed.names.length && unmatchedCurrent.length === unmatchedNames.length;
+    parsed.names.forEach(function(name, index){
+      let player = byName[name] || null;
+      if(!player && canPreserveRename){
+        player = unmatchedCurrent.shift() || null;
+        if(player){
+          const old = player.name;
+          player.name = name;
+          player.updatedAt = nowIso();
+          logAction('renamePlayer', player.zone, [name], old + ' → ' + name);
+        }
+      }
+      if(!player){
+        player = makeRosterPlayer(name, Date.now() + index);
+        state.players.push(player);
+        logAction('addPlayer','rest',[name],'更新名單新增球員');
+      }
+      player.isActive = true;
+      if(!Number.isFinite(Number(player.sortOrder))) player.sortOrder = Date.now() + index;
+      player.updatedAt = nowIso();
+      usedIds[player.id] = true;
+    });
+
+    current.forEach(function(p){
+      if(usedIds[p.id]) return;
+      p.isActive = false;
+      p.updatedAt = nowIso();
+      logAction('removeFromToday', p.zone, [p.name], '更新名單移除球員');
+      if(selectedPlayer && selectedPlayer.playerId === p.id) setSelectedPlayer(null);
+    });
+    saveState();
+    closeModal();
+    showToast('今日名單已更新');
+    render();
+    return true;
+  }
+
   function normalizePastedPlayerItem(item){
     if(typeof item === 'string') return {name:item.trim(), color:COLORS[0]};
     if(item && item.name) return item;
@@ -3426,6 +3562,7 @@
     tap('adminLoginBtn', adminLogin);
     tap('freeModeBtn', () => { state.settings.freePlayMode=true; state.settings.autoArrangeMode=false; saveState(); renderPanel(); });
     tap('autoModeBtn', () => { state.settings.freePlayMode=false; state.settings.autoArrangeMode=true; saveState(); showToast('已切換'); renderPanel(); });
+    tap('updateTodayRosterBtn', showTodayRosterEditor);
     tap('randomFillBtn', randomFillCourts);
     tap('fetchRosterBtn', showRosterImportDialog);
     tap('autoCallOffBtn', disableAutoCall);
@@ -3542,6 +3679,9 @@
       resetToday:resetToday,
       clearAll:clearAll,
       importPlayersFromText:importPlayersFromText,
+      showTodayRosterEditor:showTodayRosterEditor,
+      saveTodayRosterFromText:saveTodayRosterFromText,
+      parseRosterEditorNames:parseRosterEditorNames,
       importRosterPlayers:importRosterPlayers,
       setSelectedPlayerColor:setSelectedPlayerColor,
       requestRosterApi:requestRosterApi,

@@ -705,6 +705,51 @@ async function run() {
   await reset;
   assert('reset today clears locations and games', api.getState().players.every((p) => p.zone === 'rest' && p.slot === null && p.games === 0));
 
+  api.setState(baseState([
+    player('p1', 'CourtA', 'court1', 1, 5),
+    player('p2', 'NextB', 'next1', 2, 3),
+    player('p3', 'RestC', 'rest', null, 1)
+  ]));
+  context.__lastFetchUrl = '';
+  api.showTodayRosterEditor();
+  assert('today roster editor opens with current active roster', /CourtA/.test(context.document.getElementById('todayRosterTextArea').value) && /NextB/.test(context.document.getElementById('todayRosterTextArea').value) && /RestC/.test(context.document.getElementById('todayRosterTextArea').value));
+  assert('today roster editor does not call remote api', !context.__lastFetchUrl);
+  api.tap('modalCancelBtn');
+
+  api.setState(baseState([
+    player('p1', 'CourtA', 'court1', 1, 5),
+    player('p2', 'NextB', 'next1', 2, 3),
+    player('p3', 'RestC', 'rest', null, 1)
+  ]));
+  api.saveTodayRosterFromText('CourtA\nNextB\nRestC\nNewD');
+  let rosterState = api.getState();
+  const retainedCourt = rosterState.players.find((p) => p.id === 'p1');
+  const retainedNext = rosterState.players.find((p) => p.id === 'p2');
+  const newPlayer = rosterState.players.find((p) => p.name === 'NewD');
+  assert('today roster retained players preserve identity color games and location', retainedCourt && retainedCourt.name === 'CourtA' && retainedCourt.games === 5 && retainedCourt.zone === 'court1' && retainedCourt.slot === 1 && retainedNext && retainedNext.games === 3 && retainedNext.zone === 'next1' && retainedNext.slot === 2);
+  assert('today roster added player enters rest', newPlayer && newPlayer.zone === 'rest' && newPlayer.slot === null && newPlayer.games === 0);
+
+  api.setState(baseState([
+    player('p1', 'OldA', 'court1', 1, 5),
+    player('p2', 'OldB', 'next1', 2, 3)
+  ]));
+  api.saveTodayRosterFromText('NewA\nOldB');
+  rosterState = api.getState();
+  const renamed = rosterState.players.find((p) => p.id === 'p1');
+  assert('today roster unambiguous rename preserves identity and location', renamed && renamed.name === 'NewA' && renamed.games === 5 && renamed.zone === 'court1' && renamed.slot === 1);
+
+  api.setState(baseState([
+    player('p1', 'KeepA', 'court1', 1, 5),
+    player('p2', 'RemoveB', 'next1', 2, 3)
+  ]));
+  api.saveTodayRosterFromText('KeepA');
+  rosterState = api.getState();
+  assert('today roster removal deactivates without clearing retained court', rosterState.players.find((p) => p.id === 'p1').zone === 'court1' && rosterState.players.find((p) => p.id === 'p2').isActive === false);
+
+  api.setState(baseState([player('p1', 'A', 'court1', 1, 2)]));
+  api.saveTodayRosterFromText('A\nA');
+  assert('today roster duplicate names are blocked', api.getState().players.length === 1 && api.getState().players[0].zone === 'court1' && api.getState().players[0].games === 2);
+
   api.importPlayersFromText(JSON.stringify({ players: [{ name: '匯入A', color: '#fecaca' }, { name: '匯入B', games: 9 }] }));
   assert('paste import replaces list', api.getState().players.length === 2 && api.getState().players[0].name === '匯入A');
   assert('paste import resets games', api.getState().players.every((p) => p.games === 0 && p.zone === 'rest'));

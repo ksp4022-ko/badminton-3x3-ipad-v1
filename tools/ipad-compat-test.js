@@ -100,7 +100,13 @@ assert('panel scroll tap guard exists', html.includes('function initPanelScrollG
 assert('floating tap uses drag threshold', html.includes('const FLOAT_DRAG_THRESHOLD = 8') && html.includes('const LEGACY_FLOAT_DRAG_THRESHOLD = 20') && html.includes('function floatingDragThreshold') && html.includes('startX:point.x') && html.includes('floatingTapHandledAt'));
 assert('floating toggle uses lock', html.includes('floatingToggleLockedUntil') && html.includes('function toggleFloatingPanel') && html.includes('now + 300'));
 assert('floating pointer and touch are not both bound on modern browsers', html.includes('if(window.PointerEvent)') && html.includes('}else{') && html.includes("btn.addEventListener('touchstart'"));
-assert('roster import button exists', html.includes('id="fetchRosterBtn"') && html.includes('更新日安名單') && html.includes("tap('fetchRosterBtn', showRosterImportDialog)"));
+const todayStart = html.indexOf('<h3>今日操作</h3>');
+const autoCallStart = html.indexOf('<h3>自動呼叫</h3>');
+const todayBlock = html.slice(todayStart, autoCallStart);
+assert('today actions use updated admin v2 definition', todayBlock.includes('排場模式') && todayBlock.includes('id="updateTodayRosterBtn"') && todayBlock.includes('id="randomFillBtn"') && todayBlock.includes('id="resetTodayBtn"'));
+assert('today actions omit repeat call and remote roster', !todayBlock.includes('repeatCallAdminBtn') && !todayBlock.includes('更新日安名單') && !todayBlock.includes('fetchRosterBtn'));
+assert('roster import compatibility code remains', html.includes('id="fetchRosterBtn"') === false && html.includes("function showRosterImportDialog") && html.includes("tap('fetchRosterBtn', showRosterImportDialog)"));
+assert('today roster editor exists', html.includes('function showTodayRosterEditor') && html.includes('function saveTodayRosterFromText') && html.includes('id="todayRosterTextArea"') && html.includes("tap('updateTodayRosterBtn', showTodayRosterEditor)"));
 assert('roster api fixed to rian', html.includes("const ROSTER_SITE = 'rian'"));
 assert('roster api uses shuttle rian source', html.includes('ROSTER_SOURCE_PAGE') && html.includes('shuttle-burst-dynamic/rian') && html.includes('SHUTTLE_ROSTER_API_BASE') && html.includes('function requestShuttleRosterApi'));
 assert('roster source is visible and not blank', html.includes('rosterApiUrl:ROSTER_SOURCE_PAGE') && html.includes('merged.settings.rosterApiUrl = ROSTER_SOURCE_PAGE') && html.includes('目前固定使用日安報名頁'));
