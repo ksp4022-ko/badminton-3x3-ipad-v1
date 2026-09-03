@@ -452,6 +452,13 @@ async function run() {
   ]));
   assert('rest area names trim and dedupe for Edge check', api.restPlayerNamesForEdgeCheck().join('|') === '柯|Chris');
 
+  const checkingEdge = api.enableAutoCallWithEdgeCheck();
+  const autoCallBody = context.document.getElementById('autoCallBody');
+  const edgeStatus = context.document.getElementById('edgeReadyStatus');
+  assert('Edge checking state keeps status visible before preload completes', autoCallBody.classList.contains('mode-checking') && !autoCallBody.classList.contains('mode-off') && /Edge 音源檢查中/.test(edgeStatus.textContent));
+  assert('Edge checking disables mode selectors', context.document.getElementById('edgeCallBtn').disabled && context.document.getElementById('autoCallOffBtn').disabled && context.document.getElementById('browserCallBtn').disabled);
+  await checkingEdge;
+
   const readyEdge = await api.enableAutoCallWithEdgeCheck();
   assert('all rest MP3 assets enable Edge ready', readyEdge.ok && readyEdge.ready === 2 && readyEdge.total === 2 && api.getState().settings.autoCallEnabled === true && /Edge Ready 2\/2/.test(context.document.getElementById('edgeReadyStatus').textContent));
 

@@ -80,12 +80,15 @@ assert('stable speaker tap exists', html.includes('function bindStableTap') && h
 assert('speaker button uses purple tool color', html.includes('.floating-button.speaker-button{display:none;background:linear-gradient(135deg,#6d28d9,#4f46e5);color:#fff'));
 assert('selected floating button still turns yellow', html.includes('.floating-button.has-selected{background:linear-gradient(135deg,#f59e0b,#facc15);color:#422006;}'));
 assert('admin v2 fullscreen header exists', html.includes('class="float-panel admin-v2"') && html.includes('‹ 返回排場') && !html.includes('id="closePanelBtn">×'));
+assert('selected admin bar sits between header and body', html.indexOf('<div id="selectedAdminBar"') > html.indexOf('<div class="panel-head">') && html.indexOf('<div id="selectedAdminBar"') < html.indexOf('<div class="panel-body"'));
+assert('admin v2 hides old selected hint', !html.includes('<div id="panelHint"'));
 assert('admin v2 sections exist', ['今日操作','自動呼叫','球員與場次','場地與排場','視覺與顯示','系統與資料'].every((label) => html.includes(label)));
 assert('admin v2 uses detail views for player and games', html.includes('id="playerDetailView"') && html.includes('id="gamesDetailView"') && html.includes('function showAdminDetail'));
 assert('admin footer version exists', html.includes('id="adminVersion"') && html.includes("textContent = 'v' + APP_VERSION"));
 assert('bilingual speech helpers exist', html.includes('function detectNameLanguage') && html.includes('function findPreferredVoice') && html.includes('function speakCallSequence'));
 assert('court call speaks player names sequentially', html.includes('function callSequenceParts') && html.includes('function playAudioParts') && html.includes('function speakTextPart') && html.includes('const nameGap = 90') && html.includes('const courtGap = 110'));
 assert('auto call has mutually exclusive Edge and Browser modes', html.includes("autoCallMode:'off'") && html.includes('id="edgeCallBtn"') && html.includes('id="browserCallBtn"') && html.includes('function browserCallSequenceParts') && html.includes('function edgeCallSequenceParts'));
+assert('edge checking state keeps status visible', html.includes('mode-checking') && html.includes("edgeCheckInProgress || edgeCheckState === 'CHECKING'") && html.includes('.auto-call-content.mode-checking .browser-settings'));
 assert('court call no longer uses single combined zh sentence', !html.includes("names.join('、')} 請上") && !html.includes("'請上場：' + names.join('、')"));
 assert('repeat call reuses callPlayers path', html.includes('function repeatLastCall') && html.includes('callPlayers(names, state.settings.lastCallCourt || null);'));
 assert('selectable bilingual voice controls exist', html.includes('id="zhVoiceSelect"') && html.includes('id="enVoiceSelect"') && html.includes('zhVoiceId') && html.includes('enVoiceId'));
@@ -107,6 +110,8 @@ assert('today actions use updated admin v2 definition', todayBlock.includes('排
 assert('today actions omit repeat call and remote roster', !todayBlock.includes('repeatCallAdminBtn') && !todayBlock.includes('更新日安名單') && !todayBlock.includes('fetchRosterBtn'));
 assert('roster import compatibility code remains', html.includes('id="fetchRosterBtn"') === false && html.includes("function showRosterImportDialog") && html.includes("tap('fetchRosterBtn', showRosterImportDialog)"));
 assert('today roster editor exists', html.includes('function showTodayRosterEditor') && html.includes('function saveTodayRosterFromText') && html.includes('id="todayRosterTextArea"') && html.includes("tap('updateTodayRosterBtn', showTodayRosterEditor)"));
+assert('today roster save fits after modal close', html.indexOf('render();\n    closeModal();\n    await waitForMeasurablePlayerNames();\n    fitPlayerNameText();') > 0);
+assert('court label input overrides admin full width', html.includes('#adminTools .court-label-grid input{width:88px;min-width:72px;max-width:96px;flex:0 0 auto;}'));
 assert('roster api fixed to rian', html.includes("const ROSTER_SITE = 'rian'"));
 assert('roster api uses shuttle rian source', html.includes('ROSTER_SOURCE_PAGE') && html.includes('shuttle-burst-dynamic/rian') && html.includes('SHUTTLE_ROSTER_API_BASE') && html.includes('function requestShuttleRosterApi'));
 assert('roster source is visible and not blank', html.includes('rosterApiUrl:ROSTER_SOURCE_PAGE') && html.includes('merged.settings.rosterApiUrl = ROSTER_SOURCE_PAGE') && html.includes('目前固定使用日安報名頁'));

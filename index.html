@@ -448,6 +448,8 @@
     .admin-button-row.single{grid-template-columns:1fr;}
     .admin-nav-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     .segmented-wide{grid-template-columns:repeat(3,minmax(0,1fr));}
+    .auto-call-content.mode-checking .auto-off-status,
+    .auto-call-content.mode-checking .browser-settings,
     .auto-call-content.mode-off .edge-settings,
     .auto-call-content.mode-off .browser-settings{display:none;}
     .auto-call-content.mode-edge .auto-off-status,
@@ -506,9 +508,9 @@
     }
     .admin-v2 #panelHint{display:none!important;}
     .selected-admin-bar{
-      position:sticky;top:calc(52px + var(--safe-top));z-index:2;min-height:54px;
+      min-height:54px;
       display:flex;align-items:center;justify-content:space-between;gap:10px;
-      margin:10px auto 12px;max-width:980px;padding:9px 12px;border-radius:16px;
+      margin:0 auto;padding:9px max(14px,var(--safe-right)) 9px max(14px,var(--safe-left));border-radius:0;
       background:#171a21;border:1px solid #2e3442;color:#f5f7fa;
     }
     .selected-admin-line{display:flex;align-items:center;gap:10px;min-width:0;font-size:16px;font-weight:900;}
@@ -540,7 +542,7 @@
     #exportLogBtn{grid-column:1 / 2;}
     .court-label-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     .court-label-grid label{display:flex;gap:8px;align-items:center;justify-content:flex-start;}
-    .court-label-grid input{width:88px;min-width:72px;max-width:96px;flex:0 0 auto;}
+    #adminTools .court-label-grid input{width:88px;min-width:72px;max-width:96px;flex:0 0 auto;}
     .court-label-save{width:100%;margin-top:10px;}
     .court-label-hidden{display:none!important;}
     #adminTools .compact-colors{
@@ -617,15 +619,13 @@
       <div class="panel-title" id="panelTitle">管理員</div>
       <div class="admin-header-version" id="adminHeaderVersion">v2.0.0</div>
     </div>
+    <div id="selectedAdminBar" class="selected-admin-bar">
+      <div class="selected-admin-line"><span id="selectedAdminLabel">尚未選取球員</span><span id="selectedAdminName" class="selected-admin-name"></span></div>
+      <div class="selected-admin-help">可移動或球員管理</div>
+    </div>
     <div class="panel-body" id="panelBody">
       <div class="quick-grid" id="quickMoveGrid">
         <button class="warn wide-action" id="moveRestBtn">回到休息區</button>
-      </div>
-
-      <div id="panelHint" class="backup-summary">未選取球員。可從場地或休息區點選人名。</div>
-      <div id="selectedAdminBar" class="selected-admin-bar">
-        <div class="selected-admin-line"><span id="selectedAdminLabel">尚未選取球員</span><span id="selectedAdminName" class="selected-admin-name"></span></div>
-        <div class="selected-admin-help">可移動或球員管理</div>
       </div>
 
       <section class="panel-section" id="restSection">
@@ -1629,12 +1629,14 @@
     const hint = $('panelHint');
     const legacy = isLegacyIpadRuntime();
     if(p){
-      hint.textContent = p.zone === 'rest'
-        ? `已選取：${p.name}。請點選 Court / Next 空格放入。`
-        : legacy ? `已選取：${p.name}。可按「回到休息區」或點其他格交換。` : `已選取：${p.name}。可點主畫面休息區或其他格移動。`;
+      if(hint){
+        hint.textContent = p.zone === 'rest'
+          ? `已選取：${p.name}。請點選 Court / Next 空格放入。`
+          : legacy ? `已選取：${p.name}。可按「回到休息區」或點其他格交換。` : `已選取：${p.name}。可點主畫面休息區或其他格移動。`;
+      }
       $('moveRestBtn').style.display = legacy && p.zone !== 'rest' ? '' : 'none';
     }else{
-      hint.textContent = legacy ? '未選取球員。可從場地或休息區點選人名。' : '未選取球員。可從主畫面場地、預備區或休息區點選人名。';
+      if(hint) hint.textContent = legacy ? '未選取球員。可從場地或休息區點選人名。' : '未選取球員。可從主畫面場地、預備區或休息區點選人名。';
       $('moveRestBtn').style.display = 'none';
     }
     $('quickMoveGrid').style.display = legacy && p && p.zone !== 'rest' ? '' : 'none';
@@ -1676,8 +1678,8 @@
     $('adminTools').style.display = isAdmin ? '' : 'none';
     const autoCallBody = $('autoCallBody');
     if(autoCallBody){
-      autoCallBody.classList.remove('mode-off','mode-edge','mode-browser');
-      autoCallBody.classList.add('mode-' + currentAutoCallMode());
+      autoCallBody.classList.remove('mode-off','mode-edge','mode-browser','mode-checking');
+      autoCallBody.classList.add(edgeCheckInProgress || edgeCheckState === 'CHECKING' ? 'mode-checking' : ('mode-' + currentAutoCallMode()));
     }
     $('freeModeBtn').classList.toggle('active', !!state.settings.freePlayMode);
     $('autoModeBtn').classList.toggle('active', !!state.settings.autoArrangeMode);
@@ -1686,7 +1688,11 @@
       $('edgeCallBtn').classList.toggle('active', currentAutoCallMode() === 'edge');
       $('edgeCallBtn').disabled = edgeCheckInProgress;
     }
-    if($('browserCallBtn')) $('browserCallBtn').classList.toggle('active', currentAutoCallMode() === 'browser');
+    if($('autoCallOffBtn')) $('autoCallOffBtn').disabled = edgeCheckInProgress;
+    if($('browserCallBtn')){
+      $('browserCallBtn').classList.toggle('active', currentAutoCallMode() === 'browser');
+      $('browserCallBtn').disabled = edgeCheckInProgress;
+    }
     if($('edgeTestBtn')) $('edgeTestBtn').disabled = currentAutoCallMode() !== 'edge' || edgeCheckInProgress;
     if($('callEffectOffBtn')) $('callEffectOffBtn').classList.toggle('active', state.settings.callEffectEnabled === false);
     if($('callEffectOnBtn')) $('callEffectOnBtn').classList.toggle('active', state.settings.callEffectEnabled !== false);
@@ -3250,9 +3256,9 @@
     saveState();
     for(const key in playerNameFitCache) delete playerNameFitCache[key];
     render();
+    closeModal();
     await waitForMeasurablePlayerNames();
     fitPlayerNameText();
-    closeModal();
     showToast('今日名單已更新');
     scheduleFitPlayerNames();
     return true;
