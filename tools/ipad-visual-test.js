@@ -193,6 +193,13 @@ async function runAdminCase(browser, scenario) {
       bodyClass: document.body.className,
       portraitWarningDisplay: style('floatPanel') && window.getComputedStyle(document.querySelector('.portrait-warning.phone')).display,
       panel: rect('floatPanel'),
+      headBorderBottom: style('floatPanel') && window.getComputedStyle(document.querySelector('.admin-v2 .panel-head')).borderBottomWidth,
+      selectedBar: rect('selectedAdminBar'),
+      firstCard: document.querySelector('#adminTools .admin-v2-card') ? (() => {
+        const r = document.querySelector('#adminTools .admin-v2-card').getBoundingClientRect();
+        return { top: r.top, left: r.left, right: r.right, width: r.width };
+      })() : null,
+      selectedBarRadius: window.getComputedStyle(document.getElementById('selectedAdminBar')).borderRadius,
       title: document.getElementById('panelTitle').textContent,
       back: document.getElementById('closePanelBtn').textContent,
       adminToolsDisplay: style('adminTools').display,
@@ -207,6 +214,8 @@ async function runAdminCase(browser, scenario) {
   assert(label + ' portrait warning is bypassed when open', metrics.portraitWarningDisplay === 'none', metrics.portraitWarningDisplay);
   assert(label + ' panel fills viewport', metrics.panel.left <= 1 && metrics.panel.top <= 1 && metrics.panel.width >= scenario.width - 2 && metrics.panel.height >= scenario.height - 2, JSON.stringify(metrics.panel));
   assert(label + ' header is compact nav', metrics.title === '管理員' && metrics.back.indexOf('返回排場') >= 0, JSON.stringify({ title: metrics.title, back: metrics.back }));
+  assert(label + ' header divider removed', parseFloat(metrics.headBorderBottom) === 0, metrics.headBorderBottom);
+  assert(label + ' selected bar aligns with cards and uses rounded container', metrics.firstCard && Math.abs(metrics.selectedBar.left - metrics.firstCard.left) <= 2 && Math.abs(metrics.selectedBar.width - metrics.firstCard.width) <= 2 && parseFloat(metrics.selectedBarRadius) >= 18 && metrics.firstCard.top - metrics.selectedBar.bottom >= 8 && metrics.firstCard.top - metrics.selectedBar.bottom <= 14, JSON.stringify({ selectedBar: metrics.selectedBar, firstCard: metrics.firstCard, radius: metrics.selectedBarRadius }));
   assert(label + ' admin tools visible after unlock', metrics.adminToolsDisplay !== 'none', metrics.adminToolsDisplay);
   assert(label + ' all v2 sections visible', ['今日操作','自動呼叫','球員與場次','場地與排場','視覺與顯示','系統與資料'].every((title) => metrics.sectionTitles.indexOf(title) >= 0), JSON.stringify(metrics.sectionTitles));
   assert(label + ' old red close removed', !metrics.redCloseExists);
@@ -223,6 +232,94 @@ async function runAdminCase(browser, scenario) {
   const closed = await page.evaluate(() => !document.getElementById('floatPanel').classList.contains('open') && !document.body.classList.contains('admin-panel-open'));
   assert(label + ' back button closes admin', closed);
 
+  await context.close();
+}
+
+function overflowMetricsScript() {
+  return Array.prototype.map.call(document.querySelectorAll('.player-chip .name'), (name) => {
+    const chip = name.parentNode;
+    const maxWidth = Math.max(24, (chip.clientWidth || chip.offsetWidth || 0) - 18);
+    const maxHeight = Math.max(20, (chip.clientHeight || chip.offsetHeight || 0) - 12);
+    return {
+      text: name.textContent,
+      scrollWidth: name.scrollWidth,
+      scrollHeight: name.scrollHeight,
+      maxWidth,
+      maxHeight
+    };
+  }).filter((name) => name.scrollWidth > name.maxWidth + 1 || name.scrollHeight > name.maxHeight + 1);
+}
+
+function portraitFitState() {
+  return {
+    app: 'badminton-court-2x2-3x3-ipad',
+    version: 'visual-test',
+    players: [
+      player('p1', '國泰 哥', 'court1', 1, '#bfdbfe'),
+      player('p2', 'Chris 哥', 'court1', 2, '#fde68a'),
+      player('p3', '安鼎 哥', 'next1', 1, '#bbf7d0')
+    ],
+    settings: {
+      courtCount: 3,
+      nextCount: 3,
+      playersPerCourt: 4,
+      adminPassword: '1111',
+      freePlayMode: false,
+      autoArrangeMode: true,
+      autoCallEnabled: false,
+      autoCallMode: 'off',
+      callEffectEnabled: true,
+      playerNameScale: 100,
+      playerNameFont: 'system',
+      helperTextEnabled: true,
+      floating: { side: 'left', y: 0.62 },
+      collapsedSections: []
+    },
+    gameLog: []
+  };
+}
+
+async function openUnlockedAdmin(page) {
+  await page.waitForSelector('#floatButton');
+  await page.click('#floatButton', { force: true });
+  await page.waitForSelector('#floatPanel.open');
+  await page.waitForSelector('#adminTools');
+}
+
+async function runPortraitAdminToLandscapeFitCase(browser, action) {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+    isMobile: true,
+    hasTouch: true,
+    userAgent: modernIpadUa
+  });
+  const page = await context.newPage();
+  await page.addInitScript((state) => {
+    const d = new Date();
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    window.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(state));
+    window.localStorage.setItem('badminton3x3.ipad.v1.state.adminUnlockedDate', key);
+  }, portraitFitState());
+  await page.goto(appUrl + '?debug=1');
+  await openUnlockedAdmin(page);
+  if (action === 'roster') {
+    await page.evaluate(async () => {
+      await window.__badmintonIpadV1.saveTodayRosterFromText('國泰 哥\nChris 哥\n安鼎 哥\nAriel');
+    });
+  } else {
+    await page.evaluate(() => {
+      window.__resetPromise = window.__badmintonIpadV1.resetToday();
+    });
+    await page.waitForSelector('#modalMask.show');
+    await page.click('#modalOkBtn');
+    await page.evaluate(async () => { await window.__resetPromise; });
+  }
+  await page.click('#closePanelBtn', { force: true });
+  await page.setViewportSize({ width: 1024, height: 638 });
+  await page.waitForTimeout(450);
+  const overflow = await page.evaluate(overflowMetricsScript);
+  assert('portrait Admin ' + action + ' then landscape board has fitted player names', overflow.length === 0, JSON.stringify(overflow.slice(0, 3)));
   await context.close();
 }
 
@@ -361,6 +458,8 @@ async function main() {
     await runAdminCase(browser, { name: 'Safari portrait', standalone: false, width: 390, height: 844 });
     await runAdminCase(browser, { name: 'Standalone portrait', standalone: true, width: 390, height: 844 });
     await runAdminCase(browser, { name: 'Safari landscape', standalone: false, width: 1024, height: 638 });
+    await runPortraitAdminToLandscapeFitCase(browser, 'roster');
+    await runPortraitAdminToLandscapeFitCase(browser, 'reset');
     await runEntryAnimationCase(browser);
     await runLegacyNoEntryAnimationCase(browser);
   } finally {

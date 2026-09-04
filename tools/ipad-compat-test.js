@@ -84,9 +84,11 @@ assert('stable speaker tap exists', html.includes('function bindStableTap') && h
 assert('speaker button uses purple tool color', html.includes('.floating-button.speaker-button{display:none;background:linear-gradient(135deg,#6d28d9,#4f46e5);color:#fff'));
 assert('selected floating button still turns yellow', html.includes('.floating-button.has-selected{background:linear-gradient(135deg,#f59e0b,#facc15);color:#422006;}'));
 assert('admin v2 fullscreen header exists', html.includes('class="float-panel admin-v2"') && html.includes('‹ 返回排場') && !html.includes('id="closePanelBtn">×'));
+assert('admin v2 header divider removed', html.includes('.admin-v2 .panel-head') && html.includes('border-bottom:0'));
 assert('selected admin bar sits between header and body', html.indexOf('<div id="selectedAdminBar"') > html.indexOf('<div class="panel-head">') && html.indexOf('<div id="selectedAdminBar"') < html.indexOf('<div class="panel-body"'));
 assert('admin v2 hides old selected hint', !html.includes('<div id="panelHint"'));
 assert('selected admin bar uses three equal columns', html.includes('.selected-admin-bar{') && html.includes('grid-template-columns:1fr 1fr 1fr') && html.includes('id="selectedAdminCount"') && html.includes('id="selectedAdminName"') && html.includes('id="selectedAdminCancelBtn"'));
+assert('selected admin bar is rounded and aligned to admin cards', html.includes('border-radius:20px') && html.includes('max-width:980px') && html.includes('max-width:952px') && html.includes('scheduleStableBoardNameFit'));
 assert('selected admin bar has read-only count badge', html.includes('.selected-admin-count') && !html.slice(html.indexOf('<div id="selectedAdminBar"'), html.indexOf('<div class="panel-body"')).includes('+1') && !html.slice(html.indexOf('<div id="selectedAdminBar"'), html.indexOf('<div class="panel-body"')).includes('-1'));
 assert('admin v2 sections exist', ['今日操作','自動呼叫','球員與場次','場地與排場','視覺與顯示','系統與資料'].every((label) => html.includes(label)));
 assert('admin v2 uses detail views for player and games', html.includes('id="playerDetailView"') && html.includes('id="gamesDetailView"') && html.includes('function showAdminDetail'));
@@ -122,6 +124,7 @@ assert('today actions omit repeat call and remote roster', !todayBlock.includes(
 assert('roster import compatibility code remains', html.includes('id="fetchRosterBtn"') === false && html.includes("function showRosterImportDialog") && html.includes("tap('fetchRosterBtn', showRosterImportDialog)"));
 assert('today roster editor exists', html.includes('function showTodayRosterEditor') && html.includes('function saveTodayRosterFromText') && html.includes('id="todayRosterTextArea"') && html.includes("tap('updateTodayRosterBtn', showTodayRosterEditor)"));
 assert('structural board renders share post-layout name fitting', html.includes('async function refitAfterStructuralBoardRender(closeOverlay)') && html.includes('await refitAfterStructuralBoardRender();') && html.includes('await refitAfterStructuralBoardRender(closeModal);'));
+assert('admin close and orientation changes schedule stable board fitting', html.includes('function scheduleStableBoardNameFit') && html.includes('function boardFitSignature') && html.includes('scheduleStableBoardNameFit();') && html.includes("window.addEventListener('orientationchange'"));
 assert('court label save checks Edge only in Edge mode', html.includes("if(currentAutoCallMode() === 'edge')") && html.includes('await recheckEdgeCourtLabelsAfterSave();'));
 assert('court label input overrides admin full width', html.includes('#adminTools .court-label-grid input{width:88px;min-width:72px;max-width:96px;flex:0 0 auto;}') && html.includes('.court-label-grid label{display:flex;gap:8px;align-items:center;justify-content:space-between;width:100%;min-width:0;}'));
 assert('roster api fixed to rian', html.includes("const ROSTER_SITE = 'rian'"));
