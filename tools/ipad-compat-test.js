@@ -67,6 +67,10 @@ assert('court call target highlight exists', html.includes('function markCourtCa
 assert('court call target duration is configurable', html.includes('callEffectDuration') && html.includes('duration * 1000'));
 assert('court call target rerenders after timeout', html.includes('courtHighlightZone = null;') && html.includes('renderZones();') && html.includes('fitPlayerNameText();'));
 assert('court call target controls exist', html.includes('callEffectOffBtn') && html.includes('callEffectOnBtn') && html.includes('callEffectDurationSelect') && html.includes('callEffectIntensitySelect') && html.includes('callEffectColorSelect') && html.includes('callMarqueeSelect'));
+assert('court entry animation controls exist', html.includes('id="courtEntryAnimationOffBtn"') && html.includes('id="courtEntryAnimationOnBtn"') && html.includes('id="courtEntryAnimationModuleSelect"') && html.includes('fly-guide-v1'));
+assert('court entry animation defaults off and reuses call effect duration', html.includes('courtEntryAnimationEnabled:false') && html.includes("courtEntryAnimationModule:'fly-guide-v1'") && html.includes('duration = Number(state.settings.callEffectDuration) || 5'));
+assert('court entry animation is modern only', html.includes('function courtEntryAnimationShouldRun') && html.includes('!isLegacyIpadRuntime()') && html.includes("prefersReducedMotion"));
+assert('court entry animation hooks only court-down auto next flow', html.includes('prepareCourtEntryAnimation(nextZone, court)') && html.includes('fromCourtDown ? prepareCourtEntryAnimation') && html.includes("nextZone !== 'next1'"));
 assert('court down pill exists', html.includes('court-down-pill') && html.includes('<span class="arrow">'));
 assert('court down pill expanded', html.includes('min-width:136px'));
 assert('court header uses flex layout', html.includes('.zone-head{width:100%;display:flex;'));

@@ -130,10 +130,17 @@
     .zone-card.call-low{--call-ring:3px;--call-ring-strong:5px;--call-scale:.992;}
     .zone-card.call-medium{--call-ring:4px;--call-ring-strong:8px;--call-scale:.985;}
     .zone-card.call-high{--call-ring:6px;--call-ring-strong:12px;--call-scale:.975;}
+    .zone-card.entry-static-pending{border-color:var(--call-border,#facc15);box-shadow:0 0 0 var(--call-ring,4px) var(--call-soft,rgba(250,204,21,.35)),0 10px 22px rgba(15,23,42,.14);}
+    .zone-card.entry-dynamic-focus{position:relative;}
+    .zone-card.entry-dynamic-focus::after{content:"";position:absolute;inset:2px;border-radius:calc(var(--radius) - 2px);pointer-events:none;background:linear-gradient(105deg,transparent 15%,var(--call-soft,rgba(250,204,21,.35)) 45%,transparent 75%);opacity:.65;transform:translateX(-110%);animation:entryCourtSweep 2s ease-in-out infinite;}
+    .zone-card.entry-pre-pulse{animation:entryPrePulse .22s ease-out 1;border-color:var(--call-border,#facc15);}
+    .slot.entry-destination-hidden .player-chip{opacity:0;}
     @keyframes courtCallPulse{
       0%,100%{transform:scale(1);box-shadow:0 0 0 var(--call-ring,4px) var(--call-soft,rgba(250,204,21,.35)),0 10px 22px rgba(15,23,42,.16);}
       45%{transform:scale(var(--call-scale,.985));box-shadow:0 0 0 var(--call-ring-strong,8px) var(--call-strong,rgba(250,204,21,.75)),0 12px 26px rgba(15,23,42,.22);}
     }
+    @keyframes entryCourtSweep{0%,18%{transform:translateX(-110%);opacity:0}36%,74%{opacity:.7}100%{transform:translateX(110%);opacity:0}}
+    @keyframes entryPrePulse{0%{transform:scale(1)}55%{transform:scale(.985);box-shadow:0 0 0 10px var(--call-soft,rgba(250,204,21,.35))}100%{transform:scale(1)}}
     .zone-head{width:100%;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:14px;border:1px solid #99f6e4;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;border-radius:14px;min-height:44px;padding:8px 10px;text-align:left;}
     .zone-head.warn{background:linear-gradient(135deg,#92400e,#f59e0b);border-color:#facc15;}
     .zone-head:active{transform:translateY(1px)}
@@ -155,6 +162,11 @@
     .player-chip.selected::after{content:"✓";position:absolute;top:4px;right:6px;z-index:3;width:24px;height:24px;border-radius:999px;background:#111827;color:#fff;font-size:16px;font-weight:1000;line-height:24px;text-align:center;}
     .player-chip .games{position:absolute;top:4px;left:6px;z-index:1;background:rgba(255,255,255,.95);border:1px solid rgba(15,23,42,.18);border-radius:999px;min-width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:clamp(15px,1.8vw,22px);font-weight:1000;line-height:1;padding:0 6px;}
     .player-chip .name{position:relative;z-index:2;text-align:center;font-weight:1000;line-height:1.05;letter-spacing:.02em;font-size:clamp(20px,2.6vw,34px);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px;}
+    .entry-animation-overlay{position:fixed;inset:0;z-index:47;pointer-events:none;overflow:hidden;}
+    .entry-fly-clone{position:fixed;margin:0;pointer-events:none;will-change:transform,opacity;transform-origin:center center;transition:transform .42s cubic-bezier(.2,.82,.2,1),opacity .42s ease;box-shadow:0 16px 32px rgba(15,23,42,.28);}
+    .entry-fly-clone.lift{transform:translateY(-6px) scale(1.02);}
+    .entry-fly-clone.arrive{opacity:.96;}
+    .entry-fly-clone.settle{transition:transform .22s cubic-bezier(.34,1.56,.64,1),opacity .18s ease;transform:scale(.98);}
     .rest-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px;}
     .rest-list .player-chip{min-height:52px;}
     .rest-list .player-chip .name{font-size:22px;}
@@ -590,6 +602,12 @@
       .portrait-card .big::after{content:"";}
       .floating-group{z-index:101;}
     }
+    @media (prefers-reduced-motion:reduce){
+      .entry-animation-overlay{display:none;}
+      .zone-card.call-target{animation:none;}
+      .zone-card.entry-dynamic-focus::after{display:none;}
+      .zone-card.entry-pre-pulse{animation:none;}
+    }
   </style>
 </head>
 <body>
@@ -828,6 +846,17 @@
                 </div>
               </div>
               <div class="compact-state-row">
+                <div class="compact-row-label">上場動畫</div>
+                <button id="courtEntryAnimationOffBtn">關閉</button>
+                <button id="courtEntryAnimationOnBtn">開啟</button>
+              </div>
+              <div class="player-text-grid">
+                <div>
+                  <label>動畫模組</label>
+                  <select id="courtEntryAnimationModuleSelect"><option value="fly-guide-v1">① 飛卡導引</option></select>
+                </div>
+              </div>
+              <div class="compact-state-row">
                 <div class="compact-row-label">輔助文字</div>
                 <button id="helperTextOffBtn">關閉</button>
                 <button id="helperTextOnBtn">開啟</button>
@@ -904,6 +933,11 @@
   let edgeCheckState = 'IDLE';
   let edgeCheckInProgress = false;
   let adminDetailView = '';
+  let courtEntryAnimationLocked = false;
+  let courtEntryHidden = {};
+  let pendingCourtEntryAnimation = null;
+  let courtStaticHighlights = {};
+  let courtHighlightExpiry = {};
   const FLOAT_DRAG_THRESHOLD = 8;
   const LEGACY_FLOAT_DRAG_THRESHOLD = 20;
   let courtHighlightZone = null;
@@ -1146,14 +1180,36 @@
 
   function markCourtCallTarget(zone){
     if(!state.settings.callEffectEnabled) return;
+    if(!courtEntryAnimationShouldRun()){
+      clearCourtStaticHighlights();
+      courtHighlightExpiry = {};
+      courtHighlightZone = zone || null;
+      if(courtHighlightTimer) clearTimeout(courtHighlightTimer);
+      const duration = Number(state.settings.callEffectDuration) || 5;
+      courtHighlightTimer = setTimeout(function(){
+        courtHighlightZone = null;
+        renderZones();
+        fitPlayerNameText();
+      }, duration * 1000);
+      return;
+    }
+    const now = Date.now();
+    const duration = Number(state.settings.callEffectDuration) || 5;
+    const nextExpiry = now + duration * 1000;
+    const previous = courtHighlightZone;
+    if(previous && previous !== zone && courtHighlightExpiry[previous] && courtHighlightExpiry[previous] > now){
+      setStaticCourtHighlight(previous, courtHighlightExpiry[previous]);
+    }
     courtHighlightZone = zone || null;
     if(courtHighlightTimer) clearTimeout(courtHighlightTimer);
-    const duration = Number(state.settings.callEffectDuration) || 5;
+    courtHighlightExpiry[zone] = nextExpiry;
     courtHighlightTimer = setTimeout(function(){
-      courtHighlightZone = null;
+      if(courtHighlightZone === zone) courtHighlightZone = null;
+      delete courtHighlightExpiry[zone];
+      clearStaticCourtHighlight(zone);
       renderZones();
       fitPlayerNameText();
-    }, duration * 1000);
+    }, Math.max(0, nextExpiry - now));
   }
 
   function removeCourtCallTarget(zone){
@@ -1161,6 +1217,40 @@
     for(let i = 0; i < cards.length; i += 1){
       if(!zone || dataAttr(cards[i], 'zone-card') === zone) cards[i].classList.remove('call-target');
     }
+  }
+
+  function clearCourtStaticHighlights(){
+    Object.keys(courtStaticHighlights).forEach(clearStaticCourtHighlight);
+  }
+
+  function clearStaticCourtHighlight(zone){
+    const item = courtStaticHighlights[zone];
+    if(item && item.timer) clearTimeout(item.timer);
+    delete courtStaticHighlights[zone];
+  }
+
+  function setStaticCourtHighlight(zone, expiry){
+    clearStaticCourtHighlight(zone);
+    const delay = Math.max(0, expiry - Date.now());
+    courtStaticHighlights[zone] = {
+      expiry,
+      timer:setTimeout(function(){
+        clearStaticCourtHighlight(zone);
+        renderZones();
+        fitPlayerNameText();
+      }, delay)
+    };
+  }
+
+  function prefersReducedMotion(){
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  function courtEntryAnimationShouldRun(){
+    return state.settings.courtEntryAnimationEnabled === true
+      && state.settings.courtEntryAnimationModule === 'fly-guide-v1'
+      && !isLegacyIpadRuntime()
+      && !prefersReducedMotion();
   }
 
   function defaultState(){
@@ -1194,6 +1284,8 @@
         callEffectIntensity:'medium',
         callEffectColor:'yellow',
         callEffectMarquee:true,
+        courtEntryAnimationEnabled:false,
+        courtEntryAnimationModule:'fly-guide-v1',
         helperTextEnabled:true,
         rosterApiUrl:ROSTER_SOURCE_PAGE,
         lastCallPlayers:[],
@@ -1234,6 +1326,8 @@
     merged.settings.callEffectIntensity = ['low','medium','high'].indexOf(String(merged.settings.callEffectIntensity)) >= 0 ? String(merged.settings.callEffectIntensity) : 'medium';
     merged.settings.callEffectColor = ['yellow','green','blue','red'].indexOf(String(merged.settings.callEffectColor)) >= 0 ? String(merged.settings.callEffectColor) : 'yellow';
     merged.settings.callEffectMarquee = merged.settings.callEffectMarquee !== false;
+    merged.settings.courtEntryAnimationEnabled = merged.settings.courtEntryAnimationEnabled === true;
+    merged.settings.courtEntryAnimationModule = String(merged.settings.courtEntryAnimationModule || 'fly-guide-v1') === 'fly-guide-v1' ? 'fly-guide-v1' : 'fly-guide-v1';
     merged.settings.helperTextEnabled = merged.settings.helperTextEnabled !== false;
     merged.settings.playerNameScale = normalizePlayerNameScale(merged.settings.playerNameScale);
     merged.settings.playerNameFont = ['system','bold','serif'].indexOf(String(merged.settings.playerNameFont)) >= 0 ? String(merged.settings.playerNameFont) : 'system';
@@ -1449,6 +1543,7 @@
     renderSpeakerButton();
     fitPlayerNameText();
     scheduleFitPlayerNames();
+    runPendingCourtEntryAnimation();
     saveState();
     if(console.timeEnd) console.timeEnd('render');
   }
@@ -1578,16 +1673,20 @@
   function renderZoneCard(zone, isCourt){
     const players = zonePlayers(zone);
     const isCallTarget = courtHighlightZone === zone;
+    const isStaticPending = !!courtStaticHighlights[zone] && !isCallTarget;
     const useMarquee = isCallTarget && state.settings.callEffectMarquee !== false;
     const title = useMarquee ? zoneLabel(zone) + ' >>> 請上場…' : zoneLabel(zone);
     const slots = SLOTS.map(slot => {
       const p = occupant(zone, slot);
       const content = p ? playerChipHtml(p) : '';
-      return `<div class="slot ${p?'filled':'empty'}" data-zone="${zone}" data-slot="${slot}">${content}</div>`;
+      const hiddenClass = p && courtEntryHidden[p.id] ? ' entry-destination-hidden' : '';
+      return `<div class="slot ${p?'filled':'empty'}${hiddenClass}" data-zone="${zone}" data-slot="${slot}">${content}</div>`;
     }).join('');
     const actionClass = isCourt ? 'warn' : '';
     const actionData = isCourt ? `data-court="${zone}"` : `data-next="${zone}"`;
-    const highlightClass = isCallTarget ? ' call-target call-' + callEffectColorClass() + ' call-' + callEffectIntensityClass() : '';
+    const highlightClass = isCallTarget || isStaticPending
+      ? ' call-target call-' + callEffectColorClass() + ' call-' + callEffectIntensityClass() + (isCallTarget && courtEntryAnimationShouldRun() ? ' entry-dynamic-focus' : '') + (isStaticPending ? ' entry-static-pending' : '')
+      : '';
     const titleHtml = useMarquee
       ? `<div class="call-marquee"><span>${title}</span></div>`
       : `<div class="zone-title">${title}</div>${isCourt ? '<div class="court-down-pill">下場 <span class="arrow">↓</span></div>' : '<div></div>'}`;
@@ -1750,6 +1849,12 @@
     if($('callEffectColorSelect')) $('callEffectColorSelect').value = state.settings.callEffectColor || 'yellow';
     if($('playerNameScaleSelect')) $('playerNameScaleSelect').value = String(normalizePlayerNameScale(state.settings.playerNameScale));
     if($('playerNameFontSelect')) $('playerNameFontSelect').value = state.settings.playerNameFont || 'system';
+    if($('courtEntryAnimationOffBtn')) $('courtEntryAnimationOffBtn').classList.toggle('active', state.settings.courtEntryAnimationEnabled !== true);
+    if($('courtEntryAnimationOnBtn')) $('courtEntryAnimationOnBtn').classList.toggle('active', state.settings.courtEntryAnimationEnabled === true);
+    if($('courtEntryAnimationModuleSelect')){
+      $('courtEntryAnimationModuleSelect').value = state.settings.courtEntryAnimationModule || 'fly-guide-v1';
+      $('courtEntryAnimationModuleSelect').disabled = state.settings.courtEntryAnimationEnabled !== true;
+    }
     renderCourtLabelControls();
     if($('courtModeStatus')) $('courtModeStatus').textContent = '場地模式';
     if($('use3x3Btn')) $('use3x3Btn').classList.toggle('active', currentMode() === '3x3');
@@ -1925,6 +2030,10 @@
     if(players.length === 0){ showToast('這個球場目前沒有人'); return; }
     const ok = await confirmDialog(`${zoneLabel(courtZone)} 下場`, '', courtDownConfirmHtml(players), '下場', 'court-down-ok');
     if(!ok) return;
+    if(courtEntryAnimationLocked && courtEntryAnimationShouldRun()){
+      showToast('上場動畫進行中');
+      return;
+    }
     players.forEach(p => { p.games = (Number(p.games)||0)+1; p.updatedAt=nowIso(); });
     if(state.settings.autoArrangeMode){
       await autoArrangeCourtDown(courtZone, players);
@@ -1979,6 +2088,136 @@
       .map(item => item.p);
   }
 
+  function validRect(rect){
+    return !!(rect && rect.width > 1 && rect.height > 1);
+  }
+
+  function findPlayerChipElement(playerId){
+    const chips = document.querySelectorAll('.player-chip');
+    for(let i = 0; i < chips.length; i += 1){
+      if(dataAttr(chips[i], 'player-id') === playerId) return chips[i];
+    }
+    return null;
+  }
+
+  function findSlotElement(zone, slot){
+    const slots = document.querySelectorAll('.slot');
+    for(let i = 0; i < slots.length; i += 1){
+      if(dataAttr(slots[i], 'zone') === zone && Number(dataAttr(slots[i], 'slot')) === Number(slot)) return slots[i];
+    }
+    return null;
+  }
+
+  function findZoneCardElement(zone){
+    const cards = document.querySelectorAll('.zone-card');
+    for(let i = 0; i < cards.length; i += 1){
+      if(dataAttr(cards[i], 'zone-card') === zone) return cards[i];
+    }
+    return null;
+  }
+
+  function copyRect(rect){
+    return {left:rect.left, top:rect.top, width:rect.width, height:rect.height};
+  }
+
+  function prepareCourtEntryAnimation(nextZone, courtZone){
+    if(nextZone !== 'next1' || !courtEntryAnimationShouldRun()) return null;
+    if(courtEntryAnimationLocked) return {locked:true};
+    const players = zonePlayers(nextZone).slice(0, 4).sort((a,b)=>(a.slot||99)-(b.slot||99));
+    if(!players.length) return null;
+    const items = [];
+    for(let i = 0; i < players.length; i += 1){
+      const player = players[i];
+      const sourceEl = findPlayerChipElement(player.id);
+      const targetEl = findSlotElement(courtZone, i + 1);
+      if(!sourceEl || !targetEl) return null;
+      const sourceRect = copyRect(sourceEl.getBoundingClientRect());
+      const targetRect = copyRect(targetEl.getBoundingClientRect());
+      if(!validRect(sourceRect) || !validRect(targetRect)) return null;
+      items.push({playerId:player.id, sourceRect, targetRect, sourceHtml:sourceEl.outerHTML || playerChipHtml(player), index:i});
+    }
+    const card = findZoneCardElement(courtZone);
+    if(card) card.classList.add('entry-pre-pulse','call-' + callEffectColorClass(),'call-' + callEffectIntensityClass());
+    setTimeout(function(){ if(card) card.classList.remove('entry-pre-pulse'); }, 260);
+    courtEntryAnimationLocked = true;
+    items.forEach(function(item){ courtEntryHidden[item.playerId] = true; });
+    return {courtZone, items};
+  }
+
+  function cleanupCourtEntryAnimation(capture){
+    if(capture && capture.items){
+      capture.items.forEach(function(item){ delete courtEntryHidden[item.playerId]; });
+    }
+    courtEntryAnimationLocked = false;
+  }
+
+  function runCourtEntryAnimation(capture){
+    if(!capture || capture.locked || !capture.items || !capture.items.length){
+      if(capture && capture.locked) showToast('上場動畫進行中');
+      return;
+    }
+    try{
+      const overlay = document.createElement('div');
+      overlay.className = 'entry-animation-overlay';
+      overlay.setAttribute('aria-hidden', 'true');
+      const clones = capture.items.map(function(item){
+        const wrapper = document.createElement('div');
+        wrapper.className = 'entry-fly-clone';
+        wrapper.innerHTML = item.sourceHtml;
+        wrapper.style.left = item.sourceRect.left + 'px';
+        wrapper.style.top = item.sourceRect.top + 'px';
+        wrapper.style.width = item.sourceRect.width + 'px';
+        wrapper.style.height = item.sourceRect.height + 'px';
+        overlay.appendChild(wrapper);
+        return {el:wrapper, item};
+      });
+      document.body.appendChild(overlay);
+      const raf = window.requestAnimationFrame || function(fn){ return setTimeout(fn, 0); };
+      raf(function(){
+        clones.forEach(function(pair){
+          pair.el.classList.add('lift');
+        });
+        setTimeout(function(){
+          clones.forEach(function(pair){
+            const item = pair.item;
+            const dx = item.targetRect.left - item.sourceRect.left;
+            const dy = item.targetRect.top - item.sourceRect.top;
+            const sx = item.targetRect.width / item.sourceRect.width;
+            const sy = item.targetRect.height / item.sourceRect.height;
+            setTimeout(function(){
+              pair.el.classList.add('arrive');
+              pair.el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + sx.toFixed(3) + ',' + sy.toFixed(3) + ')';
+              setTimeout(function(){
+                pair.el.classList.add('settle');
+                pair.el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + (sx * 0.98).toFixed(3) + ',' + (sy * 0.98).toFixed(3) + ')';
+              }, 420);
+            }, item.index * 40);
+          });
+        }, 130);
+      });
+      setTimeout(function(){
+        if(overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        cleanupCourtEntryAnimation(capture);
+        renderZones();
+        fitPlayerNameText();
+      }, 1020);
+    }catch(err){
+      cleanupCourtEntryAnimation(capture);
+      renderZones();
+      fitPlayerNameText();
+    }
+  }
+
+  function queueCourtEntryAnimation(capture){
+    if(capture && !capture.locked && capture.items && capture.items.length) pendingCourtEntryAnimation = capture;
+  }
+
+  function runPendingCourtEntryAnimation(){
+    const capture = pendingCourtEntryAnimation;
+    pendingCourtEntryAnimation = null;
+    if(capture) runCourtEntryAnimation(capture);
+  }
+
   function firstEmptyCourt(){
     return activeCourts().find(z => zonePlayers(z).length === 0) || null;
   }
@@ -2021,6 +2260,7 @@
     }
     if(!(await confirmPartialNextUp(nextZone, players.length))) return false;
     const sorted = players.sort((a,b)=>(a.slot||99)-(b.slot||99));
+    const entryAnimation = fromCourtDown ? prepareCourtEntryAnimation(nextZone, court) : null;
     sorted.forEach((p,i) => { p.zone = court; p.slot = i+1; p.updatedAt = nowIso(); });
     const names = sorted.map(p=>p.name);
     state.settings.lastCallPlayers = names;
@@ -2028,6 +2268,7 @@
     shiftNextForwardAfter(nextZone);
     logAction('autoNextUp',court,names,`${zoneLabel(nextZone)} 上場到 ${zoneLabel(court)}，Next 向前遞補`);
     markCourtCallTarget(court);
+    queueCourtEntryAnimation(entryAnimation);
     showToast(`${zoneLabel(nextZone)} 已上場`);
     if(state.settings.autoCallEnabled) callPlayers(names, court);
     return true;
@@ -3221,6 +3462,8 @@
       courtHighlightZone = null;
       if(courtHighlightTimer) clearTimeout(courtHighlightTimer);
       courtHighlightTimer = null;
+      clearCourtStaticHighlights();
+      courtHighlightExpiry = {};
     }
     saveState();
     render();
@@ -3242,6 +3485,7 @@
     state.settings.callEffectIntensity = $('callEffectIntensitySelect').value || 'medium';
     state.settings.callEffectColor = $('callEffectColorSelect').value || 'yellow';
     state.settings.callEffectMarquee = $('callMarqueeSelect') ? $('callMarqueeSelect').value !== 'off' : state.settings.callEffectMarquee !== false;
+    state.settings.courtEntryAnimationModule = $('courtEntryAnimationModuleSelect') ? $('courtEntryAnimationModuleSelect').value : 'fly-guide-v1';
     state.settings.playerNameScale = normalizePlayerNameScale($('playerNameScaleSelect') ? $('playerNameScaleSelect').value : state.settings.playerNameScale);
     state.settings.playerNameFont = $('playerNameFontSelect') ? $('playerNameFontSelect').value : state.settings.playerNameFont;
     saveState();
@@ -3255,6 +3499,13 @@
 
   function setHelperTextEnabled(enabled){
     state.settings.helperTextEnabled = !!enabled;
+    saveState();
+    render();
+  }
+
+  function setCourtEntryAnimationEnabled(enabled){
+    state.settings.courtEntryAnimationEnabled = !!enabled;
+    state.settings.courtEntryAnimationModule = 'fly-guide-v1';
     saveState();
     render();
   }
@@ -4277,6 +4528,8 @@
     tap('callEffectOnBtn', () => setCallEffectEnabled(true));
     tap('callMarqueeOffBtn', () => setCallMarqueeEnabled(false));
     tap('callMarqueeOnBtn', () => setCallMarqueeEnabled(true));
+    tap('courtEntryAnimationOffBtn', () => setCourtEntryAnimationEnabled(false));
+    tap('courtEntryAnimationOnBtn', () => setCourtEntryAnimationEnabled(true));
     tap('helperTextOffBtn', () => setHelperTextEnabled(false));
     tap('helperTextOnBtn', () => setHelperTextEnabled(true));
     tap('voiceTestBtn', () => speakCallSequence(['雅雯','Kevin'], 'court1', 'browser'));
@@ -4285,7 +4538,7 @@
       callPlayers(restPlayerNamesForEdgeCheck().slice(0, 4), activeCourts()[0] || 'court1');
     });
     tap('saveVoiceBtn', saveVoiceSettings);
-    ['voiceRateSelect','voicePitchSelect','zhVoiceSelect','enVoiceSelect','callEffectDurationSelect','callEffectIntensitySelect','callEffectColorSelect','callMarqueeSelect'].forEach(function(id){
+    ['voiceRateSelect','voicePitchSelect','zhVoiceSelect','enVoiceSelect','callEffectDurationSelect','callEffectIntensitySelect','callEffectColorSelect','callMarqueeSelect','courtEntryAnimationModuleSelect'].forEach(function(id){
       const el = $(id);
       if(el) el.addEventListener('change', saveVoiceSettingsSilently);
     });
@@ -4432,6 +4685,12 @@
       refreshLocalVoiceStatus:refreshLocalVoiceStatus,
       generateMissingVoiceAssets:generateMissingVoiceAssets,
       edgeSpokenName:edgeSpokenName,
+      autoArrangeCourtDown:autoArrangeCourtDown,
+      autoNextUpToCourt:autoNextUpToCourt,
+      markCourtCallTarget:markCourtCallTarget,
+      courtEntryAnimationShouldRun:courtEntryAnimationShouldRun,
+      prepareCourtEntryAnimation:prepareCourtEntryAnimation,
+      render:render,
       populateVoiceSelects:populateVoiceSelects
     };
   }

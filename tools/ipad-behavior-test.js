@@ -905,6 +905,16 @@ async function run() {
   assert('roster api failure rejects', failed);
   assert('roster api failure does not overwrite existing players', api.getState().players.length === 1 && api.getState().players[0].name === '保留A' && api.getState().players[0].zone === 'court1');
 
+  api.setState(baseState([player('p1', 'A', 'next1', 1)]));
+  assert('court entry animation defaults off', api.getState().settings.courtEntryAnimationEnabled === false && api.getState().settings.courtEntryAnimationModule === 'fly-guide-v1');
+  api.tap('courtEntryAnimationOnBtn');
+  assert('court entry animation setting persists on', api.getState().settings.courtEntryAnimationEnabled === true);
+  context.document.documentElement.classList.add('legacyIpad');
+  assert('legacy iPad never runs court entry fly animation', api.courtEntryAnimationShouldRun() === false);
+  context.document.documentElement.classList.remove('legacyIpad');
+  api.tap('courtEntryAnimationOffBtn');
+  assert('court entry animation setting persists off', api.getState().settings.courtEntryAnimationEnabled === false);
+
   api.exportJson();
   assert('copy list export opens plain names textarea', context.document.getElementById('exportTextArea').value.split('\n').length === api.getState().players.length && !/badminton-player-list-v1/.test(context.document.getElementById('exportTextArea').value));
   api.tap('modalOkBtn');

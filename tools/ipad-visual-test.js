@@ -2,6 +2,7 @@ const path = require('path');
 const { chromium } = require('playwright');
 
 const iPadAirIos12Ua = 'Mozilla/5.0 (iPad; CPU OS 12_5_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1.2 Mobile/15E148 Safari/604.1';
+const modernIpadUa = 'Mozilla/5.0 (iPad; CPU OS 17_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Mobile/15E148 Safari/604.1';
 const appUrl = 'file:///' + path.resolve(__dirname, '..', 'index.html').replace(/\\/g, '/');
 
 function assert(name, condition, details) {
@@ -225,6 +226,127 @@ async function runAdminCase(browser, scenario) {
   await context.close();
 }
 
+function animationState(nextCount) {
+  const players = [];
+  for (let slot = 1; slot <= nextCount; slot += 1) {
+    players.push(player('n' + slot, ['A', 'B', 'C', 'D'][slot - 1], 'next1', slot, '#bfdbfe'));
+  }
+  return {
+    app: 'badminton-court-2x2-3x3-ipad',
+    version: 'visual-test',
+    players,
+    settings: {
+      courtCount: 3,
+      nextCount: 3,
+      playersPerCourt: 4,
+      adminPassword: '1111',
+      freePlayMode: false,
+      autoArrangeMode: true,
+      autoCallEnabled: false,
+      autoCallMode: 'off',
+      callEffectEnabled: true,
+      callEffectDuration: 5,
+      callEffectIntensity: 'medium',
+      callEffectColor: 'yellow',
+      callEffectMarquee: true,
+      courtEntryAnimationEnabled: true,
+      courtEntryAnimationModule: 'fly-guide-v1',
+      playerNameScale: 100,
+      playerNameFont: 'system',
+      helperTextEnabled: true,
+      floating: { side: 'left', y: 0.62 },
+      collapsedSections: []
+    },
+    gameLog: []
+  };
+}
+
+async function runEntryAnimationCase(browser) {
+  const context = await browser.newContext({
+    viewport: { width: 1024, height: 638 },
+    deviceScaleFactor: 2,
+    isMobile: true,
+    hasTouch: true,
+    userAgent: modernIpadUa
+  });
+  const page = await context.newPage();
+  await page.addInitScript((state) => {
+    window.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(state));
+  }, animationState(3));
+  await page.goto(appUrl + '?debug=1');
+  await page.waitForSelector('#nextRow .player-chip');
+  await page.evaluate(() => {
+    const api = window.__badmintonIpadV1;
+    window.__entryMovePromise = api.autoNextUpToCourt('next1', 'court1', true);
+  });
+  await page.waitForSelector('#modalMask.show');
+  await page.click('#modalOkBtn');
+  await page.evaluate(async () => {
+    await window.__entryMovePromise;
+    const api = window.__badmintonIpadV1;
+    api.render();
+  });
+  await page.waitForSelector('.entry-animation-overlay');
+  const during = await page.evaluate(() => ({
+    cloneCount: document.querySelectorAll('.entry-fly-clone').length,
+    hiddenCount: document.querySelectorAll('#courtRow .entry-destination-hidden').length,
+    dynamicCount: document.querySelectorAll('#courtRow .entry-dynamic-focus').length,
+    courtPlayers: window.__badmintonIpadV1.getState().players.filter((p) => p.zone === 'court1').length
+  }));
+  assert('modern partial Next creates one clone per actual player', during.cloneCount === 3, JSON.stringify(during));
+  assert('modern partial Next hides matching destination cards during flight', during.hiddenCount === 3, JSON.stringify(during));
+  assert('modern entry animation uses one dynamic court focus', during.dynamicCount === 1, JSON.stringify(during));
+  assert('modern entry animation does not block player mutation', during.courtPlayers === 3, JSON.stringify(during));
+  await page.waitForTimeout(1200);
+  const after = await page.evaluate(() => ({
+    overlayCount: document.querySelectorAll('.entry-animation-overlay').length,
+    hiddenCount: document.querySelectorAll('.entry-destination-hidden').length
+  }));
+  assert('modern entry animation cleans overlay and hidden state', after.overlayCount === 0 && after.hiddenCount === 0, JSON.stringify(after));
+  const focus = await page.evaluate(() => {
+    window.__badmintonIpadV1.markCourtCallTarget('court2');
+    window.__badmintonIpadV1.render();
+    return {
+      dynamicCount: document.querySelectorAll('#courtRow .entry-dynamic-focus').length,
+      staticCount: document.querySelectorAll('#courtRow .entry-static-pending').length,
+      court1Static: document.querySelector('[data-zone-card="court1"]').classList.contains('entry-static-pending'),
+      court2Dynamic: document.querySelector('[data-zone-card="court2"]').classList.contains('entry-dynamic-focus')
+    };
+  });
+  assert('entry reminder keeps one dynamic focus and prior static pending court', focus.dynamicCount === 1 && focus.staticCount === 1 && focus.court1Static && focus.court2Dynamic, JSON.stringify(focus));
+  await context.close();
+}
+
+async function runLegacyNoEntryAnimationCase(browser) {
+  const context = await browser.newContext({
+    viewport: { width: 1024, height: 638 },
+    deviceScaleFactor: 2,
+    isMobile: true,
+    hasTouch: true,
+    userAgent: iPadAirIos12Ua
+  });
+  const page = await context.newPage();
+  await page.addInitScript((state) => {
+    window.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(state));
+  }, animationState(4));
+  await page.goto(appUrl + '?debug=1');
+  await page.waitForSelector('#nextRow .player-chip');
+  await page.evaluate(async () => {
+    const api = window.__badmintonIpadV1;
+    await api.autoNextUpToCourt('next1', 'court1', true);
+    api.render();
+  });
+  await page.waitForTimeout(100);
+  const metrics = await page.evaluate(() => ({
+    htmlClass: document.documentElement.className,
+    overlayCount: document.querySelectorAll('.entry-animation-overlay').length,
+    shouldRun: window.__badmintonIpadV1.courtEntryAnimationShouldRun(),
+    courtPlayers: window.__badmintonIpadV1.getState().players.filter((p) => p.zone === 'court1').length
+  }));
+  assert('legacy iPad does not run new entry animation', /legacyIpad/.test(metrics.htmlClass) && metrics.shouldRun === false && metrics.overlayCount === 0 && metrics.courtPlayers === 4, JSON.stringify(metrics));
+  await context.close();
+}
+
 async function main() {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const scenarios = [
@@ -239,6 +361,8 @@ async function main() {
     await runAdminCase(browser, { name: 'Safari portrait', standalone: false, width: 390, height: 844 });
     await runAdminCase(browser, { name: 'Standalone portrait', standalone: true, width: 390, height: 844 });
     await runAdminCase(browser, { name: 'Safari landscape', standalone: false, width: 1024, height: 638 });
+    await runEntryAnimationCase(browser);
+    await runLegacyNoEntryAnimationCase(browser);
   } finally {
     await browser.close();
   }
