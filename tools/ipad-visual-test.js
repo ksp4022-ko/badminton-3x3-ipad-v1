@@ -444,6 +444,74 @@ async function runLegacyNoEntryAnimationCase(browser) {
   await context.close();
 }
 
+async function runNextScrollTouchCase(browser) {
+  const state = stateForMode('3x3');
+  state.settings.nextCount = 5;
+  state.settings.nextCount3x3 = 5;
+  state.players.push(player('r1', '休息甲', 'rest', null, '#bfdbfe'));
+  state.players.push(player('r2', '休息乙', 'rest', null, '#fde68a'));
+  const context = await browser.newContext({
+    viewport: { width: 1024, height: 638 },
+    deviceScaleFactor: 2,
+    isMobile: true,
+    hasTouch: true,
+    userAgent: modernIpadUa
+  });
+  const page = await context.newPage();
+  await page.addInitScript((nextState) => {
+    window.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(nextState));
+  }, state);
+  await page.goto(appUrl + '?debug=1');
+  await page.waitForSelector('#nextRow.next-scroll .player-chip');
+  await page.waitForTimeout(100);
+
+  const hintInitial = await page.evaluate(() => {
+    const row = document.getElementById('nextRow');
+    const hint = document.getElementById('nextScrollAffordance');
+    return {
+      overflow: row.scrollWidth > row.clientWidth + 2,
+      visible: !!hint && hint.classList.contains('show'),
+      bars: hint ? hint.querySelectorAll('span').length : 0
+    };
+  });
+  assert('next scroll affordance appears only when right content remains', hintInitial.overflow && hintInitial.visible && hintInitial.bars === 2, JSON.stringify(hintInitial));
+
+  const hintRight = await page.evaluate(() => new Promise((resolve) => {
+    const row = document.getElementById('nextRow');
+    row.scrollLeft = row.scrollWidth;
+    row.dispatchEvent(new Event('scroll'));
+    requestAnimationFrame(() => {
+      const hint = document.getElementById('nextScrollAffordance');
+      resolve(!!hint && hint.classList.contains('show'));
+    });
+  }));
+  assert('next scroll affordance hides at right edge', hintRight === false);
+
+  const afterSwipe = await page.evaluate(async () => {
+    const row = document.getElementById('nextRow');
+    row.scrollLeft = 0;
+    row.dispatchEvent(new Event('scroll'));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    const chip = row.querySelector('.player-chip');
+    const rect = chip.getBoundingClientRect();
+    const startX = Math.round(rect.left + rect.width * 0.75);
+    const y = Math.round(rect.top + rect.height / 2);
+    chip.dispatchEvent(new PointerEvent('pointerdown', { bubbles:true, pointerId:1, pointerType:'touch', clientX:startX, clientY:y }));
+    chip.dispatchEvent(new PointerEvent('pointermove', { bubbles:true, pointerId:1, pointerType:'touch', clientX:startX - 44, clientY:y + 2 }));
+    chip.dispatchEvent(new PointerEvent('pointerup', { bubbles:true, pointerId:1, pointerType:'touch', clientX:startX - 44, clientY:y + 2 }));
+    chip.click();
+    return window.__badmintonIpadV1.getState().players.filter((p) => p.id === window.__badmintonIpadV1.getState().players[0].id).length && document.querySelectorAll('.player-chip.selected').length;
+  });
+  assert('next horizontal swipe suppresses accidental chip selection', afterSwipe === 0, String(afterSwipe));
+
+  await page.waitForTimeout(150);
+  await page.click('#nextRow .player-chip', { force: true });
+  const afterTap = await page.evaluate(() => document.querySelectorAll('.player-chip.selected').length);
+  assert('next short tap still selects player immediately', afterTap === 1, String(afterTap));
+
+  await context.close();
+}
+
 async function main() {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const scenarios = [
@@ -462,6 +530,7 @@ async function main() {
     await runPortraitAdminToLandscapeFitCase(browser, 'reset');
     await runEntryAnimationCase(browser);
     await runLegacyNoEntryAnimationCase(browser);
+    await runNextScrollTouchCase(browser);
   } finally {
     await browser.close();
   }

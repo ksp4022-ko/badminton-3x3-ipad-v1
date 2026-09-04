@@ -88,8 +88,10 @@ assert('admin v2 header divider removed', html.includes('.admin-v2 .panel-head')
 assert('selected admin bar sits between header and body', html.indexOf('<div id="selectedAdminBar"') > html.indexOf('<div class="panel-head">') && html.indexOf('<div id="selectedAdminBar"') < html.indexOf('<div class="panel-body"'));
 assert('admin v2 hides old selected hint', !html.includes('<div id="panelHint"'));
 assert('selected admin bar uses three equal columns', html.includes('.selected-admin-bar{') && html.includes('grid-template-columns:1fr 1fr 1fr') && html.includes('id="selectedAdminCount"') && html.includes('id="selectedAdminName"') && html.includes('id="selectedAdminCancelBtn"'));
-assert('selected admin bar is rounded and aligned to admin cards', html.includes('border-radius:20px') && html.includes('max-width:980px') && html.includes('max-width:952px') && html.includes('scheduleStableBoardNameFit'));
+assert('selected admin bar is rounded, lowered, and aligned to admin cards', html.includes('border-radius:20px') && html.includes('margin:6px auto 0') && html.includes('max-width:980px') && html.includes('max-width:952px') && html.includes('scheduleStableBoardNameFit'));
 assert('selected admin bar has read-only count badge', html.includes('.selected-admin-count') && !html.slice(html.indexOf('<div id="selectedAdminBar"'), html.indexOf('<div class="panel-body"')).includes('+1') && !html.slice(html.indexOf('<div id="selectedAdminBar"'), html.indexOf('<div class="panel-body"')).includes('-1'));
+assert('selected admin count badge is compact', html.includes('min-width:28px;height:28px') && html.includes('font-size:18px') && html.includes('align-self:start'));
+assert('next scroll swipe guard exists', html.includes('function beginNextScrollGesture') && html.includes('function shouldSuppressNextScrollTap') && html.includes('nextScrollGesture.blockUntil = Date.now() + 120') && html.includes('dx >= 12 && dx > dy'));
 assert('admin v2 sections exist', ['今日操作','自動呼叫','球員與場次','場地與排場','視覺與顯示','系統與資料'].every((label) => html.includes(label)));
 assert('admin v2 uses detail views for player and games', html.includes('id="playerDetailView"') && html.includes('id="gamesDetailView"') && html.includes('function showAdminDetail'));
 assert('admin footer version exists', html.includes('id="adminVersion"') && html.includes("textContent = 'v' + APP_VERSION"));

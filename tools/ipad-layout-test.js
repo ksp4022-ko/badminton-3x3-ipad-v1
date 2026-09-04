@@ -31,6 +31,7 @@ assert('legacy landscape game badge is enlarged', cssRuleIncludes('html.legacyIp
 assert('legacy standalone avoids status bar', cssRuleIncludes('html.legacyIpadStandalone.legacyIpadLandscape .app-shell', 'padding-top:26px'));
 assert('legacy panel opens fullscreen', cssRuleIncludes('html.legacyIpadLandscape .float-panel', 'top:0') && cssRuleIncludes('html.legacyIpadLandscape .float-panel', 'height:var(--legacy-vh)') && cssRuleIncludes('html.legacyIpadLandscape .float-panel', 'bottom:0'));
 assert('modern cards clip overflowing content', html.includes('.zone-card{background:rgba(255,255,255,.96)') && html.includes('display:flex;flex-direction:column;overflow:hidden;}'));
+assert('modern zone cards use reinforced light blue frame without layout growth', html.includes('border:1px solid #9ECBE8') && html.includes('inset 0 0 0 1px #9ECBE8') && html.includes('.rest-board-card{background:rgba(248,250,252,.98);border-color:#9ECBE8;}'));
 assert('modern short landscape removes slot min height', html.includes('@media (orientation:landscape) and (max-height:560px)') && html.includes('html:not(.legacyIpad) .slot{min-height:0'));
 assert('modern tablet desktop admin panel overrides side drawer to fullscreen', html.includes('html.modernIpad .admin-v2.float-panel') && html.includes('width:100vw'));
 assert('player name auto fit exists', html.includes('function fitPlayerNameText') && html.includes('function fitOnePlayerName') && html.includes('scheduleFitPlayerNames()'));
@@ -47,6 +48,8 @@ assert('compact admin v2 rows exist', html.includes('admin-action-grid four') &&
 assert('player add row has fixed button and compact swatches', html.includes('.player-add-row{grid-template-columns:60px minmax(150px,1fr) minmax(240px,340px) minmax(96px,120px);}') && html.includes('grid-template-columns:repeat(12,24px)') && html.includes('width:24px'));
 assert('system mode status is not duplicated', html.includes("textContent = '場地模式'") && !html.includes('場地模式：${currentMode()}'));
 assert('modern next row can scroll horizontally', cssRuleIncludes('.zone-row.next-scroll', 'overflow-x:auto') && html.includes("classList.toggle('next-scroll'"));
+assert('modern next row uses pan-x touch behavior', cssRuleIncludes('.zone-row.next-scroll', 'touch-action:pan-x') && cssRuleIncludes('.zone-row.next-scroll .player-chip', 'touch-action:pan-x'));
+assert('scroll affordance is overlay only', html.includes('.scroll-affordance{position:fixed') && html.includes('pointer-events:none') && html.includes('aria-hidden') && html.includes('scrollWidth <= row.clientWidth + 2'));
 assert('next zones support up to five areas', html.includes("const NEXTS = ['next1','next2','next3','next4','next5']"));
 assert('next count admin controls exist', html.includes('id="nextCountControls"') && html.includes('data-next-count-option="min"') && html.includes('function setNextCount'));
 assert('zone labels are localized', html.includes("return '場地 '") && html.includes("return '預備區 '"));

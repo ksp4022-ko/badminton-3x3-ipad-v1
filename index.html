@@ -112,10 +112,11 @@
     .section-title{display:none;}
     .zone-row{height:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;min-width:0;min-height:0;}
     .zone-row.mode-2{grid-template-columns:repeat(2,minmax(0,1fr));}
-    .zone-row.next-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:3px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
+    .zone-row.next-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:3px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;touch-action:pan-x;}
+    .zone-row.next-scroll .player-chip{touch-action:pan-x;}
     .zone-row.next-scroll .zone-card{min-width:0;}
-    .zone-card{background:rgba(255,255,255,.96);border:1px solid #bae6fd;border-radius:var(--radius);box-shadow:0 10px 22px rgba(15,23,42,.1);padding:8px;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
-    .rest-board-card{background:rgba(248,250,252,.98);border-color:#cbd5e1;}
+    .zone-card{background:rgba(255,255,255,.96);border:1px solid #9ECBE8;border-radius:var(--radius);box-shadow:inset 0 0 0 1px #9ECBE8,0 10px 22px rgba(15,23,42,.1);padding:8px;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+    .rest-board-card{background:rgba(248,250,252,.98);border-color:#9ECBE8;}
     .rest-board-card .zone-head{background:linear-gradient(135deg,#334155,#64748b);border-color:#cbd5e1;}
     .rest-board-grid{flex:1 1 auto;display:grid;grid-template-rows:repeat(2,minmax(0,1fr));grid-auto-flow:column;grid-auto-columns:minmax(145px,1fr);gap:8px;min-height:0;overflow:hidden;}
     .rest-board-empty{grid-column:1 / -1;grid-row:1 / -1;border:2px dashed #94a3b8;border-radius:16px;background:#f8fafc;color:#94a3b8;font-weight:900;font-size:clamp(14px,1.5vw,20px);display:flex;align-items:center;justify-content:center;text-align:center;}
@@ -167,6 +168,13 @@
     .entry-fly-clone.lift{transform:translateY(-6px) scale(1.02);}
     .entry-fly-clone.arrive{opacity:.96;}
     .entry-fly-clone.settle{transition:transform .22s cubic-bezier(.34,1.56,.64,1),opacity .18s ease;transform:scale(.98);}
+    .scroll-affordance{position:fixed;z-index:46;display:none;align-items:flex-end;justify-content:center;gap:5px;width:18px;height:34px;pointer-events:none;}
+    .scroll-affordance.show{display:flex;}
+    .scroll-affordance span{display:block;width:2px;border-radius:999px;background:#64748B;opacity:.22;animation:scrollAffordanceBreath 1.7s ease-in-out infinite;}
+    .scroll-affordance .long{height:24px;}
+    .scroll-affordance .short{height:14px;}
+    @keyframes scrollAffordanceBreath{0%,100%{opacity:.22}50%{opacity:.68}}
+    body.admin-panel-open .scroll-affordance{display:none!important;}
     .rest-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px;}
     .rest-list .player-chip{min-height:52px;}
     .rest-list .player-chip .name{font-size:22px;}
@@ -533,17 +541,17 @@
       min-height:54px;
       display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;gap:10px;
       width:calc(100% - max(28px, calc(var(--safe-left) + var(--safe-right) + 28px)));max-width:980px;
-      margin:0 auto 0;padding:9px 14px;border-radius:20px;
+      margin:6px auto 0;padding:9px 14px;border-radius:20px;
       background:#171a21;border:1px solid #2e3442;color:#f5f7fa;
     }
-    .selected-admin-count{justify-self:end;display:none;align-items:center;justify-content:center;min-width:42px;height:42px;border-radius:999px;background:#fff;color:#0f172a;border:2px solid rgba(15,23,42,.08);font-size:26px;font-weight:1000;box-shadow:0 2px 8px rgba(15,23,42,.18);}
+    .selected-admin-count{justify-self:end;align-self:start;display:none;align-items:center;justify-content:center;min-width:28px;height:28px;margin-top:1px;margin-right:4px;border-radius:999px;background:#fff;color:#0f172a;border:1px solid rgba(15,23,42,.12);font-size:18px;font-weight:1000;box-shadow:0 2px 6px rgba(15,23,42,.16);}
     .selected-admin-count.show{display:flex;}
     .selected-admin-line{display:flex;align-items:center;justify-content:center;gap:10px;min-width:0;font-size:16px;font-weight:900;}
     .selected-admin-name{display:none;width:100%;max-width:100%;padding:8px 12px;border-radius:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;font-size:18px;font-weight:1000;}
     .selected-admin-name.show{display:inline-block;}
     .selected-admin-cancel{justify-self:end;display:none;min-height:44px;border-radius:12px;border:1px solid #2e3442;background:#232834;color:#f5f7fa;font-size:16px;font-weight:900;padding:8px 12px;}
     .selected-admin-cancel.show{display:inline-flex;align-items:center;justify-content:center;}
-    .selected-admin-empty{grid-column:1 / -1;color:#b7c0cd;font-size:16px;font-weight:900;}
+    .selected-admin-empty{grid-column:1 / -1;justify-self:center;text-align:center;color:#b7c0cd;font-size:16px;font-weight:900;}
     @media (orientation:landscape){
       .selected-admin-bar{width:calc(100% - max(56px, calc(var(--safe-left) + var(--safe-right) + 56px)));max-width:952px;}
       .admin-v2 #adminSection{margin-top:0;}
@@ -617,6 +625,7 @@
       .zone-card.call-target{animation:none;}
       .zone-card.entry-dynamic-focus::after{display:none;}
       .zone-card.entry-pre-pulse{animation:none;}
+      .scroll-affordance span{animation:none;opacity:.38;}
     }
   </style>
 </head>
@@ -957,6 +966,8 @@
   let stableBoardFitPending = false;
   let stableBoardFitLastSignature = '';
   let stableBoardFitStableFrames = 0;
+  let nextScrollGesture = { active:false, scrolling:false, x:0, y:0, pointerId:null, blockUntil:0 };
+  let scrollAffordanceFrame = 0;
 
   const $ = (id) => document.getElementById(id);
   const FIXED_AUDIO_BASE = './voice-poc/';
@@ -1725,6 +1736,7 @@
     }
     $('courtRow').innerHTML = activeCourts().map(z => renderZoneCard(z, true)).join('');
     $('nextRow').innerHTML = nexts.map(z => renderZoneCard(z, false)).join('') + (showBoardRest ? renderRestBoardCard(restMinWidth) : '');
+    scheduleScrollAffordanceUpdate();
   }
 
   function renderZoneCard(zone, isCourt){
@@ -4414,7 +4426,102 @@
     return window.innerHeight - height - 8;
   }
 
+  function isInsideNextScroller(target){
+    const row = $('nextRow');
+    return !!(row && row.classList.contains('next-scroll') && closestById(target, 'nextRow'));
+  }
+
+  function nextScrollPoint(e){
+    const p = e.touches && e.touches.length ? e.touches[0] : (e.changedTouches && e.changedTouches.length ? e.changedTouches[0] : e);
+    return { x:Number(p.clientX || 0), y:Number(p.clientY || 0), id:p.pointerId || null };
+  }
+
+  function beginNextScrollGesture(e){
+    if(!isInsideNextScroller(e.target)) return;
+    const p = nextScrollPoint(e);
+    nextScrollGesture.active = true;
+    nextScrollGesture.scrolling = false;
+    nextScrollGesture.x = p.x;
+    nextScrollGesture.y = p.y;
+    nextScrollGesture.pointerId = p.id;
+  }
+
+  function moveNextScrollGesture(e){
+    if(!nextScrollGesture.active || !isInsideNextScroller(e.target)) return;
+    const p = nextScrollPoint(e);
+    const dx = Math.abs(p.x - nextScrollGesture.x);
+    const dy = Math.abs(p.y - nextScrollGesture.y);
+    if(dx >= 12 && dx > dy) nextScrollGesture.scrolling = true;
+  }
+
+  function endNextScrollGesture(e){
+    if(!nextScrollGesture.active) return;
+    if(nextScrollGesture.scrolling) nextScrollGesture.blockUntil = Date.now() + 120;
+    nextScrollGesture.active = false;
+    nextScrollGesture.scrolling = false;
+    nextScrollGesture.pointerId = null;
+  }
+
+  function cancelNextScrollGesture(){
+    nextScrollGesture.active = false;
+    nextScrollGesture.scrolling = false;
+    nextScrollGesture.pointerId = null;
+  }
+
+  function shouldSuppressNextScrollTap(target){
+    return isInsideNextScroller(target) && (nextScrollGesture.scrolling || Date.now() < nextScrollGesture.blockUntil);
+  }
+
+  function ensureScrollAffordance(id){
+    let el = $(id);
+    if(el) return el;
+    el = document.createElement('div');
+    el.id = id;
+    el.className = 'scroll-affordance';
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = '<span class="long"></span><span class="short"></span>';
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function updateScrollAffordanceFor(rowId, affordanceId){
+    const row = $(rowId);
+    const affordance = ensureScrollAffordance(affordanceId);
+    if(!row || panelOpen || row.scrollWidth <= row.clientWidth + 2){
+      affordance.classList.remove('show');
+      return;
+    }
+    const maxScroll = row.scrollWidth - row.clientWidth;
+    const hasMoreRight = row.scrollLeft < maxScroll - 3;
+    if(!hasMoreRight){
+      affordance.classList.remove('show');
+      return;
+    }
+    const rect = row.getBoundingClientRect();
+    affordance.style.left = Math.round(rect.right - 26) + 'px';
+    affordance.style.top = Math.round(rect.top + rect.height * 0.62 - 17) + 'px';
+    affordance.classList.add('show');
+  }
+
+  function updateScrollAffordances(){
+    updateScrollAffordanceFor('nextRow', 'nextScrollAffordance');
+  }
+
+  function scheduleScrollAffordanceUpdate(){
+    if(scrollAffordanceFrame) return;
+    const raf = window.requestAnimationFrame || function(cb){ return setTimeout(cb, 0); };
+    scrollAffordanceFrame = raf(function(){
+      scrollAffordanceFrame = 0;
+      updateScrollAffordances();
+    });
+  }
+
   async function handleBoardInteraction(e){
+    if(shouldSuppressNextScrollTap(e.target)){
+      if(e.cancelable) e.preventDefault();
+      e.stopPropagation();
+      return true;
+    }
     const zoneHead = closestByClass(e.target, 'zone-head');
     if(zoneHead && dataAttr(zoneHead, 'court')){
       if(e.cancelable) e.preventDefault();
@@ -4533,6 +4640,22 @@
       if(Date.now() - lastTouchHandledAt < 500) return;
       runBoardInteraction(e);
     });
+    const nextRow = $('nextRow');
+    if(nextRow){
+      if(window.PointerEvent){
+        nextRow.addEventListener('pointerdown', beginNextScrollGesture, false);
+        nextRow.addEventListener('pointermove', moveNextScrollGesture, false);
+        nextRow.addEventListener('pointerup', endNextScrollGesture, false);
+        nextRow.addEventListener('pointercancel', cancelNextScrollGesture, false);
+      }
+      nextRow.addEventListener('touchstart', beginNextScrollGesture, false);
+      nextRow.addEventListener('touchmove', moveNextScrollGesture, false);
+      nextRow.addEventListener('touchend', endNextScrollGesture, false);
+      nextRow.addEventListener('touchcancel', cancelNextScrollGesture, false);
+      nextRow.addEventListener('scroll', scheduleScrollAffordanceUpdate, false);
+    }
+    window.addEventListener('resize', scheduleScrollAffordanceUpdate, false);
+    window.addEventListener('orientationchange', scheduleScrollAffordanceUpdate, false);
 
     function moveSelectedToRest(){
       const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
