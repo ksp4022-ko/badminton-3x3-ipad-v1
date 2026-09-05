@@ -504,12 +504,65 @@ async function runNextScrollTouchCase(browser) {
   });
   assert('next horizontal swipe suppresses accidental chip selection', afterSwipe === 0, String(afterSwipe));
 
-  await page.waitForTimeout(150);
+  await page.waitForTimeout(380);
   await page.click('#nextRow .player-chip', { force: true });
   const afterTap = await page.evaluate(() => document.querySelectorAll('.player-chip.selected').length);
   assert('next short tap still selects player immediately', afterTap === 1, String(afterTap));
 
   await context.close();
+}
+
+async function runPortraitAdminModeCase(browser) {
+  const state = stateForMode('3x3');
+  state.settings.portraitAdminModeEnabled = true;
+  state.settings.helperTextEnabled = true;
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 3,
+    isMobile: true,
+    hasTouch: true,
+    userAgent: modernIpadUa
+  });
+  const page = await context.newPage();
+  await page.addInitScript((nextState) => {
+    window.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(nextState));
+  }, state);
+  await page.goto(appUrl + '?debug=1');
+  await page.waitForSelector('#floatPanel.open');
+  const portrait = await page.evaluate(() => ({
+    panelOpen: document.getElementById('floatPanel').classList.contains('open'),
+    hintShown: document.getElementById('orientationHint').classList.contains('show'),
+    warningHidden: window.getComputedStyle(document.querySelector('.portrait-warning.phone')).display === 'none'
+  }));
+  assert('portrait admin mode opens Admin and bypasses rotate guard', portrait.panelOpen && portrait.hintShown && portrait.warningHidden, JSON.stringify(portrait));
+  await page.setViewportSize({ width: 1024, height: 638 });
+  await page.waitForTimeout(260);
+  const landscape = await page.evaluate(() => ({
+    panelOpen: document.getElementById('floatPanel').classList.contains('open'),
+    overflow: Array.prototype.filter.call(document.querySelectorAll('.player-chip .name'), (name) => name.scrollWidth > name.clientWidth + 1).length
+  }));
+  assert('portrait admin mode returns to landscape board without name overflow', !landscape.panelOpen && landscape.overflow === 0, JSON.stringify(landscape));
+  await context.close();
+
+  const quietContext = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 3,
+    isMobile: true,
+    hasTouch: true,
+    userAgent: modernIpadUa
+  });
+  const quietPage = await quietContext.newPage();
+  const quietState = stateForMode('3x3');
+  quietState.settings.portraitAdminModeEnabled = true;
+  quietState.settings.helperTextEnabled = false;
+  await quietPage.addInitScript((nextState) => {
+    window.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(nextState));
+  }, quietState);
+  await quietPage.goto(appUrl + '?debug=1');
+  await quietPage.waitForSelector('#floatPanel.open');
+  const quietHint = await quietPage.evaluate(() => document.getElementById('orientationHint').classList.contains('show'));
+  assert('portrait admin startup hint follows helper text setting', quietHint === false);
+  await quietContext.close();
 }
 
 async function main() {
@@ -531,6 +584,7 @@ async function main() {
     await runEntryAnimationCase(browser);
     await runLegacyNoEntryAnimationCase(browser);
     await runNextScrollTouchCase(browser);
+    await runPortraitAdminModeCase(browser);
   } finally {
     await browser.close();
   }

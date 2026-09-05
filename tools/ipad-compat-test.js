@@ -46,7 +46,7 @@ assert('admin unlock persisted', html.includes('saveAdminUnlock()') && html.incl
 assert('debug mode exists', html.includes("location.search.indexOf('debug=1')") && html.includes('function debugLog'));
 assert('debug mode tracks board actions', html.includes("debugLog('zone-head courtDown'") && html.includes("debugLog('slot move success'") && html.includes("debugLog(inRest ? 'chip rest select'"));
 assert('v1 storage key isolated', html.includes("badminton3x3.ipad.v1.state"));
-assert('release version synchronized', appVersion === '2.0.1' && pkg.version === appVersion && lock.version === appVersion && lock.packages[''].version === appVersion && sw.includes('v2.0.1'));
+assert('release version synchronized', appVersion === '2.0.2' && pkg.version === appVersion && lock.version === appVersion && lock.packages[''].version === appVersion && sw.includes('v2.0.2'));
 assert('copy paste player list exists', html.includes('function playerNamesText') && html.includes('function showImportPasteDialog') && html.includes('function importPlayersFromText'));
 assert('player list exports plain names', html.includes("showExportText('複製名單', playerNamesText())") && html.includes(".join('\\n')"));
 assert('player list import accepts plain lines', html.includes('function parsePlayerListText') && html.includes("placeholder=\"A&#10;B&#10;C\"") && html.includes("replace(/^\\s*\\[(.*)\\]\\s*$/, '$1')"));
@@ -91,7 +91,7 @@ assert('selected admin bar uses three equal columns', html.includes('.selected-a
 assert('selected admin bar is rounded, lowered, and aligned to admin cards', html.includes('border-radius:20px') && html.includes('margin:6px auto 0') && html.includes('max-width:980px') && html.includes('max-width:952px') && html.includes('scheduleStableBoardNameFit'));
 assert('selected admin bar has read-only count badge', html.includes('.selected-admin-count') && !html.slice(html.indexOf('<div id="selectedAdminBar"'), html.indexOf('<div class="panel-body"')).includes('+1') && !html.slice(html.indexOf('<div id="selectedAdminBar"'), html.indexOf('<div class="panel-body"')).includes('-1'));
 assert('selected admin count badge is compact', html.includes('min-width:28px;height:28px') && html.includes('font-size:18px') && html.includes('align-self:start'));
-assert('next scroll swipe guard exists', html.includes('function beginNextScrollGesture') && html.includes('function shouldSuppressNextScrollTap') && html.includes('nextScrollGesture.blockUntil = Date.now() + 120') && html.includes('dx >= 12 && dx > dy'));
+assert('next scroll swipe guard exists', html.includes('function beginNextScrollGesture') && html.includes('function shouldSuppressNextScrollTap') && html.includes('nextScrollGesture.blockUntil = Date.now() + 350') && html.includes('dx >= 8 || dy >= 8 || scrollDelta >= 2'));
 assert('admin v2 sections exist', ['今日操作','自動呼叫','球員與場次','場地與排場','視覺與顯示','系統與資料'].every((label) => html.includes(label)));
 assert('admin v2 uses detail views for player and games', html.includes('id="playerDetailView"') && html.includes('id="gamesDetailView"') && html.includes('function showAdminDetail'));
 assert('admin footer version exists', html.includes('id="adminVersion"') && html.includes("textContent = 'v' + APP_VERSION"));
@@ -101,6 +101,8 @@ assert('auto call has mutually exclusive Edge and Browser modes', html.includes(
 assert('edge checking state keeps status visible', html.includes('mode-checking') && html.includes("edgeCheckInProgress || edgeCheckState === 'CHECKING'") && html.includes('.auto-call-content.mode-checking .browser-settings'));
 assert('local Edge voice uses IndexedDB and production generator', html.includes("badminton-local-voice") && html.includes("voiceAssets") && html.includes("local-voice-v1") && html.includes("en-US-AnaNeural") && html.includes("zh-TW-HsiaoChenNeural") && html.includes("api/voice/generate"));
 assert('Edge Ready checks local assets and preload', html.includes('function preloadLocalVoiceDescriptors') && html.includes('function generateMissingVoiceAssets') && html.includes('function localVoiceCheck') && html.includes('IndexedDB'));
+assert('Edge fixed voice checks complete active roster without on-court block', html.includes('function todayActiveNamesForEdgeCheck') && html.includes('const names = todayActiveNamesForEdgeCheck();') && !html.includes("reason:'onCourt'"));
+assert('Edge missing state preserves Edge mode', html.includes('function preflightEdgeParts') && html.includes("edgeCheckState = 'MISSING';") && !html.includes('Edge 缺少音源，已關閉 Edge 固定語音'));
 const edgeSettingsBlock = html.slice(html.indexOf('<div class="edge-settings">'), html.indexOf('<div class="browser-settings">'));
 const localVoiceBlock = html.slice(html.indexOf('<h3>本機音源</h3>'), html.indexOf('<h3>球員與場次</h3>'));
 assert('missing voice generation button lives in local voice card', !edgeSettingsBlock.includes('generateMissingVoicesBtn') && localVoiceBlock.includes('generateMissingVoicesBtn') && localVoiceBlock.includes('toggleLocalVoiceDetailsBtn'));
@@ -140,6 +142,7 @@ assert('modal mask has old safari fixed fallback', html.includes('.modal-mask{po
 assert('manager panel opens fullscreen', html.includes('.float-panel{position:fixed;z-index:49;top:0;right:0;bottom:0;left:0') && html.includes('html.legacyIpadLandscape .float-panel{left:0;right:0;top:0;bottom:0'));
 assert('manifest allows portrait admin in A2HS', manifest.orientation === 'any');
 assert('portrait court guard remains but admin can bypass it', html.includes('請將裝置橫放') && html.includes('body.admin-panel-open .portrait-warning.phone{display:none!important;}') && html.includes("document.body.classList.toggle('admin-panel-open', panelOpen)"));
+assert('modern portrait admin mode exists', html.includes('portraitAdminModeEnabled:false') && html.includes('id="portraitAdminModeOnBtn"') && html.includes('function applyPortraitAdminModeRoute') && html.includes('直屏進入管理員'));
 assert('legacy ipad classes exist', html.includes('function detectLegacyIpad') && html.includes('legacyIpadLandscape') && html.includes('html.legacyIpadLandscape'));
 assert('legacy ipad measured viewport height exists', html.includes('function measuredLegacyViewportHeight') && html.includes('--legacy-vh') && html.includes('height:var(--legacy-vh)'));
 assert('legacy ipad safari compact layout exists', html.includes('legacyIpadSafari') && html.includes('html.legacyIpadSafari.legacyIpadLandscape'));

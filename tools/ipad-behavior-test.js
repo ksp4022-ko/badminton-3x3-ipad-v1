@@ -468,8 +468,9 @@ async function run() {
     player('court-player', '柯', 'court1', 1),
     player('rest-player', 'Chris', 'rest', null)
   ]));
-  const blockedEdge = await api.enableAutoCallWithEdgeCheck();
-  assert('on-court players block Edge ready check', blockedEdge.reason === 'onCourt' && api.getState().settings.autoCallEnabled === false && /今日重新開始/.test(context.document.getElementById('toast').textContent));
+  await seedLocalVoices(api, api.requiredLocalVoiceAssetsForToday());
+  const onCourtEdge = await api.enableAutoCallWithEdgeCheck();
+  assert('on-court players can enable Edge from complete active roster', onCourtEdge.ok && api.getState().settings.autoCallMode === 'edge' && api.getState().players.some((p) => p.zone === 'court1'));
 
   const resetForEdge = api.resetToday();
   api.tap('modalOkBtn');
@@ -481,7 +482,7 @@ async function run() {
     player('rest-b', 'Chris', 'rest', null),
     player('rest-c', '柯', 'rest', null)
   ]));
-  assert('rest area names trim and dedupe for Edge check', api.restPlayerNamesForEdgeCheck().join('|') === '柯|Chris');
+  assert('active roster names trim and dedupe for Edge check', api.restPlayerNamesForEdgeCheck().join('|') === '柯|Chris');
   await seedLocalVoices(api, api.requiredLocalVoiceAssetsForToday());
 
   const checkingEdge = api.enableAutoCallWithEdgeCheck();
@@ -494,13 +495,31 @@ async function run() {
   const readyEdge = await api.enableAutoCallWithEdgeCheck();
   assert('all required local MP3 assets enable Edge ready', readyEdge.ok && readyEdge.ready === 6 && readyEdge.total === 6 && api.getState().settings.autoCallEnabled === true && /本機音源 Ready/.test(context.document.getElementById('edgeReadyStatus').textContent));
 
+  api.setState(baseState([player('rename-edge', '柯', 'court1', 1)]));
+  await seedLocalVoices(api, api.requiredLocalVoiceAssetsForToday());
+  await api.enableAutoCallWithEdgeCheck();
+  const renameSlot = new FakeElement('div');
+  renameSlot.classList.add('slot');
+  renameSlot.setAttribute('data-zone', 'court1');
+  renameSlot.setAttribute('data-slot', '1');
+  const renameChip = new FakeElement('div');
+  renameChip.classList.add('player-chip');
+  renameChip.setAttribute('data-player-id', 'rename-edge');
+  renameChip.parentNode = renameSlot;
+  await api.handleBoardInteraction(eventFor(renameChip));
+  context.document.getElementById('renamePlayerInput').value = '新缺檔';
+  api.renameSelected();
+  await wait(80);
+  const renamedEdgePlayer = api.getState().players.find((p) => p.id === 'rename-edge');
+  assert('Edge rename missing MP3 keeps player position and Edge missing mode', renamedEdgePlayer.name === '新缺檔' && renamedEdgePlayer.zone === 'court1' && renamedEdgePlayer.slot === 1 && api.getState().settings.autoCallMode === 'edge' && /Edge 缺少/.test(context.document.getElementById('edgeReadyStatus').textContent));
+
   api.setState(baseState([
     player('rest-a', '柯', 'rest', null),
     player('rest-b', 'Missing Voice', 'rest', null)
   ]));
   await seedLocalVoices(api, api.requiredLocalVoiceAssets(['柯'], true, true));
   const missingEdge = await api.enableAutoCallWithEdgeCheck();
-  assert('missing rest MP3 blocks Edge ready with count summary', !missingEdge.ok && missingEdge.missing.join('|') === 'Missing Voice' && api.getState().settings.autoCallEnabled === false && /Edge 缺少 1 個本機音源/.test(missingEdge.message) && !/Missing Voice/.test(missingEdge.message));
+  assert('missing active-roster MP3 keeps Edge mode with count summary', !missingEdge.ok && missingEdge.missing.join('|') === 'Missing Voice' && api.getState().settings.autoCallMode === 'edge' && api.getState().settings.autoCallEnabled === true && /Edge 缺少 1 個本機音源/.test(missingEdge.message) && !/Missing Voice/.test(missingEdge.message));
   await api.refreshLocalVoiceStatus();
   assert('generate missing button remains accessible outside collapsed details', context.document.getElementById('generateMissingVoicesBtn').style.display !== 'none' && context.document.getElementById('localVoiceList').style.display === 'none');
   api.tap('toggleLocalVoiceDetailsBtn');
@@ -511,7 +530,12 @@ async function run() {
   context.__spokenUtterances = [];
   api.callPlayers(['Missing Voice'], 'court1');
   await wait(500);
-  assert('browser speech fallback still works when auto call disabled', context.__spokenUtterances.some((u) => u.text === 'Missing Voice'));
+  assert('Edge missing call does not fall back to browser', context.__spokenUtterances.length === 0 && /Edge 缺少/.test(context.document.getElementById('edgeReadyStatus').textContent));
+  api.setAutoCallModeForTest('browser');
+  context.__spokenUtterances = [];
+  api.callPlayers(['Missing Voice'], 'court1');
+  await wait(500);
+  assert('browser speech fallback still works when browser mode selected', context.__spokenUtterances.some((u) => u.text === 'Missing Voice'));
 
   api.setAutoCallModeForTest('edge');
   context.__spokenUtterances = [];
@@ -580,7 +604,7 @@ async function run() {
   await seedLocalVoices(api, api.requiredLocalVoiceAssets(['柯'], false, false));
   api.callPlayers(['柯'], 'court1');
   await wait(900);
-  assert('Edge missing court phrase does not fall back to browser', context.__playedAudio.length === 1 && context.__playedAudio[0] === 'blob:test' && context.__spokenUtterances.length === 0 && /場地 1/.test(context.document.getElementById('edgeReadyStatus').textContent));
+  assert('Edge missing court phrase does not partially play or fall back to browser', context.__playedAudio.length === 0 && context.__spokenUtterances.length === 0 && /場地 1/.test(context.document.getElementById('edgeReadyStatus').textContent));
 
   api.setState(baseState([player('gen1', 'Bobo 哥', 'rest', null)], { courtLabels: { court1: '1', court2: '2', court3: '3' } }));
   await api.localVoiceClear();
@@ -722,6 +746,33 @@ async function run() {
   api.tap('modalOkBtn');
   await autoPartial;
   assert('auto arrange next with 3 players confirm moves', api.getState().players.every((p) => p.zone === 'court1'));
+
+  api.setState(baseState([
+    player('n1', 'A', 'next1', 1),
+    player('n2', 'B', 'next1', 2),
+    player('n3', 'C', 'next1', 3),
+    player('n4', 'D', 'next1', 4),
+    player('n5', 'E', 'next2', 1)
+  ]));
+  const next1Head = new FakeElement('button');
+  next1Head.classList.add('zone-head');
+  next1Head.setAttribute('data-next', 'next1');
+  await api.handleBoardInteraction(eventFor(next1Head));
+  assert('Next1 header tap still runs nextUp', api.getState().players.filter((p) => p.zone === 'court1').length === 4 && api.getState().players.some((p) => p.id === 'n5' && p.zone === 'next2'));
+  api.setState(baseState([
+    player('n1', 'A', 'next1', 1),
+    player('n5', 'E', 'next2', 1)
+  ]));
+  const next2Head = new FakeElement('button');
+  next2Head.classList.add('zone-head');
+  next2Head.setAttribute('data-display-zone', 'next2');
+  await api.handleBoardInteraction(eventFor(next2Head));
+  assert('Next2 header tap is display-only', api.getState().players.some((p) => p.id === 'n5' && p.zone === 'next2'));
+  const restHead = new FakeElement('button');
+  restHead.classList.add('zone-head');
+  restHead.setAttribute('data-rest-display', 'rest');
+  await api.handleBoardInteraction(eventFor(restHead));
+  assert('Rest header tap is inert and does not move selected player', api.getState().players.some((p) => p.id === 'n1' && p.zone === 'next1') && api.getState().players.some((p) => p.id === 'n5' && p.zone === 'next2'));
 
   api.setState(baseState([
     player('p1', 'A', 'court1', 1),

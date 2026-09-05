@@ -168,7 +168,7 @@
     .entry-fly-clone.lift{transform:translateY(-6px) scale(1.02);}
     .entry-fly-clone.arrive{opacity:.96;}
     .entry-fly-clone.settle{transition:transform .22s cubic-bezier(.34,1.56,.64,1),opacity .18s ease;transform:scale(.98);}
-    .scroll-affordance{position:fixed;z-index:46;display:none;align-items:flex-end;justify-content:center;gap:5px;width:18px;height:34px;pointer-events:none;}
+    .scroll-affordance{position:fixed;z-index:46;display:none;align-items:flex-end;justify-content:center;gap:5px;width:18px;pointer-events:none;}
     .scroll-affordance.show{display:flex;}
     .scroll-affordance span{display:block;width:2px;border-radius:999px;background:#64748B;opacity:.22;animation:scrollAffordanceBreath 1.7s ease-in-out infinite;}
     .scroll-affordance .long{height:24px;}
@@ -281,6 +281,8 @@
     .portrait-card{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.35);border-radius:26px;padding:28px;box-shadow:var(--shadow);}
     .portrait-card .big{font-size:34px;font-weight:1000;margin-bottom:12px;}
     .portrait-card .small{font-size:20px;font-weight:800;line-height:1.4;opacity:.95;}
+    .orientation-hint{position:fixed;left:50%;top:calc(14px + var(--safe-top));transform:translateX(-50%);z-index:80;display:none;max-width:min(520px,calc(100vw - 28px));padding:12px 16px;border-radius:18px;background:rgba(15,23,42,.9);color:#fff;text-align:center;font-size:17px;font-weight:900;line-height:1.35;box-shadow:0 12px 28px rgba(15,23,42,.28);pointer-events:none;}
+    .orientation-hint.show{display:block;}
     .file-input{display:none}
     .backup-summary{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:10px;margin-top:8px;font-weight:800;line-height:1.55;color:#334155;}
     @media (max-width:900px) and (orientation:landscape){
@@ -662,7 +664,7 @@
     <div class="panel-head">
       <button class="admin-back-btn" id="closePanelBtn" type="button">‹ 返回排場</button>
       <div class="panel-title" id="panelTitle">管理員</div>
-      <div class="admin-header-version" id="adminHeaderVersion">v2.0.1</div>
+      <div class="admin-header-version" id="adminHeaderVersion">v2.0.2</div>
     </div>
     <div id="selectedAdminBar" class="selected-admin-bar">
       <div class="selected-admin-empty" id="selectedAdminEmpty">尚未選取球員</div>
@@ -880,6 +882,11 @@
                 <button id="helperTextOffBtn">關閉</button>
                 <button id="helperTextOnBtn">開啟</button>
               </div>
+              <div class="compact-state-row">
+                <div class="compact-row-label">直屏管理員模式</div>
+                <button id="portraitAdminModeOffBtn">關閉</button>
+                <button id="portraitAdminModeOnBtn">開啟</button>
+              </div>
             </section>
 
             <section class="admin-v2-card">
@@ -897,7 +904,7 @@
             </div>
             </section>
 
-            <div class="admin-version-footer" id="adminVersion">v2.0.1</div>
+            <div class="admin-version-footer" id="adminVersion">v2.0.2</div>
           </div>
         </div>
       </section>
@@ -905,6 +912,7 @@
   </aside>
 
   <div class="toast" id="toast"></div>
+  <div class="orientation-hint" id="orientationHint" aria-live="polite"></div>
   <div class="debug-panel" id="debugPanel"></div>
 
   <div class="modal-mask" id="modalMask">
@@ -923,7 +931,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.0.1';
+  const APP_VERSION = '2.0.2';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -966,8 +974,10 @@
   let stableBoardFitPending = false;
   let stableBoardFitLastSignature = '';
   let stableBoardFitStableFrames = 0;
-  let nextScrollGesture = { active:false, scrolling:false, x:0, y:0, pointerId:null, blockUntil:0 };
+  let nextScrollGesture = { active:false, scrolling:false, x:0, y:0, scrollLeft:0, target:null, pointerId:null, blockUntil:0 };
   let scrollAffordanceFrame = 0;
+  let edgeRevalidateToken = 0;
+  let orientationStartupHintShown = false;
 
   const $ = (id) => document.getElementById(id);
   const FIXED_AUDIO_BASE = './voice-poc/';
@@ -1311,6 +1321,7 @@
         courtEntryAnimationEnabled:false,
         courtEntryAnimationModule:'fly-guide-v1',
         helperTextEnabled:true,
+        portraitAdminModeEnabled:false,
         rosterApiUrl:ROSTER_SOURCE_PAGE,
         lastCallPlayers:[],
         lastCallCourt:null,
@@ -1353,6 +1364,7 @@
     merged.settings.courtEntryAnimationEnabled = merged.settings.courtEntryAnimationEnabled === true;
     merged.settings.courtEntryAnimationModule = String(merged.settings.courtEntryAnimationModule || 'fly-guide-v1') === 'fly-guide-v1' ? 'fly-guide-v1' : 'fly-guide-v1';
     merged.settings.helperTextEnabled = merged.settings.helperTextEnabled !== false;
+    merged.settings.portraitAdminModeEnabled = merged.settings.portraitAdminModeEnabled === true;
     merged.settings.playerNameScale = normalizePlayerNameScale(merged.settings.playerNameScale);
     merged.settings.playerNameFont = ['system','bold','serif'].indexOf(String(merged.settings.playerNameFont)) >= 0 ? String(merged.settings.playerNameFont) : 'system';
     if(['off','edge','browser'].indexOf(String(merged.settings.autoCallMode)) < 0){
@@ -1416,6 +1428,12 @@
   function isLegacyIpadRuntime(){
     return document.documentElement.classList.contains('legacyIpad');
   }
+  function isModernTouchRuntime(){
+    return !isLegacyIpadRuntime() && Number(navigator.maxTouchPoints || 0) > 0 && !document.documentElement.classList.contains('modernDesktop');
+  }
+  function isPortraitViewport(){
+    return window.innerHeight > window.innerWidth;
+  }
   function activeNextCount(){
     if(isLegacyIpadRuntime()) return Number(state.settings.courtCount) === 2 ? 2 : 3;
     return activeNextCountForSettings(state.settings);
@@ -1433,9 +1451,12 @@
   function restPlayers(){ return activePlayers().filter(p => p.zone === 'rest').sort((a,b) => (a.games - b.games) || (a.sortOrder - b.sortOrder)); }
   function onCourtPlayers(){ return activePlayers().filter(p => COURTS.includes(p.zone)); }
   function restPlayerNamesForEdgeCheck(){
+    return todayActiveNamesForEdgeCheck();
+  }
+  function todayActiveNamesForEdgeCheck(){
     const seen = {};
     const names = [];
-    restPlayers().forEach(function(p){
+    todayRosterPlayers().forEach(function(p){
       const name = String(p.name || '').replace(/^\s+|\s+$/g, '');
       if(!name || seen[name]) return;
       seen[name] = true;
@@ -1736,6 +1757,7 @@
     }
     $('courtRow').innerHTML = activeCourts().map(z => renderZoneCard(z, true)).join('');
     $('nextRow').innerHTML = nexts.map(z => renderZoneCard(z, false)).join('') + (showBoardRest ? renderRestBoardCard(restMinWidth) : '');
+    updateScrollAffordances();
     scheduleScrollAffordanceUpdate();
   }
 
@@ -1752,7 +1774,7 @@
       return `<div class="slot ${p?'filled':'empty'}${hiddenClass}" data-zone="${zone}" data-slot="${slot}">${content}</div>`;
     }).join('');
     const actionClass = isCourt ? 'warn' : '';
-    const actionData = isCourt ? `data-court="${zone}"` : `data-next="${zone}"`;
+    const actionData = isCourt ? `data-court="${zone}"` : (zone === 'next1' ? `data-next="${zone}"` : `data-display-zone="${zone}"`);
     const highlightClass = isCallTarget || isStaticPending
       ? ' call-target call-' + callEffectColorClass() + ' call-' + callEffectIntensityClass() + (isCallTarget && courtEntryAnimationShouldRun() ? ' entry-dynamic-focus' : '') + (isStaticPending ? ' entry-static-pending' : '')
       : '';
@@ -1768,7 +1790,7 @@
     const content = players.length
       ? players.map(function(p){ return '<div class="rest-board-player">' + playerChipHtml(p) + '</div>'; }).join('') + openSlots
       : '<div class="rest-board-empty">休息區目前沒有人</div>';
-    return '<div class="zone-card rest-board-card rest-board-drop" data-zone-card="rest" data-rest-target="rest" style="min-width:' + Number(minWidth || 300) + 'px"><button class="zone-head rest-board-drop" data-rest-target="rest" type="button"><div class="zone-title">休息區</div><div class="zone-count">' + players.length + '人</div></button><div class="rest-board-grid">' + content + '</div></div>';
+    return '<div class="zone-card rest-board-card rest-board-drop" data-zone-card="rest" data-rest-target="rest" style="min-width:' + Number(minWidth || 300) + 'px"><button class="zone-head" data-rest-display="rest" type="button"><div class="zone-title">休息區</div><div class="zone-count">' + players.length + '人</div></button><div class="rest-board-grid">' + content + '</div></div>';
   }
 
   function callEffectColorClass(){
@@ -1913,6 +1935,8 @@
     if($('callMarqueeSelect')) $('callMarqueeSelect').value = state.settings.callEffectMarquee === false ? 'off' : 'on';
     if($('helperTextOffBtn')) $('helperTextOffBtn').classList.toggle('active', state.settings.helperTextEnabled === false);
     if($('helperTextOnBtn')) $('helperTextOnBtn').classList.toggle('active', state.settings.helperTextEnabled !== false);
+    if($('portraitAdminModeOffBtn')) $('portraitAdminModeOffBtn').classList.toggle('active', state.settings.portraitAdminModeEnabled !== true);
+    if($('portraitAdminModeOnBtn')) $('portraitAdminModeOnBtn').classList.toggle('active', state.settings.portraitAdminModeEnabled === true);
     if($('callEffectDurationSelect')) $('callEffectDurationSelect').value = String(state.settings.callEffectDuration || 5);
     if($('callEffectIntensitySelect')) $('callEffectIntensitySelect').value = state.settings.callEffectIntensity || 'medium';
     if($('callEffectColorSelect')) $('callEffectColorSelect').value = state.settings.callEffectColor || 'yellow';
@@ -2367,6 +2391,7 @@
     $('newPlayerInput').value = '';
     showToast(`已新增：${name}`);
     render();
+    revalidateEdgeIfActive('addPlayer');
   }
 
   function renameSelected(){
@@ -2383,6 +2408,7 @@
     saveState();
     showToast('已修改姓名');
     render();
+    revalidateEdgeIfActive('renamePlayer');
   }
 
   async function deleteSelected(){
@@ -2397,6 +2423,7 @@
     saveState();
     showToast('已刪除');
     render();
+    revalidateEdgeIfActive('deletePlayer');
   }
 
   function adjustSelectedGames(delta){
@@ -2902,12 +2929,10 @@
     if(currentAutoCallMode() === 'edge'){
       if(finalCheck.missing.length){
         edgeCheckState = 'MISSING';
-        setAutoCallMode('off');
         saveState();
         setEdgeReadyStatus(missingVoiceSummary(descs, finalCheck.missing), 'missing');
       }else{
         edgeCheckState = 'READY';
-        setAutoCallMode('edge');
         saveState();
         setEdgeReadyStatus('✓ 本機音源 Ready\n✓ Edge 固定語音已啟用\n目前音源已完整，你可以離線作業。', 'ready');
       }
@@ -2921,9 +2946,8 @@
     await refreshLocalVoiceStatus();
     if(currentAutoCallMode() === 'edge'){
       edgeCheckState = 'MISSING';
-      setAutoCallMode('off');
       saveState();
-      setEdgeReadyStatus('Edge 缺少音源，已關閉 Edge 固定語音', 'missing');
+      setEdgeReadyStatus('Edge 缺少音源，請至「本機音源」產生', 'missing');
     }
     renderPanel();
   }
@@ -2934,6 +2958,7 @@
     await localVoiceClear('player');
     await refreshLocalVoiceStatus();
     showToast('已清除球員音源');
+    revalidateEdgeIfActive('clearPlayerVoiceAssets');
     return true;
   }
 
@@ -2942,12 +2967,11 @@
     if(!ok) return false;
     await localVoiceClear();
     if(currentAutoCallMode() === 'edge'){
-      setAutoCallMode('off');
       edgeCheckState = 'MISSING';
       saveState();
     }
     await refreshLocalVoiceStatus();
-    setEdgeReadyStatus('Edge 缺少音源，已關閉 Edge 固定語音', 'missing');
+    setEdgeReadyStatus('Edge 缺少音源，請至「本機音源」產生', 'missing');
     showToast('已清除本機音源');
     renderPanel();
     return true;
@@ -3027,6 +3051,44 @@
 
   function callSequenceParts(names, courtZone){
     return currentAutoCallMode() === 'edge' ? edgeCallSequenceParts(names, courtZone) : browserCallSequenceParts(names, courtZone);
+  }
+
+  function uniqueVoiceDescriptorsFromParts(parts){
+    const seen = {};
+    const descs = [];
+    (parts || []).forEach(function(part){
+      (part.descriptors || []).forEach(function(desc){
+        if(!desc || seen[desc.key]) return;
+        seen[desc.key] = true;
+        descs.push(desc);
+      });
+    });
+    return descs;
+  }
+
+  async function preflightEdgeParts(parts){
+    const descs = uniqueVoiceDescriptorsFromParts(parts);
+    const local = await preloadLocalVoiceDescriptors(descs);
+    local.urls.forEach(function(url){ try{ URL.revokeObjectURL(url); }catch(err){} });
+    if(local.missing.length){
+      edgeCheckState = 'MISSING';
+      saveState();
+      setEdgeReadyStatus(missingVoiceSummary(descs, local.missingDescriptors), 'missing');
+      renderPanel();
+      return false;
+    }
+    if(!local.ok){
+      edgeCheckState = 'ERROR';
+      saveState();
+      setEdgeReadyStatus('Edge 音源檢查失敗，請重新嘗試', 'error');
+      renderPanel();
+      return false;
+    }
+    edgeCheckState = 'READY';
+    saveState();
+    setEdgeReadyStatus('✓ 本機音源 Ready\n✓ Edge 固定語音已啟用\n目前音源已完整，你可以離線作業。', 'ready');
+    renderPanel();
+    return true;
   }
 
   function stopCurrentCallAudio(){
@@ -3209,18 +3271,19 @@
   }
 
   async function recheckEdgeCourtLabelsAfterSave(){
+    if(currentAutoCallMode() !== 'edge') return {ok:true, skipped:true};
+    const token = ++edgeRevalidateToken;
     edgeCheckState = 'CHECKING';
-    setAutoCallMode('off');
     saveState();
     setEdgeReadyStatus('Edge 音源檢查中…\n正在確認場地音源', 'checking');
     renderPanel();
     await waitForPaint();
     const required = requiredEdgeCourtLabelParts();
     const local = await preloadLocalVoiceDescriptors(required.descriptors);
+    if(token !== edgeRevalidateToken || currentAutoCallMode() !== 'edge') return {ok:false, stale:true};
     local.urls.forEach(function(url){ try{ URL.revokeObjectURL(url); }catch(err){} });
     if(local.missing.length){
       edgeCheckState = 'MISSING';
-      setAutoCallMode('off');
       setEdgeReadyStatus(missingVoiceSummary(required.descriptors, local.missingDescriptors), 'missing');
       showToast('Edge 缺少場地音源');
       saveState();
@@ -3229,7 +3292,6 @@
     }
     if(!local.ok){
       edgeCheckState = 'ERROR';
-      setAutoCallMode('off');
       saveState();
       setEdgeReadyStatus('Edge 音源檢查失敗，請重新嘗試', 'error');
       showToast('Edge 音源檢查失敗');
@@ -3237,7 +3299,6 @@
       return {ok:false, missing:[]};
     }
     edgeCheckState = 'READY';
-    setAutoCallMode('edge');
     saveState();
     setEdgeReadyStatus('✓ 場地名稱已更新\n✓ 本機場地音源 Ready', 'ready');
     showToast('場地名稱已更新');
@@ -3246,17 +3307,7 @@
   }
 
   async function checkEdgeReadyFromRest(){
-    if(onCourtPlayers().length){
-      return {
-        ok:false,
-        reason:'onCourt',
-        total:0,
-        ready:0,
-        missing:[],
-        message:'場上目前還有人員，請先執行『今日重新開始』，讓今日所有人員回到休息區後，再啟用 Edge 語音。'
-      };
-    }
-    const names = restPlayerNamesForEdgeCheck();
+    const names = todayActiveNamesForEdgeCheck();
     const required = requiredEdgePartsForRest(names);
     const local = await preloadLocalVoiceDescriptors(required.descriptors);
     local.urls.forEach(function(url){ try{ URL.revokeObjectURL(url); }catch(err){} });
@@ -3281,27 +3332,42 @@
     };
   }
 
+  function revalidateEdgeIfActive(reason){
+    if(currentAutoCallMode() !== 'edge') return;
+    enableAutoCallWithEdgeCheck().catch(function(err){
+      console.error(err);
+      edgeCheckInProgress = false;
+      edgeCheckState = 'ERROR';
+      setEdgeReadyStatus('Edge 音源檢查失敗，請重新嘗試', 'error');
+      renderPanel();
+    });
+  }
+
   async function enableAutoCallWithEdgeCheck(){
     if(edgeCheckInProgress) return {ok:false, reason:'checking'};
+    const token = ++edgeRevalidateToken;
     edgeCheckInProgress = true;
     edgeCheckState = 'CHECKING';
-    setAutoCallMode('off');
+    setAutoCallMode('edge');
     saveState();
     setEdgeReadyStatus('Edge 音源檢查中…\n正在確認今日音源', 'checking');
     renderPanel();
     await waitForPaint();
     const result = await checkEdgeReadyFromRest();
+    if(token !== edgeRevalidateToken || currentAutoCallMode() !== 'edge'){
+      edgeCheckInProgress = false;
+      renderPanel();
+      return {ok:false, reason:'stale'};
+    }
     edgeCheckInProgress = false;
     if(!result.ok){
-      setAutoCallMode('off');
-      edgeCheckState = result.reason === 'onCourt' ? 'ON_COURT_BLOCKED' : (result.reason === 'missing' ? 'MISSING' : 'ERROR');
+      edgeCheckState = result.reason === 'missing' ? 'MISSING' : 'ERROR';
       saveState();
-      setEdgeReadyStatus(result.message, result.reason === 'onCourt' ? 'blocked' : (result.reason === 'missing' ? 'missing' : 'error'));
-      showToast(result.reason === 'onCourt' ? result.message : result.message);
+      setEdgeReadyStatus(result.message, result.reason === 'missing' ? 'missing' : 'error');
+      showToast(result.message);
       renderPanel();
       return result;
     }
-    setAutoCallMode('edge');
     edgeCheckState = 'READY';
     saveState();
     setEdgeReadyStatus('✓ 本機音源 Ready\n✓ Edge 固定語音已啟用\n目前音源已完整，你可以離線作業。', 'ready');
@@ -3311,6 +3377,7 @@
   }
 
   function enableBrowserAutoCall(){
+    edgeRevalidateToken += 1;
     edgeCheckState = 'IDLE';
     edgeCheckInProgress = false;
     setAutoCallMode('browser');
@@ -3320,6 +3387,7 @@
   }
 
   function disableAutoCall(){
+    edgeRevalidateToken += 1;
     edgeCheckState = 'IDLE';
     edgeCheckInProgress = false;
     setAutoCallMode('off');
@@ -3403,6 +3471,7 @@
     try{
       if(synth.cancel) synth.cancel();
     }catch(err){}
+    if(mode === 'edge' && !(await preflightEdgeParts(parts))) return;
     async function speakNext(index){
       if(token !== speechCallToken || index >= parts.length) return;
       const part = parts[index];
@@ -3509,16 +3578,7 @@
     const mode = currentAutoCallMode() === 'edge' ? 'edge' : 'browser';
     const parts = prepareSequenceParts(names, mode);
     if(mode === 'edge'){
-      const missing = [];
-      const descriptors = [];
-      for(let i = 0; i < parts.length; i += 1){
-        descriptors.push.apply(descriptors, parts[i].descriptors || []);
-      }
-      const local = await localVoiceUrlsForDescriptors(descriptors);
-      local.urls.forEach(function(url){ try{ URL.revokeObjectURL(url); }catch(err){} });
-      missing.push.apply(missing, local.missing);
-      if(missing.length){
-        setEdgeReadyStatus(missingVoiceSummary(descriptors, local.missingDescriptors), 'missing');
+      if(!(await preflightEdgeParts(parts))){
         showToast('Edge 缺少音源');
         return;
       }
@@ -3571,6 +3631,35 @@
     state.settings.helperTextEnabled = !!enabled;
     saveState();
     render();
+  }
+
+  function showOrientationStartupHint(){
+    if(orientationStartupHintShown) return;
+    if(state.settings.portraitAdminModeEnabled !== true || state.settings.helperTextEnabled === false || !isModernTouchRuntime()) return;
+    const el = $('orientationHint');
+    if(!el) return;
+    orientationStartupHintShown = true;
+    el.textContent = isPortraitViewport()
+      ? '直屏進入管理員\n旋轉為橫屏即可進入排場'
+      : '橫屏進入排場\n旋轉為直屏可進入管理員';
+    el.classList.add('show');
+    setTimeout(function(){ el.classList.remove('show'); }, 2600);
+  }
+
+  function applyPortraitAdminModeRoute(){
+    if(state.settings.portraitAdminModeEnabled !== true || !isModernTouchRuntime()) return;
+    if(isPortraitViewport()){
+      if(!panelOpen) openPanel();
+    }else if(panelOpen){
+      closePanel();
+    }
+  }
+
+  function setPortraitAdminModeEnabled(enabled){
+    state.settings.portraitAdminModeEnabled = !!enabled;
+    saveState();
+    renderPanel();
+    applyPortraitAdminModeRoute();
   }
 
   function setCourtEntryAnimationEnabled(enabled){
@@ -3962,6 +4051,7 @@
     saveState();
     await refitAfterStructuralBoardRender(closeModal);
     showToast('今日名單已更新');
+    revalidateEdgeIfActive('todayRoster');
     return true;
   }
 
@@ -4436,36 +4526,63 @@
     return { x:Number(p.clientX || 0), y:Number(p.clientY || 0), id:p.pointerId || null };
   }
 
+  function nextLogicalTapTarget(target){
+    const chip = closestByClass(target, 'player-chip');
+    if(chip) return 'player:' + dataAttr(chip, 'player-id');
+    const head = closestByClass(target, 'zone-head');
+    if(head && dataAttr(head, 'next') === 'next1') return 'next-head:next1';
+    return '';
+  }
+
   function beginNextScrollGesture(e){
     if(!isInsideNextScroller(e.target)) return;
     const p = nextScrollPoint(e);
+    const row = $('nextRow');
     nextScrollGesture.active = true;
     nextScrollGesture.scrolling = false;
     nextScrollGesture.x = p.x;
     nextScrollGesture.y = p.y;
+    nextScrollGesture.scrollLeft = row ? Number(row.scrollLeft || 0) : 0;
+    nextScrollGesture.target = nextLogicalTapTarget(e.target);
     nextScrollGesture.pointerId = p.id;
   }
 
   function moveNextScrollGesture(e){
     if(!nextScrollGesture.active || !isInsideNextScroller(e.target)) return;
     const p = nextScrollPoint(e);
+    const row = $('nextRow');
     const dx = Math.abs(p.x - nextScrollGesture.x);
     const dy = Math.abs(p.y - nextScrollGesture.y);
-    if(dx >= 12 && dx > dy) nextScrollGesture.scrolling = true;
+    const scrollDelta = row ? Math.abs(Number(row.scrollLeft || 0) - Number(nextScrollGesture.scrollLeft || 0)) : 0;
+    if(dx >= 8 || dy >= 8 || scrollDelta >= 2) nextScrollGesture.scrolling = true;
   }
 
   function endNextScrollGesture(e){
     if(!nextScrollGesture.active) return;
-    if(nextScrollGesture.scrolling) nextScrollGesture.blockUntil = Date.now() + 120;
+    const p = nextScrollPoint(e);
+    const row = $('nextRow');
+    const dx = Math.abs(p.x - nextScrollGesture.x);
+    const dy = Math.abs(p.y - nextScrollGesture.y);
+    const scrollDelta = row ? Math.abs(Number(row.scrollLeft || 0) - Number(nextScrollGesture.scrollLeft || 0)) : 0;
+    const sameTarget = nextScrollGesture.target && nextScrollGesture.target === nextLogicalTapTarget(e.target);
+    if(nextScrollGesture.scrolling || dx >= 8 || dy >= 8 || scrollDelta >= 2 || !sameTarget) nextScrollGesture.blockUntil = Date.now() + 350;
     nextScrollGesture.active = false;
     nextScrollGesture.scrolling = false;
+    nextScrollGesture.target = null;
     nextScrollGesture.pointerId = null;
   }
 
   function cancelNextScrollGesture(){
     nextScrollGesture.active = false;
     nextScrollGesture.scrolling = false;
+    nextScrollGesture.target = null;
     nextScrollGesture.pointerId = null;
+  }
+
+  function markNextRowScrolled(){
+    if(nextScrollGesture.active) nextScrollGesture.scrolling = true;
+    nextScrollGesture.blockUntil = Date.now() + 350;
+    scheduleScrollAffordanceUpdate();
   }
 
   function shouldSuppressNextScrollTap(target){
@@ -4498,8 +4615,15 @@
       return;
     }
     const rect = row.getBoundingClientRect();
-    affordance.style.left = Math.round(rect.right - 26) + 'px';
-    affordance.style.top = Math.round(rect.top + rect.height * 0.62 - 17) + 'px';
+    const longHeight = Math.max(24, Math.round(rect.height * 0.66));
+    const shortHeight = Math.max(14, Math.round(rect.height * 0.33));
+    affordance.style.height = longHeight + 'px';
+    affordance.style.left = Math.round(rect.right - 18) + 'px';
+    affordance.style.top = Math.round(rect.top + rect.height * 0.58 - longHeight / 2) + 'px';
+    const longLine = affordance.querySelector('.long');
+    const shortLine = affordance.querySelector('.short');
+    if(longLine) longLine.style.height = longHeight + 'px';
+    if(shortLine) shortLine.style.height = shortHeight + 'px';
     affordance.classList.add('show');
   }
 
@@ -4535,6 +4659,11 @@
       e.stopPropagation();
       debugLog('zone-head nextUp', dataAttr(zoneHead, 'next'));
       await nextUp(dataAttr(zoneHead, 'next'));
+      return true;
+    }
+    if(zoneHead && (dataAttr(zoneHead, 'display-zone') || dataAttr(zoneHead, 'rest-display'))){
+      if(e.cancelable) e.preventDefault();
+      e.stopPropagation();
       return true;
     }
     if(zoneHead && dataAttr(zoneHead, 'rest-target')){
@@ -4647,12 +4776,13 @@
         nextRow.addEventListener('pointermove', moveNextScrollGesture, false);
         nextRow.addEventListener('pointerup', endNextScrollGesture, false);
         nextRow.addEventListener('pointercancel', cancelNextScrollGesture, false);
+      }else{
+        nextRow.addEventListener('touchstart', beginNextScrollGesture, false);
+        nextRow.addEventListener('touchmove', moveNextScrollGesture, false);
+        nextRow.addEventListener('touchend', endNextScrollGesture, false);
+        nextRow.addEventListener('touchcancel', cancelNextScrollGesture, false);
       }
-      nextRow.addEventListener('touchstart', beginNextScrollGesture, false);
-      nextRow.addEventListener('touchmove', moveNextScrollGesture, false);
-      nextRow.addEventListener('touchend', endNextScrollGesture, false);
-      nextRow.addEventListener('touchcancel', cancelNextScrollGesture, false);
-      nextRow.addEventListener('scroll', scheduleScrollAffordanceUpdate, false);
+      nextRow.addEventListener('scroll', markNextRowScrolled, false);
     }
     window.addEventListener('resize', scheduleScrollAffordanceUpdate, false);
     window.addEventListener('orientationchange', scheduleScrollAffordanceUpdate, false);
@@ -4716,10 +4846,12 @@
     tap('courtEntryAnimationOnBtn', () => setCourtEntryAnimationEnabled(true));
     tap('helperTextOffBtn', () => setHelperTextEnabled(false));
     tap('helperTextOnBtn', () => setHelperTextEnabled(true));
+    tap('portraitAdminModeOffBtn', () => setPortraitAdminModeEnabled(false));
+    tap('portraitAdminModeOnBtn', () => setPortraitAdminModeEnabled(true));
     tap('voiceTestBtn', () => speakCallSequence(['雅雯','Kevin'], 'court1', 'browser'));
     tap('edgeTestBtn', () => {
       if(currentAutoCallMode() !== 'edge'){ showToast('Edge 尚未 Ready'); return; }
-      callPlayers(restPlayerNamesForEdgeCheck().slice(0, 4), activeCourts()[0] || 'court1');
+      callPlayers(todayActiveNamesForEdgeCheck().slice(0, 4), activeCourts()[0] || 'court1');
     });
     tap('saveVoiceBtn', saveVoiceSettings);
     ['voiceRateSelect','voicePitchSelect','zhVoiceSelect','enVoiceSelect','callEffectDurationSelect','callEffectIntensitySelect','callEffectColorSelect','callMarqueeSelect','courtEntryAnimationModuleSelect'].forEach(function(id){
@@ -4786,10 +4918,12 @@
       resizeTimer = setTimeout(() => {
         snapFloatingButton();
         scheduleStableBoardNameFit();
+        applyPortraitAdminModeRoute();
       }, 150);
     });
     window.addEventListener('orientationchange', () => {
       scheduleStableBoardNameFit();
+      setTimeout(applyPortraitAdminModeRoute, 80);
     });
   }
 
@@ -4842,6 +4976,7 @@
       saveTodayRosterFromText:saveTodayRosterFromText,
       parseRosterEditorNames:parseRosterEditorNames,
       importRosterPlayers:importRosterPlayers,
+      renameSelected:renameSelected,
       setSelectedPlayerColor:setSelectedPlayerColor,
       requestRosterApi:requestRosterApi,
       showRosterImportDialog:showRosterImportDialog,
@@ -4893,6 +5028,8 @@
     initFloatingButton();
     populateVoiceSelects();
     render();
+    applyPortraitAdminModeRoute();
+    showOrientationStartupHint();
     exposeDebugApi();
     registerServiceWorker();
   }
