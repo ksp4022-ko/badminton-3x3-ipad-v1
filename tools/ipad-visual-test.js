@@ -509,6 +509,23 @@ async function runNextScrollTouchCase(browser) {
   const afterTap = await page.evaluate(() => document.querySelectorAll('.player-chip.selected').length);
   assert('next short tap still selects player immediately', afterTap === 1, String(afterTap));
 
+  const moveToEmptyNext = await page.evaluate(async () => {
+    const api = window.__badmintonIpadV1;
+    const selected = JSON.parse(window.sessionStorage.getItem('badminton3x3.ipad.v1.state.selectedPlayer') || '{}');
+    const row = document.getElementById('nextRow');
+    const slot = row.querySelector('.slot.empty[data-zone="next4"][data-slot="1"]');
+    const rect = slot.getBoundingClientRect();
+    const x = Math.round(rect.left + rect.width / 2);
+    const y = Math.round(rect.top + rect.height / 2);
+    slot.dispatchEvent(new PointerEvent('pointerdown', { bubbles:true, pointerId:2, pointerType:'touch', clientX:x, clientY:y }));
+    slot.dispatchEvent(new PointerEvent('pointerup', { bubbles:true, pointerId:2, pointerType:'touch', clientX:x, clientY:y }));
+    slot.click();
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    const player = api.getState().players.find((p) => p.id === selected.playerId);
+    return player ? player.zone + ':' + player.slot : '';
+  });
+  assert('next short tap can move selected player to empty next slot', moveToEmptyNext === 'next4:1', moveToEmptyNext);
+
   await context.close();
 }
 

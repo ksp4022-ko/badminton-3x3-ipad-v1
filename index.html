@@ -4529,6 +4529,10 @@
   function nextLogicalTapTarget(target){
     const chip = closestByClass(target, 'player-chip');
     if(chip) return 'player:' + dataAttr(chip, 'player-id');
+    const slot = closestByClass(target, 'slot');
+    if(slot && closestById(slot, 'nextRow')) return 'slot:' + dataAttr(slot, 'zone') + ':' + dataAttr(slot, 'slot');
+    const restDrop = closestByClass(target, 'rest-board-drop');
+    if(restDrop && closestById(restDrop, 'nextRow')) return 'rest-drop';
     const head = closestByClass(target, 'zone-head');
     if(head && dataAttr(head, 'next') === 'next1') return 'next-head:next1';
     return '';
@@ -4564,7 +4568,9 @@
     const dx = Math.abs(p.x - nextScrollGesture.x);
     const dy = Math.abs(p.y - nextScrollGesture.y);
     const scrollDelta = row ? Math.abs(Number(row.scrollLeft || 0) - Number(nextScrollGesture.scrollLeft || 0)) : 0;
-    const sameTarget = nextScrollGesture.target && nextScrollGesture.target === nextLogicalTapTarget(e.target);
+    const startTarget = nextScrollGesture.target || '';
+    const endTarget = nextLogicalTapTarget(e.target);
+    const sameTarget = startTarget ? startTarget === endTarget : true;
     if(nextScrollGesture.scrolling || dx >= 8 || dy >= 8 || scrollDelta >= 2 || !sameTarget) nextScrollGesture.blockUntil = Date.now() + 350;
     nextScrollGesture.active = false;
     nextScrollGesture.scrolling = false;
