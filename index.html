@@ -499,6 +499,9 @@
     }
     .admin-action-grid.four{grid-template-columns:repeat(4,minmax(0,1fr));}
     .today-mode-control{min-width:0;}
+    #adminTools .today-mode-control .mode-row{grid-template-columns:repeat(3,minmax(0,1fr));}
+    #adminTools #undoRegroupNextBtn{grid-column:1 / -1;}
+    #adminTools #undoRegroupNextBtn[hidden]{display:none;}
     .admin-action-grid .today-mode-control,
     #updateTodayRosterBtn{grid-column:1 / -1;}
     #randomFillBtn{grid-column:1 / 3;}
@@ -736,6 +739,8 @@
                   <div class="mode-row">
                     <button id="freeModeBtn">自由暢打</button>
                     <button id="autoModeBtn">自動排場</button>
+                    <button id="regroupNextBtn">預備區重組</button>
+                    <button id="undoRegroupNextBtn" hidden>復原重組</button>
                   </div>
                 </div>
                 <button class="primary" id="updateTodayRosterBtn">更新名單</button>
@@ -979,7 +984,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.0.11';
+  const APP_VERSION = '2.0.12';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -1011,6 +1016,7 @@
   let adminDetailView = '';
   let courtEntryAnimationLocked = false;
   let courtEntryHidden = {};
+  let nextRegroupUndo = null;
   let pendingCourtEntryAnimation = null;
   let courtStaticHighlights = {};
   let courtHighlightExpiry = {};
@@ -1443,12 +1449,72 @@
   }
 
   function saveState(){
+    if(nextRegroupUndo && nextRegroupUndo.fingerprint !== regroupBoardFingerprint()) nextRegroupUndo = null;
     state.updatedAt = nowIso();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
 
   function validZone(zone){ return zone === 'rest' || COURTS.includes(zone) || NEXTS.includes(zone); }
   function activeCourts(){ return COURTS.slice(0, Number(state.settings.courtCount)); }
+  function regroupBoardFingerprint(){
+    return JSON.stringify([state.settings.courtCount,activeNexts(),activePlayers().map(function(p){ return [p.id,p.zone,p.slot]; }).sort(function(a,b){ return String(a[0]).localeCompare(String(b[0])); })]);
+  }
+
+  function nextRegroupGroups(){
+    return activeNexts().map(function(zone){ return zonePlayers(zone).slice().sort(function(a,b){ return a.slot-b.slot; }); });
+  }
+
+  function canRegroupNext(){
+    const groups = nextRegroupGroups().filter(function(group){ return group.length; });
+    return groups.length >= 2 && groups.some(function(group){ return group.length >= 2; });
+  }
+
+  function regroupNextPlayers(){
+    if(!canRegroupNext()){ showToast('至少兩組有人，且一組有兩人以上才能重組'); return false; }
+    const groups = nextRegroupGroups();
+    const players = [].concat.apply([],groups);
+    const original = players.map(function(p){ return {id:p.id,zone:p.zone,slot:p.slot}; });
+    function combinations(list){
+      let offset = 0;
+      return groups.map(function(group){
+        const ids = list.slice(offset,offset+group.length).map(function(p){ return p.id; }).sort();
+        offset += group.length;
+        return ids.join('|');
+      }).filter(Boolean).sort().join('\n');
+    }
+    const before = combinations(players);
+    let shuffled;
+    for(let attempt=0;attempt<24;attempt+=1){
+      shuffled = players.slice();
+      for(let i=shuffled.length-1;i>0;i-=1){
+        const j=Math.floor(Math.random()*(i+1));
+        const tmp=shuffled[i];shuffled[i]=shuffled[j];shuffled[j]=tmp;
+      }
+      if(combinations(shuffled)!==before) break;
+    }
+    if(combinations(shuffled)===before){
+      shuffled=players.slice();
+      const first=groups.findIndex(function(group){return group.length>=2;});
+      const second=groups.findIndex(function(group,index){return index!==first && group.length;});
+      const a=groups.slice(0,first).reduce(function(sum,g){return sum+g.length;},0);
+      const b=groups.slice(0,second).reduce(function(sum,g){return sum+g.length;},0);
+      const tmp=shuffled[a];shuffled[a]=shuffled[b];shuffled[b]=tmp;
+    }
+    shuffled.forEach(function(p,index){ p.zone=original[index].zone;p.slot=original[index].slot; });
+    nextRegroupUndo={original:original,fingerprint:regroupBoardFingerprint()};
+    logAction('regroupNext','next',shuffled.map(function(p){return p.name;}),'預備區重組');
+    saveState();render();showToast('預備區已重組');return true;
+  }
+
+  function undoNextRegroup(){
+    if(!nextRegroupUndo || nextRegroupUndo.fingerprint!==regroupBoardFingerprint()){
+      nextRegroupUndo=null;renderPanel();return false;
+    }
+    const original=nextRegroupUndo.original;
+    nextRegroupUndo=null;
+    original.forEach(function(item){const p=state.players.find(function(player){return player.id===item.id;});if(p){p.zone=item.zone;p.slot=item.slot;}});
+    saveState();render();showToast('已復原預備區重組');return true;
+  }
   function normalizeCourtLabel(value, fallback){
     const label = String(value == null ? '' : value).replace(/^\s+|\s+$/g, '');
     return label ? label.slice(0, 12) : fallback;
@@ -1976,6 +2042,8 @@
     }
     $('freeModeBtn').classList.toggle('active', !!state.settings.freePlayMode);
     $('autoModeBtn').classList.toggle('active', !!state.settings.autoArrangeMode);
+    $('regroupNextBtn').disabled = !canRegroupNext();
+    $('undoRegroupNextBtn').hidden = !nextRegroupUndo;
     $('autoCallOffBtn').classList.toggle('active', currentAutoCallMode() === 'off');
     if($('edgeCallBtn')){
       $('edgeCallBtn').classList.toggle('active', currentAutoCallMode() === 'edge');
@@ -5020,6 +5088,8 @@
     tap('autoModeBtn', () => { state.settings.freePlayMode=false; state.settings.autoArrangeMode=true; saveState(); showToast('已切換'); renderPanel(); });
     tap('updateTodayRosterBtn', showTodayRosterEditor);
     tap('randomFillBtn', randomFillCourts);
+    tap('regroupNextBtn', regroupNextPlayers);
+    tap('undoRegroupNextBtn', undoNextRegroup);
     tap('fetchRosterBtn', showRosterImportDialog);
     tap('autoCallOffBtn', disableAutoCall);
     tap('edgeCallBtn', enableAutoCallWithEdgeCheck);

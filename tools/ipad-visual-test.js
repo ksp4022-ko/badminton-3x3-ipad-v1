@@ -706,6 +706,9 @@ async function runAdminCollapseCase(browser, legacy) {
   await page.reload();
   await page.click('#floatButton', { force: true });
   const ids = ['adminTodayBody','adminVoiceBody','adminLocalVoiceBody','adminPlayersBody','adminCourtsBody','adminDisplayBody','adminDataBody'];
+  const autoRect = await page.locator('#autoModeBtn').boundingBox();
+  const regroupRect = await page.locator('#regroupNextBtn').boundingBox();
+  assert((legacy ? 'legacy' : 'modern') + ' regroup sits beside auto mode with touch target', regroupRect && autoRect && Math.abs(autoRect.y-regroupRect.y)<2 && regroupRect.x>=autoRect.x+autoRect.width && regroupRect.height>=44);
   for (const id of ids) {
     const button = page.locator('[data-collapse-target="' + id + '"]');
     assert('collapse touch target ' + id, (await button.boundingBox()).height >= 44);

@@ -397,6 +397,24 @@ async function run() {
   vm.runInContext(mainScript, context);
   const api = context.window.__badmintonIpadV1;
   assert('debug api exposed', !!api);
+  const regroupPlayers = [player('r1','A','next1',1,3),player('r2','B','next1',3,2),player('r3','C','next2',2,1),player('r4','D','court1',1,4),player('r5','E','rest',null,5)];
+  api.setState(baseState(regroupPlayers));
+  const regroupBefore = api.getState();
+  api.tap('regroupNextBtn');
+  const regroupAfter = api.getState();
+  assert('regroup changes combination rather than positions only', regroupAfter.players.find(p=>p.id==='r3').zone==='next1');
+  assert('regroup preserves occupied slots and holes', JSON.stringify(regroupAfter.players.filter(p=>p.zone.startsWith('next')).map(p=>[p.zone,p.slot]).sort())===JSON.stringify(regroupBefore.players.filter(p=>p.zone.startsWith('next')).map(p=>[p.zone,p.slot]).sort()));
+  assert('regroup preserves games colors and non-Next players', regroupAfter.players.every(p=>{const old=regroupBefore.players.find(o=>o.id===p.id);return p.games===old.games && p.color===old.color && (old.zone.startsWith('next') || JSON.stringify(p)===JSON.stringify(old));}));
+  api.tap('undoRegroupNextBtn');
+  assert('regroup undo restores exact players', JSON.stringify(api.getState().players)===JSON.stringify(regroupBefore.players));
+  api.tap('regroupNextBtn');
+  const changed=api.getState();changed.players.find(p=>p.id==='r1').zone='rest';changed.players.find(p=>p.id==='r1').slot=null;
+  api.setState(changed);
+  api.tap('undoRegroupNextBtn');
+  assert('movement invalidates regroup undo', api.getState().players.find(p=>p.id==='r1').zone==='rest');
+  api.setState(baseState([player('s1','A','next1',1),player('s2','B','next2',1)]));
+  api.tap('regroupNextBtn');
+  assert('single-player groups cannot fake new combinations', api.getState().players.find(p=>p.id==='s1').zone==='next1');
 
   ['1', '2', '3', '4', '5', 'A', 'B', 'C'].forEach((label) => {
     api.setState(baseState([], { courtLabels: { court1: label, court2: '2', court3: '3' } }));
