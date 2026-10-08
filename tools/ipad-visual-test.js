@@ -220,6 +220,24 @@ async function runAdminCase(browser, scenario) {
   assert(label + ' all v2 sections visible', ['今日操作','自動呼叫','球員與場次','場地與排場','視覺與顯示','系統與資料'].every((title) => metrics.sectionTitles.indexOf(title) >= 0), JSON.stringify(metrics.sectionTitles));
   assert(label + ' old red close removed', !metrics.redCloseExists);
   assert(label + ' detail views are initially closed', metrics.playerDetailVisibleBefore === false);
+  const legacyHeader = await page.evaluate(() => {
+    const panel=document.getElementById('floatPanel');
+    const head=panel.querySelector('.panel-head');
+    const body=document.getElementById('panelBody');
+    const before=head.getBoundingClientRect();
+    body.scrollTop=body.scrollHeight;
+    const after=head.getBoundingClientRect();
+    const title=document.getElementById('panelTitle').getBoundingClientRect();
+    const version=document.getElementById('adminHeaderVersion').getBoundingClientRect();
+    const result={top:after.top,panelTop:panel.getBoundingClientRect().top,height:after.height,
+      stable:Math.abs(before.top-after.top)<1,bodyTop:body.getBoundingClientRect().top,
+      titleInside:title.top>=after.top && title.bottom<=after.bottom,
+      versionInside:version.top>=after.top && version.bottom<=after.bottom,
+      scrolled:body.scrollTop>0,position:getComputedStyle(head).position};
+    body.scrollTop=0;
+    return result;
+  });
+  assert(label + ' legacy header remains at top while content scrolls',legacyHeader.position==='relative' && Math.abs(legacyHeader.top-legacyHeader.panelTop)<1 && legacyHeader.stable && legacyHeader.scrolled && legacyHeader.titleInside && legacyHeader.versionInside && legacyHeader.bodyTop>=legacyHeader.top+legacyHeader.height,JSON.stringify(legacyHeader));
 
   await page.click('#showPlayerDetailBtn');
   const detailVisible = await page.evaluate(() => document.getElementById('playerDetailView').classList.contains('show') && document.getElementById('adminDetailNav').style.display === 'none');
@@ -638,6 +656,7 @@ async function main() {
     await runAdminCase(browser, { name: 'Safari portrait', standalone: false, width: 390, height: 844 });
     await runAdminCase(browser, { name: 'Standalone portrait', standalone: true, width: 390, height: 844 });
     await runAdminCase(browser, { name: 'Safari landscape', standalone: false, width: 1024, height: 638 });
+    await runAdminCase(browser, { name: 'Standalone landscape', standalone: true, width: 1024, height: 768 });
     await runPortraitAdminToLandscapeFitCase(browser, 'roster');
     await runPortraitAdminToLandscapeFitCase(browser, 'reset');
     await runEntryAnimationCase(browser);

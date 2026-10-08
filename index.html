@@ -409,6 +409,16 @@
       min-height:52px;padding:calc(8px + var(--safe-top)) calc(14px + var(--safe-right)) 8px calc(14px + var(--safe-left));
       display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:0;background:rgba(15,17,21,.96);
     }
+    html.legacyIpad .admin-v2.float-panel{
+      height:var(--legacy-vh);max-height:var(--legacy-vh);
+    }
+    html.legacyIpad .admin-v2 .panel-head{
+      position:relative;top:auto;flex:0 0 auto;
+    }
+    html.legacyIpad .admin-v2 .selected-admin-bar{flex:0 0 auto;}
+    html.legacyIpad .admin-v2 .panel-body{
+      flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    }
     .admin-v2 .panel-title{grid-column:2;font-size:20px;font-weight:900;color:#f5f7fa;text-align:center;}
     .admin-back-btn{
       grid-column:1;justify-self:start;min-height:44px;border:0;background:transparent;color:#4f8cff;
@@ -944,7 +954,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.0.5';
+  const APP_VERSION = '2.0.6';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
