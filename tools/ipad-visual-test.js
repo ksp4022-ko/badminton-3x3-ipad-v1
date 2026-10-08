@@ -458,7 +458,18 @@ async function runLegacyNoEntryAnimationCase(browser) {
     shouldRun: window.__badmintonIpadV1.courtEntryAnimationShouldRun(),
     courtPlayers: window.__badmintonIpadV1.getState().players.filter((p) => p.zone === 'court1').length
   }));
-  assert('legacy iPad does not run new entry animation', /legacyIpad/.test(metrics.htmlClass) && metrics.shouldRun === false && metrics.overlayCount === 0 && metrics.courtPlayers === 4, JSON.stringify(metrics));
+  assert('legacy uses lightweight flight without modern animation', /legacyIpad/.test(metrics.htmlClass) && metrics.shouldRun === false && metrics.overlayCount === 1 && metrics.courtPlayers === 4, JSON.stringify(metrics));
+  await page.waitForTimeout(750);
+  assert('legacy lightweight flight cleans overlay and hidden cards', await page.locator('.entry-animation-overlay').count() === 0 && await page.locator('.entry-destination-hidden').count() === 0);
+  await page.evaluate(() => { window.__badmintonIpadV1.courtDown('court1'); });
+  await page.waitForSelector('#modalMask.show');
+  const dialog = await page.evaluate(() => ({
+    label: document.querySelector('#modalTitle .court-down-label').textContent,
+    color: getComputedStyle(document.querySelector('#modalTitle .court-down-label')).color,
+    size: getComputedStyle(document.querySelector('.court-down-confirm-card .name')).fontSize
+  }));
+  assert('legacy confirmation names enlarged and court label red', dialog.label === '1' && dialog.color === 'rgb(220, 38, 38)' && dialog.size === '32px', JSON.stringify(dialog));
+  await page.click('#modalCancelBtn');
   await context.close();
 }
 

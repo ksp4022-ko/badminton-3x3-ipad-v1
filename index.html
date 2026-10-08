@@ -285,6 +285,8 @@
     .court-down-confirm{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 4px;}
     .court-down-confirm-card{min-height:76px;border-radius:16px;border:3px solid rgba(255,255,255,.95);box-shadow:0 4px 12px rgba(15,23,42,.18);display:flex;align-items:center;justify-content:center;padding:8px;color:#0f172a;overflow:hidden;}
     .court-down-confirm-card .name{font-size:clamp(24px,3.2vw,36px);font-weight:1000;line-height:1.05;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+    html.legacyIpad .court-down-confirm-card .name{font-size:32px;font-weight:900;white-space:normal;word-wrap:break-word;}
+    .court-down-label{color:#dc2626;font-weight:900;}
     .modal-actions .court-down-cancel{background:#fff;color:#0f172a;border:2px solid #cbd5e1;min-height:58px;font-size:22px;font-weight:1000;}
     .modal-actions .court-down-ok{background:#fef3c7;color:#92400e;border:2px solid #f59e0b;min-height:58px;font-size:22px;font-weight:1000;}
     .portrait-warning{display:none;position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:100;background:linear-gradient(135deg,#0f766e,#0f172a);color:#fff;align-items:center;justify-content:center;padding:26px;text-align:center;}
@@ -976,7 +978,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.0.8';
+  const APP_VERSION = '2.0.9';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -1597,6 +1599,9 @@
       if(okText) $('modalOkBtn').textContent = okText;
       if(okClass) $('modalOkBtn').className = okClass;
       if(okClass === 'court-down-ok') $('modalCancelBtn').className = 'court-down-cancel';
+      if(okClass === 'court-down-ok' && isLegacyIpadRuntime()){
+        $('modalTitle').innerHTML = '場地 <span class="court-down-label">' + escapeHtml(title.slice(3, -3)) + '</span> 下場';
+      }
       $('modalMask').classList.add('show');
       setTap($('modalOkBtn'), () => { closeModal(); resolve(true); });
       setTap($('modalCancelBtn'), () => { closeModal(); resolve(false); });
@@ -1999,6 +2004,8 @@
     if($('courtEntryAnimationOffBtn')) $('courtEntryAnimationOffBtn').classList.toggle('active', state.settings.courtEntryAnimationEnabled !== true);
     if($('courtEntryAnimationOnBtn')) $('courtEntryAnimationOnBtn').classList.toggle('active', state.settings.courtEntryAnimationEnabled === true);
     if($('courtEntryAnimationModuleSelect')){
+      const moduleOption = $('courtEntryAnimationModuleSelect').options && $('courtEntryAnimationModuleSelect').options[0];
+      if(moduleOption) moduleOption.textContent = isLegacyIpadRuntime() ? '① 輕量飛卡導引' : '① 飛卡導引';
       $('courtEntryAnimationModuleSelect').value = state.settings.courtEntryAnimationModule || 'fly-guide-v1';
       $('courtEntryAnimationModuleSelect').disabled = state.settings.courtEntryAnimationEnabled !== true;
     }
@@ -2183,7 +2190,7 @@
     if(players.length === 0){ showToast('這個球場目前沒有人'); return; }
     const ok = await confirmDialog(`${zoneLabel(courtZone)} 下場`, '', courtDownConfirmHtml(players), '下場', 'court-down-ok');
     if(!ok) return;
-    if(courtEntryAnimationLocked && courtEntryAnimationShouldRun()){
+    if(courtEntryAnimationLocked && (courtEntryAnimationShouldRun() || legacyCourtEntryAnimationShouldRun())){
       showToast('上場動畫進行中');
       return;
     }
@@ -2274,7 +2281,7 @@
   }
 
   function prepareCourtEntryAnimation(nextZone, courtZone){
-    if(nextZone !== 'next1' || !courtEntryAnimationShouldRun()) return null;
+    if(nextZone !== 'next1' || !(courtEntryAnimationShouldRun() || legacyCourtEntryAnimationShouldRun())) return null;
     if(courtEntryAnimationLocked) return {locked:true};
     const players = zonePlayers(nextZone).slice(0, 4).sort((a,b)=>(a.slot||99)-(b.slot||99));
     if(!players.length) return null;
@@ -2290,11 +2297,53 @@
       items.push({playerId:player.id, sourceRect, targetRect, sourceHtml:sourceEl.outerHTML || playerChipHtml(player), index:i});
     }
     const card = findZoneCardElement(courtZone);
-    if(card) card.classList.add('entry-pre-pulse','call-' + callEffectColorClass(),'call-' + callEffectIntensityClass());
+    if(card && !isLegacyIpadRuntime()) card.classList.add('entry-pre-pulse','call-' + callEffectColorClass(),'call-' + callEffectIntensityClass());
     setTimeout(function(){ if(card) card.classList.remove('entry-pre-pulse'); }, 260);
     courtEntryAnimationLocked = true;
     items.forEach(function(item){ courtEntryHidden[item.playerId] = true; });
-    return {courtZone, items};
+    return {courtZone, items, legacy:isLegacyIpadRuntime()};
+  }
+
+  function legacyCourtEntryAnimationShouldRun(){
+    return isLegacyIpadRuntime() && state.settings.courtEntryAnimationEnabled === true
+      && state.settings.courtEntryAnimationModule === 'fly-guide-v1' && !prefersReducedMotion();
+  }
+
+  function runLegacyCourtEntryAnimation(capture){
+    let overlay = null;
+    function finish(){
+      if(overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      cleanupCourtEntryAnimation(capture);
+      renderZones();
+      fitPlayerNameText();
+    }
+    try{
+      overlay = document.createElement('div');
+      overlay.className = 'entry-animation-overlay';
+      overlay.setAttribute('aria-hidden','true');
+      capture.items.forEach(function(item){
+        const clone = document.createElement('div');
+        clone.className = 'entry-fly-clone';
+        clone.innerHTML = item.sourceHtml;
+        clone.style.left = item.sourceRect.left + 'px';
+        clone.style.top = item.sourceRect.top + 'px';
+        clone.style.width = item.sourceRect.width + 'px';
+        clone.style.height = item.sourceRect.height + 'px';
+        clone.style.boxShadow = 'none';
+        clone.style.transformOrigin = 'top left';
+        clone.style.transition = 'transform 550ms ease-out';
+        overlay.appendChild(clone);
+        item.legacyClone = clone;
+      });
+      document.body.appendChild(overlay);
+      overlay.getBoundingClientRect();
+      requestAnimationFrame(function(){
+        capture.items.forEach(function(item){
+          item.legacyClone.style.transform = 'translate(' + (item.targetRect.left-item.sourceRect.left) + 'px,' + (item.targetRect.top-item.sourceRect.top) + 'px) scale(' + (item.targetRect.width/item.sourceRect.width) + ',' + (item.targetRect.height/item.sourceRect.height) + ')';
+        });
+      });
+      setTimeout(finish, 700);
+    }catch(err){ finish(); }
   }
 
   function cleanupCourtEntryAnimation(capture){
@@ -2309,6 +2358,7 @@
       if(capture && capture.locked) showToast('上場動畫進行中');
       return;
     }
+    if(capture.legacy){ runLegacyCourtEntryAnimation(capture); return; }
     try{
       const overlay = document.createElement('div');
       overlay.className = 'entry-animation-overlay';
