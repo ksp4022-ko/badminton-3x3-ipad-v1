@@ -944,7 +944,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.0.4';
+  const APP_VERSION = '2.0.5';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -3123,10 +3123,40 @@
     return true;
   }
 
+  let legacyPlaybackAudio = null;
+  let legacyValidationAudio = null;
+  let legacyAudioPrimed = false;
+  let lastEdgeAudioError = '';
+  const LEGACY_AUDIO_SILENCE = 'data:audio/wav;base64,UklGRnQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
+
+  function unlockLegacyVoiceAudio(){
+    if(!isLegacyIpadRuntime() || legacyAudioPrimed || typeof Audio === 'undefined') return;
+    try{
+      if(!legacyPlaybackAudio) legacyPlaybackAudio = new Audio();
+      if(!legacyValidationAudio) legacyValidationAudio = new Audio();
+      [legacyPlaybackAudio, legacyValidationAudio].forEach(function(audio){
+        audio.src = LEGACY_AUDIO_SILENCE;
+        audio.preload = 'auto';
+        const playing = audio.play();
+        if(playing && playing.then) playing.then(function(){
+          legacyAudioPrimed = true;
+          if(audio.src === LEGACY_AUDIO_SILENCE) audio.pause();
+        }).catch(function(){ legacyAudioPrimed = false; });
+      });
+    }catch(err){ legacyAudioPrimed = false; }
+  }
+
+  function edgePlaybackErrorMessage(){
+    return lastEdgeAudioError === 'NotAllowedError'
+      ? '音訊播放被裝置阻擋，請再點一次「試播 Edge」解鎖。'
+      : 'Edge 音源播放失敗' + (lastEdgeAudioError ? '（' + lastEdgeAudioError + '）' : '，請重新嘗試');
+  }
+
   function stopCurrentCallAudio(){
     if(activeCallAudio){
       try{ activeCallAudio.pause(); }catch(err){}
       try{ activeCallAudio.src = ''; }catch(err){}
+      activeCallAudio.onended = activeCallAudio.onerror = activeCallAudio.onplay = activeCallAudio.onplaying = null;
       activeCallAudio = null;
     }
   }
@@ -3154,15 +3184,17 @@
       }
     }
     try{
-      audio = new Audio(url);
+      audio = isLegacyIpadRuntime() && legacyPlaybackAudio ? legacyPlaybackAudio : new Audio(url);
+      audio.src = url;
+      lastEdgeAudioError = '';
       activeCallAudio = audio;
       audio.preload = 'auto';
       audio.onended = function(){ finish(true); };
-      audio.onerror = function(){ finish(false); };
+      audio.onerror = function(){ lastEdgeAudioError = 'MEDIA_ERR_' + (audio.error ? audio.error.code : 'UNKNOWN'); finish(false); };
       audio.onplay = started;
       audio.onplaying = started;
       const played = audio.play();
-      if(played && played.then) played.then(started).catch(function(){ finish(false); });
+      if(played && played.then) played.then(started).catch(function(err){ lastEdgeAudioError = err && err.name ? err.name : 'PLAY_ERROR'; finish(false); });
       startTimer = setTimeout(function(){ finish(false); }, 1800);
     }catch(err){
       finish(false);
@@ -3184,7 +3216,8 @@
       done(!!ok && token === speechCallToken);
     }
     try{
-      audio = new Audio(url);
+      audio = isLegacyIpadRuntime() && legacyValidationAudio ? legacyValidationAudio : new Audio(url);
+      audio.src = url;
       audio.preload = 'auto';
       audio.oncanplaythrough = function(){ finish(true); };
       audio.oncanplay = function(){ finish(true); };
@@ -3521,7 +3554,7 @@
         playAudioParts(local.urls, token, function(ok){
           local.urls.forEach(function(url){ try{ URL.revokeObjectURL(url); }catch(err){} });
           if(ok) next();
-          else setEdgeReadyStatus('Edge 音源檢查失敗，請重新嘗試', 'error');
+          else setEdgeReadyStatus(edgePlaybackErrorMessage(), 'error');
         }, 0);
         return;
       }
@@ -3592,7 +3625,7 @@
         playAudioParts(local.urls, token, function(ok){
           local.urls.forEach(function(url){ try{ URL.revokeObjectURL(url); }catch(err){} });
           if(ok) next();
-          else setEdgeReadyStatus('Edge 音源檢查失敗，請重新嘗試', 'error');
+          else setEdgeReadyStatus(edgePlaybackErrorMessage(), 'error');
         }, 0);
         return;
       }
@@ -4824,6 +4857,8 @@
   }
 
   function bindEvents(){
+    document.addEventListener('touchend', unlockLegacyVoiceAudio, true);
+    document.addEventListener('click', unlockLegacyVoiceAudio, true);
     function isBoardTarget(target){
       return !!(closestByClass(target, 'zone-head') || closestByClass(target, 'slot') || closestByClass(target, 'player-chip') || closestByClass(target, 'rest-board-drop'));
     }
@@ -5062,6 +5097,7 @@
       exportLogCsv:exportLogCsv,
       callPlayers:callPlayers,
       repeatLastCall:repeatLastCall,
+      unlockLegacyVoiceAudio:unlockLegacyVoiceAudio,
       prepareFirstNextGroupCall:prepareFirstNextGroupCall,
       detectNameLanguage:detectNameLanguage,
       courtLabel:courtLabel,

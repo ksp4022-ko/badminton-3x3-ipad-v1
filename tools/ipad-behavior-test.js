@@ -346,7 +346,52 @@ async function seedLocalVoices(api, descs, overrides) {
   }
 }
 
+async function testLegacyUnlockedPlayback(){
+  const silence = Buffer.from(html.match(/LEGACY_AUDIO_SILENCE = 'data:audio\/wav;base64,([^']+)'/)[1],'base64');
+  assert('legacy unlock silence is a complete valid WAV',silence.toString('ascii',0,4)==='RIFF' && silence.length===silence.readUInt32LE(4)+8 && silence.length===silence.readUInt32LE(40)+44);
+  const legacy = createContext();
+  const instances = [];
+  const played = [];
+  legacy.Audio = function(){
+    instances.push(this);
+    this.src = '';
+    this.readyState = 0;
+    this.unlocked = false;
+    this.pause = function(){};
+    this.load = function(){
+      setTimeout(()=>{this.readyState=2;if(this.onloadeddata)this.onloadeddata();},0);
+    };
+    this.play = function(){
+      if(this.src.indexOf('data:audio/wav')===0){this.unlocked=true;return Promise.resolve();}
+      if(!this.unlocked){const error=new Error('gesture required');error.name='NotAllowedError';return Promise.reject(error);}
+      const source=this.src;
+      return new Promise(resolve=>setTimeout(()=>{
+        played.push(source);
+        if(this.onplaying)this.onplaying();
+        if(this.onended)this.onended();
+        resolve();
+      },0));
+    };
+  };
+  vm.createContext(legacy);
+  vm.runInContext(mainScript,legacy);
+  legacy.document.documentElement.classList.add('legacyIpad');
+  const api=legacy.window.__badmintonIpadV1;
+  api.setState(baseState([player('legacy-voice','Chris','rest',null)],{autoCallMode:'edge',autoCallEnabled:true}));
+  await seedLocalVoices(api,api.requiredLocalVoiceAssetsForToday());
+  api.unlockLegacyVoiceAudio();
+  await wait(0);
+  api.callPlayers(['Chris','Chris'],'court1');
+  await wait(500);
+  assert('legacy asynchronous local playback uses gesture-unlocked elements',played.length===3 && instances.length===2);
+  assert('legacy Edge local playback never uses Browser voice',legacy.__spokenUtterances.length===0);
+  api.repeatLastCall();
+  await wait(500);
+  assert('legacy replay reuses same unlocked player',played.length===6 && instances.length===2);
+}
+
 async function run() {
+  await testLegacyUnlockedPlayback();
   const context = createContext();
   vm.createContext(context);
   vm.runInContext(mainScript, context);
