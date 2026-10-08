@@ -944,7 +944,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.0.3';
+  const APP_VERSION = '2.0.4';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -2506,21 +2506,31 @@
   }
 
   async function setCourtMode(count){
+    if(![2,3,4].includes(count)) return;
     const mode = count + 'x' + count;
     if(currentMode() === mode){
       showToast(`目前已是 ${mode} 模式`);
       return;
     }
-    if(!isBoardEmpty()){
-      await alertDialog('無法切換模式', '切換模式前，請先執行「今日重新開始」，確保 Court 與 Next 都是空的。');
+    const increasing = count > Number(state.settings.courtCount);
+    const nextKey = 'nextCount' + count + 'x' + count;
+    const targetNextCount = isLegacyIpadRuntime() ? (count === 2 ? 2 : 3)
+      : (increasing ? normalizeNextCount(count, activeNextCount()) : normalizeNextCount(count, state.settings[nextKey]));
+    const removedCourts = COURTS.slice(count).filter(zone => zonePlayers(zone).length > 0);
+    const removedNexts = NEXTS.slice(targetNextCount).filter(zone => zonePlayers(zone).length > 0);
+    if(removedCourts.length || removedNexts.length){
+      const labels = removedCourts.concat(removedNexts).map(zone => zoneLabel(zone));
+      await alertDialog('無法切換模式', labels.join('、') + ' 尚有人員，請先移出後再切換。已打場次會保留。');
       return;
     }
-    state.settings.courtCount = [2,3,4].includes(count) ? count : 3;
+    state.settings.courtCount = count;
+    if(increasing && !isLegacyIpadRuntime()) state.settings[nextKey] = targetNextCount;
     state.settings.nextCount = activeNextCountForSettings(state.settings);
     logAction('changeCourtMode','system',[],`切換為 ${mode}`);
     saveState();
     showToast(`已切換為 ${mode}`);
     render();
+    revalidateEdgeIfActive('courtMode');
   }
 
   async function setNextCount(count){
