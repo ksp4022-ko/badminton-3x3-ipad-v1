@@ -42,9 +42,9 @@ Stable Do Not Touch unless explicitly requested:
 - external API contracts
 
 Court baseline:
-- formal system remains 3 court slots
+- formal system supports 2, 3, or 4 court slots (maximum 4)
 - courtLabel may be dynamic
-- testing 4/5/A/B/C must NOT increase formal court count
+- testing dynamic labels 4/5/A/B/C must NOT increase the selected court count
 
 Voice guardrails:
 - voice never changes scheduling result

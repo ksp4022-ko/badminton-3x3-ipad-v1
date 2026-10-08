@@ -112,6 +112,17 @@
     .section-title{display:none;}
     .zone-row{height:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;min-width:0;min-height:0;}
     .zone-row.mode-2{grid-template-columns:repeat(2,minmax(0,1fr));}
+    #courtRow.mode-4{grid-template-columns:repeat(4,minmax(0,1fr));}
+    #courtRow.mode-4 .zone-head{gap:4px;padding-left:7px;padding-right:7px;}
+    #courtRow.mode-4 .zone-title{font-size:20px;}
+    #courtRow.mode-4 .court-down-pill{min-width:0;padding:4px 8px;font-size:20px;}
+    #courtRow.mode-4 .zone-count{font-size:14px;}
+    #courtRow.mode-4 .player-chip .games{min-width:24px;height:24px;font-size:16px;padding:0 4px;top:3px;left:3px;}
+    html:not(.legacyIpad):not(.modernIpad):not(.modernDesktop) #courtRow.mode-4{
+      grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-flow:column;
+      grid-template-columns:repeat(4,calc((100% - 10px) / 2));
+      overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-x;
+    }
     .zone-row.next-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:3px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;touch-action:pan-x;}
     .zone-row.next-scroll .player-chip{touch-action:pan-x;}
     .zone-row.next-scroll .zone-card{min-width:0;}
@@ -810,6 +821,7 @@
                     <div class="mode-row">
                       <button id="use3x3Btn">3x3</button>
                       <button id="use2x2Btn">2x2</button>
+                      <button id="use4x4Btn">4場</button>
                     </div>
                   </div>
                 </div>
@@ -818,6 +830,7 @@
                   <label id="court1LabelWrap">場地1<input id="court1LabelInput" type="text" maxlength="12" /></label>
                   <label id="court2LabelWrap">場地2<input id="court2LabelInput" type="text" maxlength="12" /></label>
                   <label id="court3LabelWrap">場地3<input id="court3LabelInput" type="text" maxlength="12" /></label>
+                  <label id="court4LabelWrap">場地4<input id="court4LabelInput" type="text" maxlength="12" /></label>
                 </div>
                 <button class="primary court-label-save" id="saveCourtLabelsBtn">儲存場名</button>
                 <div class="segmented-group next-count-group" id="nextCountControls">
@@ -931,7 +944,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.0.2';
+  const APP_VERSION = '2.0.3';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -939,7 +952,7 @@
   const ROSTER_SOURCE_PAGE = 'https://ksp4022-ko.github.io/shuttle-burst-dynamic/rian';
   const SHUTTLE_ROSTER_API_BASE = 'https://badminton-signup-v6-alpha.badminton-signup-v6-worker.workers.dev/api/v7-shuttle';
   const DEBUG_MODE = location.search.indexOf('debug=1') >= 0;
-  const COURTS = ['court1','court2','court3'];
+  const COURTS = ['court1','court2','court3','court4'];
   const NEXTS = ['next1','next2','next3','next4','next5'];
   const SLOTS = [1,2,3,4];
   const COLORS = ['#bfdbfe','#bbf7d0','#fde68a','#fecaca','#ddd6fe','#fed7aa','#bae6fd','#fbcfe8','#ccfbf1','#e9d5ff','#d9f99d','#fef3c7'];
@@ -1299,7 +1312,8 @@
         nextCount:3,
         nextCount2x2:2,
         nextCount3x3:3,
-        courtLabels:{court1:'1', court2:'2', court3:'3'},
+        nextCount4x4:3,
+        courtLabels:{court1:'1', court2:'2', court3:'3', court4:'4'},
         playersPerCourt:4,
         adminPassword:'1111',
         freePlayMode:false,
@@ -1348,7 +1362,8 @@
     const base = defaultState();
     const merged = Object.assign(base, data || {});
     merged.settings = Object.assign(base.settings, data && data.settings ? data.settings : {});
-    merged.settings.courtCount = Number(merged.settings.courtCount) === 2 ? 2 : 3;
+    merged.settings.courtCount = [2,3,4].includes(Number(merged.settings.courtCount)) ? Number(merged.settings.courtCount) : 3;
+    merged.settings.nextCount4x4 = normalizeNextCount(4, merged.settings.nextCount4x4 || 3);
     merged.settings.nextCount2x2 = normalizeNextCount(2, merged.settings.nextCount2x2 || (merged.settings.courtCount === 2 ? merged.settings.nextCount : 2));
     merged.settings.nextCount3x3 = normalizeNextCount(3, merged.settings.nextCount3x3 || (merged.settings.courtCount === 3 ? merged.settings.nextCount : 3));
     merged.settings.nextCount = activeNextCountForSettings(merged.settings);
@@ -1397,7 +1412,7 @@
   }
 
   function validZone(zone){ return zone === 'rest' || COURTS.includes(zone) || NEXTS.includes(zone); }
-  function activeCourts(){ return COURTS.slice(0, Number(state.settings.courtCount) === 2 ? 2 : 3); }
+  function activeCourts(){ return COURTS.slice(0, Number(state.settings.courtCount)); }
   function normalizeCourtLabel(value, fallback){
     const label = String(value == null ? '' : value).replace(/^\s+|\s+$/g, '');
     return label ? label.slice(0, 12) : fallback;
@@ -1407,7 +1422,8 @@
     return {
       court1:normalizeCourtLabel(labels.court1, '1'),
       court2:normalizeCourtLabel(labels.court2, '2'),
-      court3:normalizeCourtLabel(labels.court3, '3')
+      court3:normalizeCourtLabel(labels.court3, '3'),
+      court4:normalizeCourtLabel(labels.court4, '4')
     };
   }
   function courtLabel(courtZone){
@@ -1422,8 +1438,8 @@
     return Math.max(min, Math.min(max, Math.round(count)));
   }
   function activeNextCountForSettings(settings){
-    const modeCount = Number(settings.courtCount) === 2 ? 2 : 3;
-    return modeCount === 2 ? normalizeNextCount(2, settings.nextCount2x2) : normalizeNextCount(3, settings.nextCount3x3);
+    const modeCount = Number(settings.courtCount);
+    return normalizeNextCount(modeCount, settings['nextCount' + modeCount + 'x' + modeCount]);
   }
   function isLegacyIpadRuntime(){
     return document.documentElement.classList.contains('legacyIpad');
@@ -1442,7 +1458,7 @@
   function nextCountOptionsForMode(){
     return Number(state.settings.courtCount) === 2 ? [2,3,4] : [3,4,5];
   }
-  function currentMode(){ return Number(state.settings.courtCount) === 2 ? '2x2' : '3x3'; }
+  function currentMode(){ const count = Number(state.settings.courtCount); return count + 'x' + count; }
   function boardPlayers(){ return activePlayers().filter(p => COURTS.includes(p.zone) || NEXTS.includes(p.zone)); }
   function isBoardEmpty(){ return boardPlayers().length === 0; }
   function getPlayer(id){ return state.players.find(p => p.id === id && p.isActive !== false) || null; }
@@ -1739,6 +1755,7 @@
 
   function renderZones(){
     $('courtRow').classList.toggle('mode-2', activeCourts().length === 2);
+    $('courtRow').classList.toggle('mode-4', activeCourts().length === 4);
     const nexts = activeNexts();
     const nextCount = nexts.length;
     const showBoardRest = !isLegacyIpadRuntime();
@@ -1766,7 +1783,8 @@
     const isCallTarget = courtHighlightZone === zone;
     const isStaticPending = !!courtStaticHighlights[zone] && !isCallTarget;
     const useMarquee = isCallTarget && state.settings.callEffectMarquee !== false;
-    const title = useMarquee ? zoneLabel(zone) + ' >>> 請上場…' : zoneLabel(zone);
+    const displayLabel = isCourt ? courtLabel(zone) : zoneLabel(zone);
+    const title = useMarquee ? escapeHtml(displayLabel) + ' >>> 請上場…' : escapeHtml(displayLabel);
     const slots = SLOTS.map(slot => {
       const p = occupant(zone, slot);
       const content = p ? playerChipHtml(p) : '';
@@ -1951,6 +1969,7 @@
     renderCourtLabelControls();
     if($('courtModeStatus')) $('courtModeStatus').textContent = '場地模式';
     if($('use3x3Btn')) $('use3x3Btn').classList.toggle('active', currentMode() === '3x3');
+    if($('use4x4Btn')) $('use4x4Btn').classList.toggle('active', currentMode() === '4x4');
     if($('use2x2Btn')) $('use2x2Btn').classList.toggle('active', currentMode() === '2x2');
     renderNextCountControls();
     $('voiceRateSelect').value = state.settings.voiceRate || 'normal';
@@ -2001,6 +2020,8 @@
     if($('court1LabelInput')) $('court1LabelInput').value = labels.court1;
     if($('court2LabelInput')) $('court2LabelInput').value = labels.court2;
     if($('court3LabelInput')) $('court3LabelInput').value = labels.court3;
+    if($('court4LabelInput')) $('court4LabelInput').value = labels.court4;
+    if($('court4LabelWrap')) $('court4LabelWrap').classList.toggle('court-label-hidden', currentMode() !== '4x4');
     if($('court3LabelWrap')) $('court3LabelWrap').classList.toggle('court-label-hidden', currentMode() === '2x2');
   }
 
@@ -2008,7 +2029,8 @@
     state.settings.courtLabels = normalizeCourtLabels({
       court1:$('court1LabelInput') ? $('court1LabelInput').value : '1',
       court2:$('court2LabelInput') ? $('court2LabelInput').value : '2',
-      court3:$('court3LabelInput') ? $('court3LabelInput').value : '3'
+      court3:$('court3LabelInput') ? $('court3LabelInput').value : '3',
+      court4:$('court4LabelInput') ? $('court4LabelInput').value : '4'
     });
     saveState();
     render();
@@ -2484,7 +2506,7 @@
   }
 
   async function setCourtMode(count){
-    const mode = count === 2 ? '2x2' : '3x3';
+    const mode = count + 'x' + count;
     if(currentMode() === mode){
       showToast(`目前已是 ${mode} 模式`);
       return;
@@ -2493,7 +2515,7 @@
       await alertDialog('無法切換模式', '切換模式前，請先執行「今日重新開始」，確保 Court 與 Next 都是空的。');
       return;
     }
-    state.settings.courtCount = count === 2 ? 2 : 3;
+    state.settings.courtCount = [2,3,4].includes(count) ? count : 3;
     state.settings.nextCount = activeNextCountForSettings(state.settings);
     logAction('changeCourtMode','system',[],`切換為 ${mode}`);
     saveState();
@@ -2506,7 +2528,7 @@
       await alertDialog('暫不支援', '舊 iPad 版預備區數量稍後另外調整，目前維持固定數量。');
       return;
     }
-    const modeCount = Number(state.settings.courtCount) === 2 ? 2 : 3;
+    const modeCount = Number(state.settings.courtCount);
     const nextCount = normalizeNextCount(modeCount, count);
     if(activeNextCountForSettings(state.settings) === nextCount){
       showToast(`預備區目前已是 ${nextCount} 個`);
@@ -2517,7 +2539,7 @@
       return;
     }
     if(modeCount === 2) state.settings.nextCount2x2 = nextCount;
-    else state.settings.nextCount3x3 = nextCount;
+    else state.settings['nextCount' + modeCount + 'x' + modeCount] = nextCount;
     state.settings.nextCount = nextCount;
     logAction('changeNextCount','system',[],`${currentMode()} 預備區數量改為 ${nextCount}`);
     saveState();
@@ -4592,7 +4614,42 @@
   }
 
   function shouldSuppressNextScrollTap(target){
-    return isInsideNextScroller(target) && (nextScrollGesture.scrolling || Date.now() < nextScrollGesture.blockUntil);
+    return (isInsideNextScroller(target) && (nextScrollGesture.scrolling || Date.now() < nextScrollGesture.blockUntil))
+      || (!!closestById(target, 'courtRow') && (courtScrollGesture.scrolling || Date.now() < courtScrollGesture.blockUntil));
+  }
+
+  const courtScrollGesture = {active:false, scrolling:false, x:0, y:0, left:0, blockUntil:0};
+  function bindCourtScrollGesture(){
+    const row = $('courtRow');
+    if(!row) return;
+    function start(e){
+      if(row.scrollWidth <= row.clientWidth + 3) return;
+      const p = nextScrollPoint(e);
+      courtScrollGesture.active = true;
+      courtScrollGesture.scrolling = false;
+      courtScrollGesture.x = p.x; courtScrollGesture.y = p.y;
+      courtScrollGesture.left = row.scrollLeft;
+    }
+    function move(e){
+      if(!courtScrollGesture.active) return;
+      const p = nextScrollPoint(e);
+      if(Math.abs(p.x-courtScrollGesture.x)>=8 || Math.abs(p.y-courtScrollGesture.y)>=8 || Math.abs(row.scrollLeft-courtScrollGesture.left)>=2) courtScrollGesture.scrolling=true;
+    }
+    function end(e){
+      move(e);
+      if(courtScrollGesture.scrolling) courtScrollGesture.blockUntil=Date.now()+350;
+      courtScrollGesture.active=false; courtScrollGesture.scrolling=false;
+    }
+    function cancel(){
+      if(courtScrollGesture.active) courtScrollGesture.blockUntil=Date.now()+350;
+      courtScrollGesture.active=false; courtScrollGesture.scrolling=false;
+    }
+    const events = window.PointerEvent ? ['pointerdown','pointermove','pointerup','pointercancel'] : ['touchstart','touchmove','touchend','touchcancel'];
+    [start,move,end,cancel].forEach(function(handler,i){row.addEventListener(events[i],handler,false);});
+    row.addEventListener('scroll',function(){
+      if(row.scrollWidth > row.clientWidth + 3){courtScrollGesture.scrolling=courtScrollGesture.active;courtScrollGesture.blockUntil=Date.now()+350;}
+      scheduleScrollAffordanceUpdate();
+    },false);
   }
 
   function ensureScrollAffordance(id){
@@ -4635,6 +4692,7 @@
 
   function updateScrollAffordances(){
     updateScrollAffordanceFor('nextRow', 'nextScrollAffordance');
+    updateScrollAffordanceFor('courtRow', 'courtScrollAffordance');
   }
 
   function scheduleScrollAffordanceUpdate(){
@@ -4791,6 +4849,7 @@
       nextRow.addEventListener('scroll', markNextRowScrolled, false);
     }
     window.addEventListener('resize', scheduleScrollAffordanceUpdate, false);
+    bindCourtScrollGesture();
     window.addEventListener('orientationchange', scheduleScrollAffordanceUpdate, false);
 
     function moveSelectedToRest(){
@@ -4877,6 +4936,7 @@
     tap('resetTodayBtn', resetToday);
     tap('clearAllBtn', clearAll);
     tap('use3x3Btn', () => setCourtMode(3));
+    tap('use4x4Btn', () => setCourtMode(4));
     tap('use2x2Btn', () => setCourtMode(2));
     tap('nextCountMinBtn', () => setNextCount(Number(dataAttr($('nextCountMinBtn'), 'next-count-value'))));
     tap('nextCountMidBtn', () => setNextCount(Number(dataAttr($('nextCountMidBtn'), 'next-count-value'))));

@@ -46,7 +46,7 @@ assert('admin unlock persisted', html.includes('saveAdminUnlock()') && html.incl
 assert('debug mode exists', html.includes("location.search.indexOf('debug=1')") && html.includes('function debugLog'));
 assert('debug mode tracks board actions', html.includes("debugLog('zone-head courtDown'") && html.includes("debugLog('slot move success'") && html.includes("debugLog(inRest ? 'chip rest select'"));
 assert('v1 storage key isolated', html.includes("badminton3x3.ipad.v1.state"));
-assert('release version synchronized', appVersion === '2.0.2' && pkg.version === appVersion && lock.version === appVersion && lock.packages[''].version === appVersion && sw.includes('v2.0.2'));
+assert('release version synchronized', appVersion === '2.0.3' && pkg.version === appVersion && lock.version === appVersion && lock.packages[''].version === appVersion && sw.includes('v' + appVersion));
 assert('copy paste player list exists', html.includes('function playerNamesText') && html.includes('function showImportPasteDialog') && html.includes('function importPlayersFromText'));
 assert('player list exports plain names', html.includes("showExportText('複製名單', playerNamesText())") && html.includes(".join('\\n')"));
 assert('player list import accepts plain lines', html.includes('function parsePlayerListText') && html.includes("placeholder=\"A&#10;B&#10;C\"") && html.includes("replace(/^\\s*\\[(.*)\\]\\s*$/, '$1')"));
@@ -74,7 +74,7 @@ assert('court entry animation hooks only court-down auto next flow', html.includ
 assert('court down pill exists', html.includes('court-down-pill') && html.includes('<span class="arrow">'));
 assert('court down pill expanded', html.includes('min-width:136px'));
 assert('court header uses flex layout', html.includes('.zone-head{width:100%;display:flex;'));
-assert('court call prompt includes court label', html.includes('call-marquee') && html.includes("zoneLabel(zone) + ' >>> 請上場…'"));
+assert('court call prompt includes court label', html.includes('call-marquee') && html.includes("escapeHtml(displayLabel) + ' >>> 請上場…'"));
 assert('shared player color editor exists', html.includes('id="newPlayerColorGrid"') && html.includes('id="sharedColorLabel"') && !html.includes('id="selectedPlayerColorGrid"') && html.includes('function setSelectedPlayerColor'));
 assert('selected banner highlights player name', html.includes('selected-name') && html.includes('id="selectedText"') && html.includes('.selected-banner .selected-name'));
 assert('admin enabled line removed', !html.includes('管理員模式已開啟'));

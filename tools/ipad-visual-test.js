@@ -142,7 +142,7 @@ async function runCase(browser, mode, scenario) {
   assert(label + ' rows do not overlap', metrics.courtRow.bottom <= metrics.nextRow.top + 4, JSON.stringify({ courtRow: metrics.courtRow, nextRow: metrics.nextRow }));
   assert(label + ' expected court count', metrics.courtCount === (mode === '2x2' ? 2 : 3), String(metrics.courtCount));
   assert(label + ' expected next count', metrics.nextCount === (mode === '2x2' ? 2 : 3), String(metrics.nextCount));
-  assert(label + ' labels are localized', metrics.titleTexts.indexOf('場地 1') >= 0 && metrics.titleTexts.indexOf('預備區 1') >= 0, JSON.stringify(metrics.titleTexts));
+  assert(label + ' labels are localized', metrics.titleTexts.indexOf('1') >= 0 && metrics.titleTexts.indexOf('預備區 1') >= 0, JSON.stringify(metrics.titleTexts));
   assert(label + ' title buttons are enlarged and tappable', metrics.titleMinHeight >= 54, String(metrics.titleMinHeight));
   assert(label + ' title text is readable', metrics.titleMinFontSize >= 27, String(metrics.titleMinFontSize));
   assert(label + ' court down pills are visible', metrics.courtDownPillCount === (mode === '2x2' ? 2 : 3) && metrics.courtDownPillMinHeight >= 34 && metrics.courtDownPillMinWidth >= 128, JSON.stringify({ count: metrics.courtDownPillCount, height: metrics.courtDownPillMinHeight, width: metrics.courtDownPillMinWidth }));
@@ -582,6 +582,48 @@ async function runPortraitAdminModeCase(browser) {
   await quietContext.close();
 }
 
+async function runFourCourtCase(browser, userAgent, width, height, scrolling) {
+  const context = await browser.newContext({viewport:{width,height},isMobile:true,hasTouch:true,userAgent});
+  const page = await context.newPage();
+  const state = stateForMode('3x3');
+  state.settings.courtCount = 4;
+  state.settings.courtLabels = {court1:'A',court2:'B',court3:'C',court4:'D'};
+  for(let slot=1;slot<=4;slot+=1) state.players.push(player('four'+slot, ['柯','Chris 哥','安鼎 哥','Ariel'][slot-1], 'court4', slot));
+  await page.addInitScript(state => localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(state)), state);
+  await page.goto(appUrl);
+  await page.waitForTimeout(350);
+  const result = await page.evaluate(() => {
+    const row = document.getElementById('courtRow');
+    const cards = Array.from(row.querySelectorAll('.zone-card'));
+    return {count:cards.length, overflow:row.scrollWidth > row.clientWidth + 3,
+      titles:cards.map(c=>c.querySelector('.zone-title').textContent),
+      widths:cards.map(c=>c.getBoundingClientRect().width),rowWidth:row.clientWidth,
+      namesFit:Array.from(row.querySelectorAll('.name')).every(n=>n.scrollWidth <= n.parentNode.clientWidth-10 && n.scrollHeight <= n.parentNode.clientHeight-6)};
+  });
+  assert('four courts render with custom labels '+width, result.count===4 && result.titles.join('')==='ABCD', JSON.stringify(result));
+  assert('four court device scrolling '+userAgent, result.overflow===scrolling, JSON.stringify(result));
+  assert('four court names fit '+userAgent, result.namesFit, JSON.stringify(result));
+  if(scrolling) assert('phone shows two complete court widths', Math.abs(result.widths[0]*2+10-result.rowWidth)<3, JSON.stringify(result));
+  if(scrolling){
+    const suppressed = await page.evaluate(() => {
+      const chip=document.querySelector('#courtRow .player-chip');
+      const row=document.getElementById('courtRow');
+      chip.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:100,clientY:100,pointerId:7}));
+      chip.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:60,clientY:100,pointerId:7}));
+      chip.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,clientX:60,clientY:100,pointerId:7}));
+      chip.dispatchEvent(new MouseEvent('click',{bubbles:true}));
+      row.scrollLeft=row.scrollWidth;
+      return !document.querySelector('#courtRow .player-chip.selected');
+    });
+    assert('phone court swipe does not select player',suppressed);
+    await page.waitForTimeout(400);
+    await page.locator('#courtRow .player-chip').last().click();
+    assert('phone fourth court player remains selectable',await page.locator('#courtRow .player-chip.selected').count()===1);
+  }
+  await page.screenshot({path:path.join(require('os').tmpdir(),'four-court-'+(scrolling?'phone':userAgent===iPadAirIos12Ua?'legacy':'ipad')+'.png')});
+  await context.close();
+}
+
 async function main() {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const scenarios = [
@@ -602,6 +644,9 @@ async function main() {
     await runLegacyNoEntryAnimationCase(browser);
     await runNextScrollTouchCase(browser);
     await runPortraitAdminModeCase(browser);
+    await runFourCourtCase(browser, modernIpadUa, 1024, 638, false);
+    await runFourCourtCase(browser, iPadAirIos12Ua, 1024, 638, false);
+    await runFourCourtCase(browser, 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15', 844, 390, true);
   } finally {
     await browser.close();
   }

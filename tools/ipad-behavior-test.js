@@ -359,7 +359,7 @@ async function run() {
   });
   api.setState(baseState([], { courtLabels: { court1: 'A', court2: 'B', court3: 'C' } }));
   assert('court labels do not add formal courts', (context.document.getElementById('courtRow').innerHTML.match(/data-zone-card="court/g) || []).length === 3);
-  assert('court frame reads court label', context.document.getElementById('courtRow').innerHTML.indexOf('場地 A') >= 0);
+  assert('court frame reads custom label without prefix', context.document.getElementById('courtRow').innerHTML.indexOf('class="zone-title">A</div>') >= 0);
   assert('court voice reads court label', api.courtVoiceText('court2') === '請到B號場');
   context.document.getElementById('court1LabelInput').value = '5';
   context.document.getElementById('court2LabelInput').value = 'A';
@@ -371,6 +371,18 @@ async function run() {
   api.setState(baseState([], { courtCount: 3, courtLabels: { court1: '1', court2: '2', court3: 'C' } }));
   assert('3x3 court label layout restores third label in left second row', !context.document.getElementById('court3LabelWrap').classList.contains('court-label-hidden') && context.document.getElementById('court3LabelInput').value === 'C');
 
+  api.setState(baseState([]));
+  await api.setCourtMode(4);
+  assert('four court mode has exactly four courts', (context.document.getElementById('courtRow').innerHTML.match(/data-zone-card="court/g) || []).length === 4);
+  assert('fourth court label and voice are available', api.courtLabel('court4') === '4' && api.courtVoiceText('court4') === '請到4號場');
+  assert('fourth court included in required local assets', api.requiredLocalVoiceAssetsForToday().some(asset => asset.spokenText === '請到4號場'));
+  await api.setNextCount(5);
+  assert('four court next count stored independently', api.getState().settings.nextCount4x4 === 5);
+  await api.setCourtMode(3);
+  assert('three court count remains separate', api.getState().settings.nextCount3x3 === 3);
+  api.setState(baseState([player('four-next','第四場球員','next1',1)], {courtCount:4,autoCallEnabled:false}));
+  await api.autoNextUpToCourt('next1','court4',true);
+  assert('existing auto next flow fills fourth court', api.getState().players[0].zone === 'court4' && api.getState().players[0].slot === 1);
   api.setState(baseState([]));
   await api.setNextCount(5);
   assert('modern 3x3 next count can increase to five', api.getState().settings.nextCount3x3 === 5 && (context.document.getElementById('nextRow').innerHTML.match(/data-zone-card="next/g) || []).length === 5);
