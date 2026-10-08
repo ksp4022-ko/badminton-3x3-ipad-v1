@@ -46,7 +46,7 @@ assert('admin unlock persisted', html.includes('saveAdminUnlock()') && html.incl
 assert('debug mode exists', html.includes("location.search.indexOf('debug=1')") && html.includes('function debugLog'));
 assert('debug mode tracks board actions', html.includes("debugLog('zone-head courtDown'") && html.includes("debugLog('slot move success'") && html.includes("debugLog(inRest ? 'chip rest select'"));
 assert('v1 storage key isolated', html.includes("badminton3x3.ipad.v1.state"));
-assert('release version synchronized', appVersion === '2.0.7' && pkg.version === appVersion && lock.version === appVersion && lock.packages[''].version === appVersion && sw.includes('v' + appVersion));
+assert('release version synchronized', appVersion === '2.0.8' && pkg.version === appVersion && lock.version === appVersion && lock.packages[''].version === appVersion && sw.includes('v' + appVersion));
 assert('copy paste player list exists', html.includes('function playerNamesText') && html.includes('function showImportPasteDialog') && html.includes('function importPlayersFromText'));
 assert('player list exports plain names', html.includes("showExportText('複製名單', playerNamesText())") && html.includes(".join('\\n')"));
 assert('player list import accepts plain lines', html.includes('function parsePlayerListText') && html.includes("placeholder=\"A&#10;B&#10;C\"") && html.includes("replace(/^\\s*\\[(.*)\\]\\s*$/, '$1')"));
@@ -104,7 +104,7 @@ assert('Edge Ready checks local assets and preload', html.includes('function pre
 assert('Edge fixed voice checks complete active roster without on-court block', html.includes('function todayActiveNamesForEdgeCheck') && html.includes('const names = todayActiveNamesForEdgeCheck();') && !html.includes("reason:'onCourt'"));
 assert('Edge missing state preserves Edge mode', html.includes('function preflightEdgeParts') && html.includes("edgeCheckState = 'MISSING';") && !html.includes('Edge 缺少音源，已關閉 Edge 固定語音'));
 const edgeSettingsBlock = html.slice(html.indexOf('<div class="edge-settings">'), html.indexOf('<div class="browser-settings">'));
-const localVoiceBlock = html.slice(html.indexOf('<h3>本機音源</h3>'), html.indexOf('<h3>球員與場次</h3>'));
+const localVoiceBlock = html.slice(html.indexOf('id="adminLocalVoiceBody"'), html.indexOf('data-collapse-target="adminPlayersBody"'));
 assert('missing voice generation button lives in local voice card', !edgeSettingsBlock.includes('generateMissingVoicesBtn') && localVoiceBlock.includes('generateMissingVoicesBtn') && localVoiceBlock.includes('toggleLocalVoiceDetailsBtn'));
 assert('court call no longer uses single combined zh sentence', !html.includes("names.join('、')} 請上") && !html.includes("'請上場：' + names.join('、')"));
 assert('repeat call reuses callPlayers path', html.includes('function repeatLastCall') && html.includes('callPlayers(names, state.settings.lastCallCourt || null);'));
@@ -120,8 +120,8 @@ assert('panel scroll tap guard exists', html.includes('function initPanelScrollG
 assert('floating tap uses drag threshold', html.includes('const FLOAT_DRAG_THRESHOLD = 8') && html.includes('const LEGACY_FLOAT_DRAG_THRESHOLD = 20') && html.includes('function floatingDragThreshold') && html.includes('startX:point.x') && html.includes('floatingTapHandledAt'));
 assert('floating toggle uses lock', html.includes('floatingToggleLockedUntil') && html.includes('function toggleFloatingPanel') && html.includes('now + 300'));
 assert('floating pointer and touch are not both bound on modern browsers', html.includes('if(window.PointerEvent)') && html.includes('}else{') && html.includes("btn.addEventListener('touchstart'"));
-const todayStart = html.indexOf('<h3>今日操作</h3>');
-const autoCallStart = html.indexOf('<h3>自動呼叫</h3>');
+const todayStart = html.indexOf('id="adminTodayBody"');
+const autoCallStart = html.indexOf('data-collapse-target="adminVoiceBody"');
 const todayBlock = html.slice(todayStart, autoCallStart);
 assert('today actions use updated admin v2 definition', todayBlock.includes('排場模式') && todayBlock.includes('id="updateTodayRosterBtn"') && todayBlock.includes('id="randomFillBtn"') && todayBlock.includes('id="resetTodayBtn"'));
 assert('today actions omit repeat call and remote roster', !todayBlock.includes('repeatCallAdminBtn') && !todayBlock.includes('更新日安名單') && !todayBlock.includes('fetchRosterBtn'));

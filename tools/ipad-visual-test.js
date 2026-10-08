@@ -676,6 +676,34 @@ async function runFourCourtCase(browser, userAgent, width, height, scrolling) {
   await context.close();
 }
 
+async function runAdminCollapseCase(browser, legacy) {
+  const context = await browser.newContext({ viewport: { width: 1024, height: 768 }, hasTouch: true, isMobile: true, userAgent: legacy ? iPadAirIos12Ua : 'Mozilla/5.0 (iPad; CPU OS 17_6 like Mac OS X) AppleWebKit/605.1.15 Version/17.6 Mobile/15E148 Safari/604.1' });
+  const page = await context.newPage();
+  await page.goto(appUrl);
+  await page.evaluate(state => {
+    localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(state));
+    const d = new Date();
+    localStorage.setItem('badminton3x3.ipad.v1.state.adminUnlockedDate', d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'));
+  }, stateForMode('3x3'));
+  await page.reload();
+  await page.click('#floatButton', { force: true });
+  const ids = ['adminTodayBody','adminVoiceBody','adminLocalVoiceBody','adminPlayersBody','adminCourtsBody','adminDisplayBody','adminDataBody'];
+  for (const id of ids) {
+    const button = page.locator('[data-collapse-target="' + id + '"]');
+    assert('collapse touch target ' + id, (await button.boundingBox()).height >= 44);
+    await button.click();
+    assert('category collapses ' + id, await page.locator('#' + id).isHidden());
+    assert('collapse aria state ' + id, await button.getAttribute('aria-expanded') === 'false');
+    await button.click();
+    assert('category expands ' + id, await page.locator('#' + id).isVisible());
+  }
+  await page.locator('[data-collapse-target="adminVoiceBody"]').click();
+  await page.reload();
+  await page.click('#floatButton', { force: true });
+  assert((legacy ? 'legacy' : 'modern') + ' category collapse persists after reload', await page.locator('#adminVoiceBody').isHidden() && await page.locator('#adminTodayBody').isVisible());
+  await context.close();
+}
+
 async function main() {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const scenarios = [
@@ -687,6 +715,8 @@ async function main() {
       await runCase(browser, '3x3', scenario);
       await runCase(browser, '2x2', scenario);
     }
+    await runAdminCollapseCase(browser, true);
+    await runAdminCollapseCase(browser, false);
     await runAdminCase(browser, { name: 'Safari portrait', standalone: false, width: 390, height: 844 });
     await runAdminCase(browser, { name: 'Standalone portrait', standalone: true, width: 390, height: 844 });
     await runAdminCase(browser, { name: 'Safari landscape', standalone: false, width: 1024, height: 638 });

@@ -457,6 +457,14 @@
     #adminTools .admin-v2-card h3{
       margin:0 0 12px;font-size:19px;line-height:1.2;color:#f5f7fa;font-weight:1000;
     }
+    #adminTools .admin-collapse-head{
+      width:100%;min-height:44px;display:flex;align-items:center;justify-content:space-between;
+      padding:0;border:0;background:transparent;color:#f5f7fa;font-size:19px;font-weight:900;text-align:left;
+    }
+    #adminTools .admin-collapse-head::after{content:'\2039';font-size:26px;color:#b7c0cd;transform:rotate(90deg);}
+    #adminTools .admin-v2-card.collapsed .admin-collapse-head::after{transform:rotate(-90deg);}
+    #adminTools .admin-v2-card.collapsed h3{margin-bottom:0;}
+    #adminTools .admin-v2-card.collapsed > .admin-collapse-body{display:none;}
     #adminTools label,
     #adminTools .compact-row-label{
       display:block;margin:0 0 6px;font-size:14px;line-height:1.2;color:#b7c0cd;font-weight:850;
@@ -717,7 +725,8 @@
           </div>
           <div id="adminTools" style="display:none">
             <section class="admin-v2-card">
-              <h3>今日操作</h3>
+              <h3><button class="admin-collapse-head" data-collapse-target="adminTodayBody" type="button">今日操作</button></h3>
+              <div class="admin-collapse-body" id="adminTodayBody">
               <div class="admin-action-grid four">
                 <div class="today-mode-control">
                   <div class="compact-row-label">排場模式</div>
@@ -730,10 +739,12 @@
                 <button id="randomFillBtn">隨機填滿</button>
                 <button class="warn" id="resetTodayBtn">今日重新開始</button>
               </div>
+              </div>
             </section>
 
             <section class="admin-v2-card">
-              <h3>自動呼叫</h3>
+              <h3><button class="admin-collapse-head" data-collapse-target="adminVoiceBody" type="button">自動呼叫</button></h3>
+              <div class="admin-collapse-body" id="adminVoiceBody">
               <div id="autoCallBody" class="auto-call-content">
                 <div class="three-state-row segmented-wide">
                   <button id="autoCallOffBtn">關閉</button>
@@ -769,10 +780,12 @@
                   <button id="voiceTestBtn">試播網頁語音</button>
                 </div>
               </div>
+              </div>
             </section>
 
             <section class="admin-v2-card">
-              <h3>本機音源</h3>
+              <h3><button class="admin-collapse-head" data-collapse-target="adminLocalVoiceBody" type="button">本機音源</button></h3>
+              <div class="admin-collapse-body" id="adminLocalVoiceBody">
               <div class="compact-help voice-progress" id="localVoiceSummary">本機音源尚未檢查</div>
               <button class="primary" id="generateMissingVoicesBtn">產生缺少音源</button>
               <div class="compact-help voice-progress" id="voiceGenerateStatus"></div>
@@ -782,10 +795,12 @@
                 <button class="warn" id="clearPlayerVoiceAssetsBtn">清除球員音源</button>
                 <button class="danger" id="clearAllVoiceAssetsBtn">清除全部本機音源</button>
               </div>
+              </div>
             </section>
 
             <section class="admin-v2-card">
-              <h3>球員與場次</h3>
+              <h3><button class="admin-collapse-head" data-collapse-target="adminPlayersBody" type="button">球員與場次</button></h3>
+              <div class="admin-collapse-body" id="adminPlayersBody">
               <div class="admin-nav-grid" id="adminDetailNav">
                 <button id="showPlayerDetailBtn" type="button">球員管理 ›</button>
                 <button id="showGamesDetailBtn" type="button">場次管理 ›</button>
@@ -821,10 +836,12 @@
               </div>
                 </div>
               </div>
+              </div>
             </section>
 
             <section class="admin-v2-card">
-              <h3>場地與排場</h3>
+              <h3><button class="admin-collapse-head" data-collapse-target="adminCourtsBody" type="button">場地與排場</button></h3>
+              <div class="admin-collapse-body" id="adminCourtsBody">
               <div id="systemOpsBody">
                 <div class="system-mode-row">
                   <div class="segmented-group" id="courtModeControls">
@@ -853,10 +870,12 @@
                   </div>
                 </div>
               </div>
+              </div>
             </section>
 
             <section class="admin-v2-card">
-              <h3>視覺與顯示</h3>
+              <h3><button class="admin-collapse-head" data-collapse-target="adminDisplayBody" type="button">視覺與顯示</button></h3>
+              <div class="admin-collapse-body" id="adminDisplayBody">
               <div class="compact-state-row">
                 <div class="compact-row-label">視覺提醒</div>
                 <button id="callEffectOffBtn">關閉</button>
@@ -911,10 +930,12 @@
                 <button id="portraitAdminModeOffBtn">關閉</button>
                 <button id="portraitAdminModeOnBtn">開啟</button>
               </div>
+              </div>
             </section>
 
             <section class="admin-v2-card">
-              <h3>系統與資料</h3>
+              <h3><button class="admin-collapse-head" data-collapse-target="adminDataBody" type="button">系統與資料</button></h3>
+              <div class="admin-collapse-body" id="adminDataBody">
               <div class="admin-button-row data-grid">
                 <button id="exportBackupBtn">複製名單</button>
                 <button id="importBackupBtn">貼上名單</button>
@@ -955,7 +976,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.0.7';
+  const APP_VERSION = '2.0.8';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -968,6 +989,7 @@
   const SLOTS = [1,2,3,4];
   const COLORS = ['#bfdbfe','#bbf7d0','#fde68a','#fecaca','#ddd6fe','#fed7aa','#bae6fd','#fbcfe8','#ccfbf1','#e9d5ff','#d9f99d','#fef3c7'];
   const DEFAULT_COLLAPSED_SECTIONS = ['restSectionBody','adminSectionBody','autoCallBody','playerManageBody','gamesManageBody','systemOpsBody'];
+  const ADMIN_COLLAPSIBLE_SECTIONS = ['adminTodayBody','adminVoiceBody','adminLocalVoiceBody','adminPlayersBody','adminCourtsBody','adminDisplayBody','adminDataBody'];
 
   let state = loadState();
   let selectedPlayer = loadSelectedPlayer();
@@ -1380,7 +1402,7 @@
     merged.settings.nextCount = activeNextCountForSettings(merged.settings);
     merged.settings.courtLabels = normalizeCourtLabels(merged.settings.courtLabels);
     merged.settings.collapsedSections = Array.isArray(merged.settings.collapsedSections)
-      ? merged.settings.collapsedSections.filter(id => DEFAULT_COLLAPSED_SECTIONS.includes(id))
+      ? merged.settings.collapsedSections.filter(id => DEFAULT_COLLAPSED_SECTIONS.includes(id) || ADMIN_COLLAPSIBLE_SECTIONS.includes(id))
       : DEFAULT_COLLAPSED_SECTIONS.slice();
     merged.settings.callEffectEnabled = merged.settings.callEffectEnabled !== false;
     merged.settings.callEffectDuration = [3,5,8,10].indexOf(Number(merged.settings.callEffectDuration)) >= 0 ? Number(merged.settings.callEffectDuration) : 5;
@@ -2091,9 +2113,11 @@
     for(let i = 0; i < buttons.length; i += 1){
       const btn = buttons[i];
       const body = $(dataAttr(btn, 'collapse-target'));
-      const section = closestByClass(btn, 'panel-section');
+      const section = closestByClass(btn, 'admin-v2-card') || closestByClass(btn, 'panel-section');
       if(!body || !section) continue;
       section.classList.toggle('collapsed', collapsedSections.has(body.id));
+      btn.setAttribute('aria-expanded', collapsedSections.has(body.id) ? 'false' : 'true');
+      btn.setAttribute('aria-controls', body.id);
     }
   }
 
