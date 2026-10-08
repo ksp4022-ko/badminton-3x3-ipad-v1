@@ -445,6 +445,11 @@ async function runLegacyNoEntryAnimationCase(browser) {
     window.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(state));
   }, animationState(4));
   await page.goto(appUrl + '?debug=1');
+  await page.evaluate(() => {
+    Array.from(document.styleSheets[0].cssRules).forEach(rule => {
+      if(rule.selectorText === '.entry-animation-overlay') rule.style.removeProperty('inset');
+    });
+  });
   await page.waitForSelector('#nextRow .player-chip');
   await page.evaluate(async () => {
     const api = window.__badmintonIpadV1;
@@ -459,6 +464,8 @@ async function runLegacyNoEntryAnimationCase(browser) {
     courtPlayers: window.__badmintonIpadV1.getState().players.filter((p) => p.zone === 'court1').length
   }));
   assert('legacy uses lightweight flight without modern animation', /legacyIpad/.test(metrics.htmlClass) && metrics.shouldRun === false && metrics.overlayCount === 1 && metrics.courtPlayers === 4, JSON.stringify(metrics));
+  const overlayRect = await page.locator('.entry-animation-overlay').boundingBox();
+  assert('legacy overlay fills viewport without inset support', overlayRect && overlayRect.width >= 1023 && overlayRect.height >= 637, JSON.stringify(overlayRect));
   await page.waitForTimeout(750);
   assert('legacy lightweight flight cleans overlay and hidden cards', await page.locator('.entry-animation-overlay').count() === 0 && await page.locator('.entry-destination-hidden').count() === 0);
   await page.evaluate(() => { window.__badmintonIpadV1.courtDown('court1'); });

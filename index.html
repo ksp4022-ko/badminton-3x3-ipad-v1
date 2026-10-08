@@ -174,6 +174,7 @@
     .player-chip .games{position:absolute;top:4px;left:6px;z-index:1;background:rgba(255,255,255,.95);border:1px solid rgba(15,23,42,.18);border-radius:999px;min-width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:clamp(15px,1.8vw,22px);font-weight:1000;line-height:1;padding:0 6px;}
     .player-chip .name{position:relative;z-index:2;text-align:center;font-weight:1000;line-height:1.05;letter-spacing:.02em;font-size:clamp(20px,2.6vw,34px);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px;}
     .entry-animation-overlay{position:fixed;inset:0;z-index:47;pointer-events:none;overflow:hidden;}
+    html.legacyIpad .entry-animation-overlay{top:0;right:0;bottom:0;left:0;}
     .entry-fly-clone{position:fixed;margin:0;pointer-events:none;will-change:transform,opacity;transform-origin:center center;transition:transform .42s cubic-bezier(.2,.82,.2,1),opacity .42s ease;box-shadow:0 16px 32px rgba(15,23,42,.28);}
     .entry-fly-clone.lift{transform:translateY(-6px) scale(1.02);}
     .entry-fly-clone.arrive{opacity:.96;}
@@ -978,7 +979,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.0.9';
+  const APP_VERSION = '2.0.10';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
