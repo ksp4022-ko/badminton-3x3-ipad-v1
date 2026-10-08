@@ -114,7 +114,7 @@ async function runCase(browser, mode, scenario) {
       courtRow: rect(document.getElementById('courtRow')),
       nextRow: rect(document.getElementById('nextRow')),
       courtCount: document.querySelectorAll('#courtRow .zone-card').length,
-      nextCount: document.querySelectorAll('#nextRow .zone-card').length,
+      nextCount: document.querySelectorAll('#nextRow .zone-card:not(.rest-board-card)').length,
       titleMinHeight: Math.min.apply(null, Array.prototype.map.call(document.querySelectorAll('.zone-head'), (head) => head.getBoundingClientRect().height)),
       slotMinHeight: Math.min.apply(null, Array.prototype.map.call(document.querySelectorAll('.slot'), (slot) => slot.getBoundingClientRect().height)),
       titleTexts: Array.prototype.map.call(document.querySelectorAll('.zone-title'), (title) => title.textContent),
@@ -600,6 +600,40 @@ async function runPortraitAdminModeCase(browser) {
   await quietContext.close();
 }
 
+async function runLegacyRestCase(browser){
+  const context=await browser.newContext({viewport:{width:1024,height:638},isMobile:true,hasTouch:true,userAgent:iPadAirIos12Ua});
+  const page=await context.newPage();
+  const state=stateForMode('3x3');
+  for(let i=0;i<8;i++)state.players.push(player('rest'+i,['Chris 哥','雅雯','Kevin','國泰 哥'][i%4],'rest',null));
+  await page.addInitScript(state=>localStorage.setItem('badminton3x3.ipad.v1.state',JSON.stringify(state)),state);
+  await page.goto(appUrl+'?debug=1');
+  await page.addStyleTag({content:'#debugPanel{display:none!important}'});
+  await page.waitForTimeout(300);
+  const before=await page.evaluate(()=>{
+    const row=document.getElementById('nextRow');
+    const rest=row.querySelector('.rest-board-card');
+    const rect=rest.getBoundingClientRect();
+    const fits=Array.from(rest.querySelectorAll('.name')).every(n=>n.scrollWidth<=n.parentNode.clientWidth-10 && n.scrollHeight<=n.parentNode.clientHeight-6);
+    return {exists:getComputedStyle(rest).display!=='none',count:rest.querySelectorAll('.player-chip').length,drop:rest.querySelectorAll('.rest-board-space').length,fits,
+      width:row.querySelector('.zone-card').getBoundingClientRect().width,rowWidth:row.clientWidth,overflow:row.scrollWidth>row.clientWidth,top:rect.top,bottom:rect.bottom,rowBottom:row.getBoundingClientRect().bottom};
+  });
+  assert('legacy rest shows all players and two drop spaces',before.exists && before.count===8 && before.drop===2 && before.fits,JSON.stringify(before));
+  assert('legacy next widths remain three full columns',Math.abs(before.width*3+6-before.rowWidth)<2 && before.overflow && before.bottom<=before.rowBottom+1,JSON.stringify(before));
+  const id=await page.locator('#courtRow .player-chip').first().getAttribute('data-player-id');
+  await page.locator('#courtRow .player-chip').first().tap();
+  await page.evaluate(()=>{const row=document.getElementById('nextRow');row.scrollLeft=row.scrollWidth;});
+  await page.waitForTimeout(400);
+  await page.locator('.rest-board-space').last().tap();
+  assert('legacy selected court player can return to rest',await page.evaluate(id=>window.__badmintonIpadV1.getState().players.find(p=>p.id===id).zone==='rest',id));
+  const returned=page.locator('.rest-board-card [data-player-id="'+id+'"]');
+  await returned.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(400);
+  await returned.tap();
+  await page.locator('#courtRow .slot.empty').first().tap();
+  assert('legacy rest player can return to court',await page.evaluate(id=>window.__badmintonIpadV1.getState().players.find(p=>p.id===id).zone==='court1',id));
+  await context.close();
+}
+
 async function runFourCourtCase(browser, userAgent, width, height, scrolling) {
   const context = await browser.newContext({viewport:{width,height},isMobile:true,hasTouch:true,userAgent});
   const page = await context.newPage();
@@ -663,6 +697,7 @@ async function main() {
     await runLegacyNoEntryAnimationCase(browser);
     await runNextScrollTouchCase(browser);
     await runPortraitAdminModeCase(browser);
+    await runLegacyRestCase(browser);
     await runFourCourtCase(browser, modernIpadUa, 1024, 638, false);
     await runFourCourtCase(browser, iPadAirIos12Ua, 1024, 638, false);
     await runFourCourtCase(browser, 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15', 844, 390, true);
