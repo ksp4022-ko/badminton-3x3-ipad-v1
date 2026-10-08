@@ -46,7 +46,7 @@ assert('admin unlock persisted', html.includes('saveAdminUnlock()') && html.incl
 assert('debug mode exists', html.includes("location.search.indexOf('debug=1')") && html.includes('function debugLog'));
 assert('debug mode tracks board actions', html.includes("debugLog('zone-head courtDown'") && html.includes("debugLog('slot move success'") && html.includes("debugLog(inRest ? 'chip rest select'"));
 assert('v1 storage key isolated', html.includes("badminton3x3.ipad.v1.state"));
-assert('release version synchronized', appVersion === '2.0.10' && pkg.version === appVersion && lock.version === appVersion && lock.packages[''].version === appVersion && sw.includes('v' + appVersion));
+assert('release version synchronized', appVersion === '2.0.11' && pkg.version === appVersion && lock.version === appVersion && lock.packages[''].version === appVersion && sw.includes('v' + appVersion));
 assert('copy paste player list exists', html.includes('function playerNamesText') && html.includes('function showImportPasteDialog') && html.includes('function importPlayersFromText'));
 assert('player list exports plain names', html.includes("showExportText('複製名單', playerNamesText())") && html.includes(".join('\\n')"));
 assert('player list import accepts plain lines', html.includes('function parsePlayerListText') && html.includes("placeholder=\"A&#10;B&#10;C\"") && html.includes("replace(/^\\s*\\[(.*)\\]\\s*$/, '$1')"));
@@ -103,6 +103,8 @@ assert('local Edge voice uses IndexedDB and production generator', html.includes
 assert('Edge Ready checks local assets and preload', html.includes('function preloadLocalVoiceDescriptors') && html.includes('function generateMissingVoiceAssets') && html.includes('function localVoiceCheck') && html.includes('IndexedDB'));
 assert('Edge fixed voice checks complete active roster without on-court block', html.includes('function todayActiveNamesForEdgeCheck') && html.includes('const names = todayActiveNamesForEdgeCheck();') && !html.includes("reason:'onCourt'"));
 assert('Edge missing state preserves Edge mode', html.includes('function preflightEdgeParts') && html.includes("edgeCheckState = 'MISSING';") && !html.includes('Edge 缺少音源，已關閉 Edge 固定語音'));
+const preflightBlock = html.slice(html.indexOf('async function preflightEdgeParts'), html.indexOf('let legacyPlaybackAudio'));
+assert('announcement preflight checks all local assets without repeating media preload', preflightBlock.includes('uniqueVoiceDescriptorsFromParts(parts)') && preflightBlock.includes('await localVoiceUrlsForDescriptors(descs)') && !preflightBlock.includes('preloadLocalVoiceDescriptors') && preflightBlock.includes('local.missing.length'));
 const edgeSettingsBlock = html.slice(html.indexOf('<div class="edge-settings">'), html.indexOf('<div class="browser-settings">'));
 const localVoiceBlock = html.slice(html.indexOf('id="adminLocalVoiceBody"'), html.indexOf('data-collapse-target="adminPlayersBody"'));
 assert('missing voice generation button lives in local voice card', !edgeSettingsBlock.includes('generateMissingVoicesBtn') && localVoiceBlock.includes('generateMissingVoicesBtn') && localVoiceBlock.includes('toggleLocalVoiceDetailsBtn'));

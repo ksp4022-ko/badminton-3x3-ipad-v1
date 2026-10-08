@@ -979,7 +979,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.0.10';
+  const APP_VERSION = '2.0.11';
   const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -3189,19 +3189,13 @@
 
   async function preflightEdgeParts(parts){
     const descs = uniqueVoiceDescriptorsFromParts(parts);
-    const local = await preloadLocalVoiceDescriptors(descs);
+    // Ready already validates media. Calls only recheck the complete local inventory.
+    const local = await localVoiceUrlsForDescriptors(descs);
     local.urls.forEach(function(url){ try{ URL.revokeObjectURL(url); }catch(err){} });
     if(local.missing.length){
       edgeCheckState = 'MISSING';
       saveState();
       setEdgeReadyStatus(missingVoiceSummary(descs, local.missingDescriptors), 'missing');
-      renderPanel();
-      return false;
-    }
-    if(!local.ok){
-      edgeCheckState = 'ERROR';
-      saveState();
-      setEdgeReadyStatus('Edge 音源檢查失敗，請重新嘗試', 'error');
       renderPanel();
       return false;
     }
