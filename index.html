@@ -179,6 +179,11 @@
     .entry-fly-clone.lift{transform:translateY(-6px) scale(1.02);}
     .entry-fly-clone.arrive{opacity:.96;}
     .entry-fly-clone.settle{transition:transform .22s cubic-bezier(.34,1.56,.64,1),opacity .18s ease;transform:scale(.98);}
+    .entry-light-svg{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none;}
+    .entry-light-trail{fill:none;stroke:#38BDF8;stroke-width:3;stroke-linecap:round;filter:drop-shadow(0 0 4px #38BDF8);opacity:0;}
+    .entry-light-border{fill:none;stroke:#FBBF24;stroke-width:3;stroke-linecap:round;filter:drop-shadow(0 0 4px #FBBF24);}
+    .entry-light-ripple{position:absolute;border:2px solid #38BDF8;border-radius:12px;opacity:0;box-sizing:border-box;pointer-events:none;}
+    .entry-light-clone{transition:none;box-shadow:0 10px 24px rgba(15,23,42,.25);}
     .scroll-affordance{position:fixed;z-index:46;display:none;align-items:flex-end;justify-content:center;gap:5px;width:18px;pointer-events:none;}
     .scroll-affordance.show{display:flex;}
     .scroll-affordance span{display:block;width:2px;border-radius:999px;background:#64748B;opacity:.22;animation:scrollAffordanceBreath 1.7s ease-in-out infinite;}
@@ -925,7 +930,7 @@
               <div class="player-text-grid">
                 <div>
                   <label>動畫模組</label>
-                  <select id="courtEntryAnimationModuleSelect"><option value="fly-guide-v1">① 飛卡導引</option></select>
+                  <select id="courtEntryAnimationModuleSelect"><option value="fly-guide-v1">① 飛卡導引</option><option value="light-trail-v1">② 光軌波紋</option></select>
                 </div>
               </div>
               <div class="compact-state-row">
@@ -984,7 +989,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.0.12';
+  const APP_VERSION = '2.0.13';
   const SETUP_TEST_MODE = location.search.indexOf('setup-test=1') >= 0;
   const STORAGE_KEY = SETUP_TEST_MODE ? 'badminton3x3.ipad.v1.setup-test' : 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
@@ -1338,7 +1343,7 @@
 
   function courtEntryAnimationShouldRun(){
     return state.settings.courtEntryAnimationEnabled === true
-      && state.settings.courtEntryAnimationModule === 'fly-guide-v1'
+      && (state.settings.courtEntryAnimationModule === 'fly-guide-v1' || state.settings.courtEntryAnimationModule === 'light-trail-v1')
       && !isLegacyIpadRuntime()
       && !prefersReducedMotion();
   }
@@ -1420,7 +1425,7 @@
     merged.settings.callEffectColor = ['yellow','green','blue','red'].indexOf(String(merged.settings.callEffectColor)) >= 0 ? String(merged.settings.callEffectColor) : 'yellow';
     merged.settings.callEffectMarquee = merged.settings.callEffectMarquee !== false;
     merged.settings.courtEntryAnimationEnabled = merged.settings.courtEntryAnimationEnabled === true;
-    merged.settings.courtEntryAnimationModule = String(merged.settings.courtEntryAnimationModule || 'fly-guide-v1') === 'fly-guide-v1' ? 'fly-guide-v1' : 'fly-guide-v1';
+    merged.settings.courtEntryAnimationModule = merged.settings.courtEntryAnimationModule === 'light-trail-v1' ? 'light-trail-v1' : 'fly-guide-v1';
     merged.settings.helperTextEnabled = merged.settings.helperTextEnabled !== false;
     merged.settings.portraitAdminModeEnabled = merged.settings.portraitAdminModeEnabled === true;
     merged.settings.playerNameScale = normalizePlayerNameScale(merged.settings.playerNameScale);
@@ -2077,6 +2082,7 @@
       const moduleOption = $('courtEntryAnimationModuleSelect').options && $('courtEntryAnimationModuleSelect').options[0];
       if(moduleOption) moduleOption.textContent = isLegacyIpadRuntime() ? '① 輕量飛卡導引' : '① 飛卡導引';
       $('courtEntryAnimationModuleSelect').value = state.settings.courtEntryAnimationModule || 'fly-guide-v1';
+      if($('courtEntryAnimationModuleSelect').options && $('courtEntryAnimationModuleSelect').options[1]) $('courtEntryAnimationModuleSelect').options[1].disabled = isLegacyIpadRuntime();
       $('courtEntryAnimationModuleSelect').disabled = state.settings.courtEntryAnimationEnabled !== true;
     }
     renderCourtLabelControls();
@@ -2371,12 +2377,12 @@
     setTimeout(function(){ if(card) card.classList.remove('entry-pre-pulse'); }, 260);
     courtEntryAnimationLocked = true;
     items.forEach(function(item){ courtEntryHidden[item.playerId] = true; });
-    return {courtZone, items, legacy:isLegacyIpadRuntime()};
+    return {courtZone, items, legacy:isLegacyIpadRuntime(), module:state.settings.courtEntryAnimationModule, courtRect:card ? copyRect(card.getBoundingClientRect()) : null};
   }
 
   function legacyCourtEntryAnimationShouldRun(){
     return isLegacyIpadRuntime() && state.settings.courtEntryAnimationEnabled === true
-      && state.settings.courtEntryAnimationModule === 'fly-guide-v1' && !prefersReducedMotion();
+      && !prefersReducedMotion();
   }
 
   function runLegacyCourtEntryAnimation(capture){
@@ -2423,12 +2429,93 @@
     courtEntryAnimationLocked = false;
   }
 
+  function runLightTrailEntryAnimation(capture){
+    let overlay = null;
+    let cleanupTimer = null;
+    const animations = [];
+    let finished = false;
+    function finish(){
+      if(finished) return;
+      finished = true;
+      if(cleanupTimer) clearTimeout(cleanupTimer);
+      animations.forEach(function(animation){ try{ animation.cancel(); }catch(err){} });
+      if(overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      cleanupCourtEntryAnimation(capture);
+      renderZones();
+      fitPlayerNameText();
+    }
+    function animate(el, frames, options){
+      if(typeof el.animate !== 'function') throw new Error('Animation unavailable');
+      animations.push(el.animate(frames, options));
+    }
+    function svgElement(tag){ return document.createElementNS('http://www.w3.org/2000/svg', tag); }
+    try{
+      overlay = document.createElement('div');
+      overlay.className = 'entry-animation-overlay entry-light-overlay';
+      overlay.setAttribute('aria-hidden','true');
+      const svg = svgElement('svg');
+      svg.setAttribute('class','entry-light-svg');
+      overlay.appendChild(svg);
+      document.body.appendChild(overlay);
+      const rect = capture.courtRect;
+      if(rect && validRect(rect)){
+        const border = svgElement('rect');
+        border.setAttribute('class','entry-light-border');
+        border.setAttribute('x',rect.left + 2);
+        border.setAttribute('y',rect.top + 2);
+        border.setAttribute('width',Math.max(1,rect.width - 4));
+        border.setAttribute('height',Math.max(1,rect.height - 4));
+        border.setAttribute('rx','14');
+        svg.appendChild(border);
+        const perimeter = border.getTotalLength();
+        border.style.strokeDasharray = (perimeter * 0.25) + ' ' + (perimeter * 0.75);
+        animate(border,[{strokeDashoffset:perimeter,opacity:0},{opacity:1,offset:0.15},{strokeDashoffset:0,opacity:0}],{duration:1000,easing:'ease-in-out',fill:'both'});
+      }
+      capture.items.forEach(function(item){
+        const source = item.sourceRect, target = item.targetRect;
+        const dx = target.left - source.left, dy = target.top - source.top;
+        const sx = target.width / source.width, sy = target.height / source.height;
+        const delay = 130 + item.index * 45;
+        const x1 = source.left + source.width / 2, y1 = source.top + source.height / 2;
+        const x2 = target.left + target.width / 2, y2 = target.top + target.height / 2;
+        const trail = svgElement('path');
+        trail.setAttribute('class','entry-light-trail');
+        trail.setAttribute('d','M ' + x1 + ' ' + y1 + ' Q ' + ((x1+x2)/2) + ' ' + ((y1+y2)/2-48) + ' ' + x2 + ' ' + y2);
+        svg.appendChild(trail);
+        const length = trail.getTotalLength();
+        trail.style.strokeDasharray = length + ' ' + length;
+        animate(trail,[{strokeDashoffset:length,opacity:0},{opacity:0.7,offset:0.2},{strokeDashoffset:0,opacity:0.65,offset:0.7},{strokeDashoffset:-length,opacity:0}],{delay,duration:720,easing:'ease-in-out',fill:'both'});
+        const clone = document.createElement('div');
+        clone.className = 'entry-fly-clone entry-light-clone';
+        clone.innerHTML = item.sourceHtml;
+        clone.style.left = source.left + 'px';clone.style.top = source.top + 'px';
+        clone.style.width = source.width + 'px';clone.style.height = source.height + 'px';
+        overlay.appendChild(clone);
+        animate(clone,[
+          {transform:'translate(0,0) scale(1)',offset:0},
+          {transform:'translate(0,-6px) scale(1.02)',offset:0.12},
+          {transform:'translate('+(dx/2)+'px,'+(dy/2-24)+'px) scale('+((1+sx)/2)+','+((1+sy)/2)+')',offset:0.5},
+          {transform:'translate('+dx+'px,'+dy+'px) scale('+(sx*1.025)+','+(sy*1.025)+')',offset:0.82},
+          {transform:'translate('+dx+'px,'+dy+'px) scale('+sx+','+sy+')',offset:1}
+        ],{delay,duration:680,easing:'cubic-bezier(.2,.7,.25,1)',fill:'both'});
+        const ripple = document.createElement('div');
+        ripple.className = 'entry-light-ripple';
+        ripple.style.left = target.left + 'px';ripple.style.top = target.top + 'px';
+        ripple.style.width = target.width + 'px';ripple.style.height = target.height + 'px';
+        overlay.appendChild(ripple);
+        animate(ripple,[{transform:'scale(.96)',opacity:0},{opacity:.75,offset:.2},{transform:'scale(1.12)',opacity:0}],{delay:delay+560,duration:350,easing:'ease-out',fill:'both'});
+      });
+      cleanupTimer = setTimeout(finish, 1220);
+    }catch(err){ finish(); }
+  }
+
   function runCourtEntryAnimation(capture){
     if(!capture || capture.locked || !capture.items || !capture.items.length){
       if(capture && capture.locked) showToast('上場動畫進行中');
       return;
     }
     if(capture.legacy){ runLegacyCourtEntryAnimation(capture); return; }
+    if(capture.module === 'light-trail-v1'){ runLightTrailEntryAnimation(capture); return; }
     try{
       const overlay = document.createElement('div');
       overlay.className = 'entry-animation-overlay';
