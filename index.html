@@ -5254,6 +5254,11 @@
       exportJson:exportJson,
       exportLogCsv:exportLogCsv,
       callPlayers:callPlayers,
+      testBrowserVoice:function(){ return speakCallSequence(['雅雯','Kevin'], 'court1', 'browser'); },
+      testEdgeVoice:function(){
+        if(currentAutoCallMode() !== 'edge') throw new Error('Edge 尚未 Ready');
+        return callPlayers(todayActiveNamesForEdgeCheck().slice(0, 4), activeCourts()[0] || 'court1');
+      },
       repeatLastCall:repeatLastCall,
       unlockLegacyVoiceAudio:unlockLegacyVoiceAudio,
       prepareFirstNextGroupCall:prepareFirstNextGroupCall,
