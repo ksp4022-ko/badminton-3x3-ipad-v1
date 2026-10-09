@@ -5255,6 +5255,7 @@
       exportLogCsv:exportLogCsv,
       callPlayers:callPlayers,
       testBrowserVoice:function(){ return speakCallSequence(['雅雯','Kevin'], 'court1', 'browser'); },
+      createSetupTrialUtterance:createCallUtterance,
       prepareSetupTrial:async function(){
         const parts = edgeCallSequenceParts(todayActiveNamesForEdgeCheck().slice(0,4), activeCourts()[0] || 'court1');
         const result = await localVoiceUrlsForDescriptors([].concat.apply([], parts.map(function(p){ return p.descriptors || []; })));

@@ -84,13 +84,14 @@ group(['gf-arrange'],'排場方式');group(['gf-fill'],'開始時的人員位置
 var colors=['#bfdbfe','#bbf7d0','#fde68a','#fecaca','#ddd6fe','#fed7aa','#bae6fd','#fbcfe8','#ccfbf1','#e9d5ff','#d9f99d','#fef3c7'];
 var s={step:0,color:colors[0],selected:null,helperTextEnabled:true,names:[],cards:{},mode:'edge',count:3,next:3,labels:['1','2','3','4'],arrange:'auto',fill:'rest',assets:{},missing:[],busy:false,complete:false};
 var engine=document.getElementById('setup-engine'),api=null,baseline=null,needsReset=false;
-var trialUrls=[],trialAudio=new Audio(),trialRun=0,trialTimer=null;
-function stopTrial(){trialRun++;clearTimeout(trialTimer);trialAudio.pause();trialAudio.onended=trialAudio.onerror=null;q('gf-trial').disabled=false;}
+var trialUrls=[],trialAudio=new Audio(),trialRun=0,trialTimer=null,trialPoll=null,browserTrialUtters=[],browserTrialTimer=null,browserTrialRun=0;
+function stopTrial(){trialRun++;clearTimeout(trialTimer);clearInterval(trialPoll);trialAudio.pause();trialAudio.onended=trialAudio.onerror=trialAudio.ontimeupdate=null;q('gf-trial').disabled=false;}
+function stopBrowserTrial(){browserTrialRun++;clearTimeout(browserTrialTimer);if(window.speechSynthesis)window.speechSynthesis.cancel();browserTrialUtters=[];q('gf-browser-trial').disabled=false;}
 function startTrial(){
- stopTrial();if(!trialUrls.length){notice('試播音源尚未就緒，請重新整理');return;}
+ stopBrowserTrial();stopTrial();if(!trialUrls.length){notice('試播音源尚未就緒，請重新整理');return;}
  var run=trialRun,index=0;q('gf-trial').disabled=true;notice('正在試播');
  function fail(err){if(run!==trialRun)return;stopTrial();notice('試播失敗：'+(err&&err.name?err.name:'音源播放錯誤')+'，請再點一次試播');}
- function play(){if(run!==trialRun)return;trialAudio.src=trialUrls[index];trialAudio.onended=function(){clearTimeout(trialTimer);index++;if(index>=trialUrls.length){stopTrial();notice('試播完成');return;}trialTimer=setTimeout(play,index===trialUrls.length-1?110:90);};trialAudio.onerror=fail;try{var result=trialAudio.play();if(result&&result.catch)result.catch(fail);trialTimer=setTimeout(function(){fail({name:'播放逾時'});},20000);}catch(err){fail(err);}}
+ function play(){if(run!==trialRun)return;var finished=false,started=false;trialAudio.src=trialUrls[index];function complete(){if(finished||run!==trialRun)return;finished=true;clearTimeout(trialTimer);clearInterval(trialPoll);index++;if(index>=trialUrls.length){stopTrial();notice('試播完成');return;}trialTimer=setTimeout(play,index===trialUrls.length-1?110:90);}function checkEnd(){if(started&&(trialAudio.ended||(isFinite(trialAudio.duration)&&trialAudio.duration>0&&trialAudio.currentTime>=trialAudio.duration-0.025)))complete();}trialAudio.onended=complete;trialAudio.ontimeupdate=checkEnd;trialAudio.onerror=fail;try{var result=trialAudio.play();if(result&&result.then)result.then(function(){started=true;checkEnd();}).catch(fail);else started=true;trialPoll=setInterval(checkEnd,100);trialTimer=setTimeout(function(){fail({name:'播放逾時'});},20000);}catch(err){fail(err);}}
  play();
 }
 q('gf-roster').value='';s.busy=true;
@@ -138,7 +139,19 @@ segment('gf-voice','mode','mode');segment('gf-arrange','arrange','arrange');segm
 q('gf-courts').onclick=function(e){if(!e.target.dataset.courts)return;s.count=Number(e.target.dataset.courts);s.next=s.count===2?2:3;q('gf-courts').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(Number(b.dataset.courts)===s.count));});courts();voice();};q('gf-next').onclick=function(e){if(!e.target.dataset.next)return;s.next=Number(e.target.dataset.next);courts();};
 async function generate(){if(s.busy||!api)return;s.busy=true;render();var timer=setInterval(function(){var progress=engine.contentDocument.getElementById('voiceGenerateStatus');if(progress)notice(progress.textContent);},200);try{await syncDraft();var result=await api.generateMissingVoiceAssets();await syncDraft();if(result.failed&&result.failed.length)notice('生成失敗：'+result.failed.join('、'));else notice('音源已完整');}catch(err){notice('產生失敗：'+err.message);}finally{clearInterval(timer);s.busy=false;voice();}}
 q('gf-generate').onclick=generate;q('gf-court-generate').onclick=generate;q('gf-trial').onclick=startTrial;
-q('gf-browser-trial').onclick=async function(){try{await syncDraft();api.enableBrowserAutoCall();api.testBrowserVoice();notice('正在試播');}catch(err){notice('試播失敗：'+err.message);}};
+q('gf-browser-trial').onclick=function(){
+ stopTrial();stopBrowserTrial();var run=browserTrialRun;
+ try{
+  if(!window.speechSynthesis||!window.SpeechSynthesisUtterance)throw new Error('此瀏覽器不支援網頁語音');
+  var fields=q('gf-browser').querySelectorAll('select'),st=api.getState();st.settings.zhVoiceId=fields[0].value;st.settings.enVoiceId=fields[1].value;st.settings.voiceRate=fields[2].value;st.settings.voicePitch=fields[3].value;api.setState(st);
+  q('gf-browser-trial').disabled=true;notice('正在試播網頁語音');
+  function finish(message){if(run!==browserTrialRun)return;stopBrowserTrial();notice(message);}
+  browserTrialUtters=[['雅雯','zh-TW'],['Kevin','en-US'],['請上，一號場。','zh-TW']].map(function(part){var config=api.createSetupTrialUtterance(part[0],part[1]),utter=new SpeechSynthesisUtterance(part[0]);utter.lang=config.lang;utter.rate=config.rate;utter.pitch=config.pitch;if(config.voice)utter.voice=config.voice;utter.onerror=function(e){finish('試播失敗：'+(e.error||'網頁語音錯誤'));};return utter;});
+  browserTrialUtters[2].onend=function(){finish('網頁語音試播完成');};
+  window.speechSynthesis.resume();browserTrialUtters.forEach(function(utter){window.speechSynthesis.speak(utter);});
+  browserTrialTimer=setTimeout(function(){finish('網頁語音未完成，請確認裝置語音可用後再試');},20000);
+ }catch(err){stopBrowserTrial();notice('試播失敗：'+err.message);}
+};
 q('gf-back').onclick=function(){if(s.step>0){s.step--;render();}};
 q('gf-previous').onclick=q('gf-back').onclick;
 q('gf-forward').onclick=async function(){if(s.busy||!api)return;try{if(s.step===0){var n=names();if(!n.length){notice('請輸入至少一位球員');return;}if(n.some(function(x,i){return n.indexOf(x)!==i;})){notice('姓名重複，請確認');return;}s.names=n;n.forEach(function(x){if(!s.cards[x])s.cards[x]=s.color;});}

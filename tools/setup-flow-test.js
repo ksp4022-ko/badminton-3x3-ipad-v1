@@ -32,6 +32,13 @@ const server=http.createServer((req,res)=>{
    await page.evaluate(()=>{window.trialCalls=0;HTMLMediaElement.prototype.play=function(){window.trialCalls++;const audio=this;setTimeout(()=>{if(audio.onended)audio.onended();},10);return Promise.resolve();};});
    for(let repeat=0;repeat<2;repeat++){await page.click('#gf-trial');await page.waitForFunction(()=>document.getElementById('gf-notice').textContent==='試播完成');}
    assert.equal(await page.evaluate(()=>window.trialCalls),6);
+   await page.evaluate(()=>{HTMLMediaElement.prototype.play=function(){const audio=this;Object.defineProperty(audio,'duration',{configurable:true,value:1});Object.defineProperty(audio,'currentTime',{configurable:true,value:1});return Promise.resolve();};});
+   await page.click('#gf-trial');await page.waitForFunction(()=>document.getElementById('gf-notice').textContent==='試播完成');
+   await page.click('#gf-voice button[data-mode="browser"]');
+   await page.evaluate(()=>{window.browserTrials=[];window.speechSynthesis.cancel=function(){};window.speechSynthesis.resume=function(){};window.speechSynthesis.speak=function(u){window.browserTrials.push({text:u.text,lang:u.lang});setTimeout(()=>{if(u.onend)u.onend();},10);};});
+   await page.click('#gf-browser-trial');await page.waitForFunction(()=>document.getElementById('gf-notice').textContent==='網頁語音試播完成');
+   assert.deepEqual(await page.evaluate(()=>window.browserTrials.map(u=>u.lang)),['zh-TW','en-US','zh-TW']);
+   await page.click('#gf-voice button[data-mode="edge"]');
    await page.click('#gf-forward');await page.locator('#gf-labels input').first().fill('A');
    await page.click('#gf-forward');assert(await page.locator('#gf-forward').isDisabled());
    await page.click('#gf-court-generate');await page.waitForFunction(()=>!document.getElementById('gf-forward').disabled);
