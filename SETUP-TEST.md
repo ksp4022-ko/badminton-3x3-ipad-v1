@@ -1,6 +1,12 @@
 # Gathering Setup Test
 
 Entry: `setup-test.html`. The normal `index.html` entry remains unchanged visually.
+Integrated preview entry: `integrated-test.html`. It uses the same isolated state
+and audio database, with a Start Gathering button opening `setup-test.html?integrated=1`.
+Modern preview adds Motion header flips and manual move/swap overlays. Legacy
+does not load Motion and retains its court headers. Normal production entry does
+not load preview assets. The bundled Motion file and license are copied from the
+locked npm dependency; no CDN is required.
 The setup page embeds the existing engine with `?debug=1&setup-test=1` and reuses
 its roster reconciliation, TTS generator, IndexedDB, voice modes and reset handler.
 

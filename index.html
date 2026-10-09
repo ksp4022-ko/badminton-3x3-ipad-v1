@@ -991,6 +991,7 @@
 
   const APP_VERSION = '2.0.13';
   const SETUP_TEST_MODE = location.search.indexOf('setup-test=1') >= 0;
+  const UI_PREVIEW_MODE = location.search.indexOf('ui-preview=1') >= 0;
   const STORAGE_KEY = SETUP_TEST_MODE ? 'badminton3x3.ipad.v1.setup-test' : 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -1397,7 +1398,13 @@
   function loadState(){
     try{
       const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return defaultState();
+      if(!raw){
+        if(UI_PREVIEW_MODE && SETUP_TEST_MODE){
+          const formal = localStorage.getItem('badminton3x3.ipad.v1.state');
+          if(formal) return normalizeState(JSON.parse(formal));
+        }
+        return defaultState();
+      }
       const data = JSON.parse(raw);
       return normalizeState(data);
     }catch(err){
@@ -1716,6 +1723,7 @@
     fitPlayerNameText();
     scheduleFitPlayerNames();
     runPendingCourtEntryAnimation();
+    if(window.BoardPreview){ try{ window.BoardPreview.onRender(); }catch(err){ console.warn('Preview animation skipped'); } }
     saveState();
     if(console.timeEnd) console.timeEnd('render');
   }
@@ -2235,6 +2243,9 @@
     if(!p || !validZone(targetZone)) return false;
     const oldZone = p.zone;
     const oldSlot = p.slot;
+    if(window.BoardPreview && validZone(targetZone) && (targetZone === 'rest' || SLOTS.includes(Number(targetSlot)))){
+      try{ window.BoardPreview.captureMove(playerId, targetZone, Number(targetSlot)); }catch(err){ console.warn('Preview move animation skipped'); }
+    }
 
     if(targetZone === 'rest'){
       p.zone = 'rest';
@@ -2629,6 +2640,7 @@
     logAction('autoNextUp',court,names,`${zoneLabel(nextZone)} 上場到 ${zoneLabel(court)}，Next 向前遞補`);
     markCourtCallTarget(court);
     queueCourtEntryAnimation(entryAnimation);
+    if(window.BoardPreview && fromCourtDown){ try{ window.BoardPreview.enteringCourt(court); }catch(err){ console.warn('Preview title skipped'); } }
     showToast(`${zoneLabel(nextZone)} 已上場`);
     if(state.settings.autoCallEnabled) callPlayers(names, court);
     return true;
@@ -5298,6 +5310,9 @@
     if(!DEBUG_MODE) return;
     window.__badmintonIpadV1 = {
       setupTestMode:SETUP_TEST_MODE,
+      isLegacyIpadRuntime:isLegacyIpadRuntime,
+      movePlayer:movePlayer,
+      savePreviewSettings:function(values){ Object.assign(state.settings,values); saveState(); },
       getState:function(){ return clone(state); },
       setState:function(nextState){
         state = normalizeState(nextState || {});
@@ -5404,6 +5419,13 @@
   }
 
   init();
+  if(UI_PREVIEW_MODE && SETUP_TEST_MODE && DEBUG_MODE){
+    const style = document.createElement('link');style.rel = 'stylesheet';style.href = './integrated-preview.css';document.head.appendChild(style);
+    const motion = document.createElement('script');motion.src = './vendor/motion.js';
+    const loadPreview = function(){const script=document.createElement('script');script.src='./integrated-preview.js';document.body.appendChild(script);};
+    motion.onload = loadPreview;motion.onerror = loadPreview;
+    if(isLegacyIpadRuntime()) loadPreview();else document.body.appendChild(motion);
+  }
 })();
 </script>
 </body>

@@ -109,7 +109,7 @@ engine.onload=function(){
  q('gf-voice').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.mode===s.mode));});q('gf-courts').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(Number(b.dataset.courts)===s.count));});q('gf-arrange').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.arrange===s.arrange));});
  s.busy=false;roster();render();notice('測試資料獨立保存，不影響正式聚會');
 };
-engine.src='./index.html?debug=1&setup-test=1';
+engine.src='./index.html?debug=1&setup-test=1'+(location.search.indexOf('integrated=1')>=0?'&ui-preview=1':'');
 async function syncDraft(){
  var ok=await api.saveTodayRosterFromText(s.names.join('\n'));if(!ok)throw new Error('名單無法儲存');
  var st=api.getState();st.players.forEach(function(p){if(p.isActive!==false&&s.cards[p.name])p.color=s.cards[p.name];});

@@ -1,0 +1,16 @@
+html:not(.legacyIpad) .preview-flip-head{position:relative;perspective:700px;padding:0!important;overflow:hidden;isolation:isolate;background:none!important;}
+.preview-flip-face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:12px;padding:6px 12px;border-radius:inherit;backface-visibility:hidden;pointer-events:none;color:#fff;font-weight:1000;font-size:22px;background:#0F766E;transform-origin:center;}
+.preview-flip-face.action{background:#D97706;}
+.preview-flip-face.entering{background:#2563EB;}
+.preview-flip-head>.zone-count{position:absolute;right:9px;bottom:6px;z-index:2;pointer-events:none;font-size:13px;}
+.preview-motion-overlay{position:fixed;inset:0;pointer-events:none;z-index:47;overflow:hidden;}
+.preview-move-clone{position:fixed;pointer-events:none;transform-origin:top left;}
+.preview-arrival{outline:2px solid #38BDF8;outline-offset:-2px;}
+#previewGatheringBtn{width:100%;min-height:48px;margin-bottom:12px;background:#0F766E!important;color:#fff!important;}
+.preview-settings-inner{padding-top:8px;}
+.preview-admin .today-mode-control>.compact-row-label{display:none!important;}
+.preview-admin .preview-today-title{display:none;}
+.preview-admin .preview-today-card>.admin-collapse-body{display:block!important;}
+.preview-admin .preview-retired{display:none!important;}
+.preview-test #debugPanel{display:none!important;}
+.preview-admin .compact-state-row button[aria-pressed="true"]{background:#2563EB!important;color:#fff!important;}
