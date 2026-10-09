@@ -985,7 +985,8 @@
   'use strict';
 
   const APP_VERSION = '2.0.12';
-  const STORAGE_KEY = 'badminton3x3.ipad.v1.state';
+  const SETUP_TEST_MODE = location.search.indexOf('setup-test=1') >= 0;
+  const STORAGE_KEY = SETUP_TEST_MODE ? 'badminton3x3.ipad.v1.setup-test' : 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
   const ROSTER_SITE = 'rian';
@@ -1064,7 +1065,7 @@
     },
     nextPrepare:'zh-TW-HsiaoChenNeural/next-group-prepare.mp3'
   };
-  const LOCAL_VOICE_DB = 'badminton-local-voice';
+  const LOCAL_VOICE_DB = SETUP_TEST_MODE ? 'badminton-setup-test-voice' : 'badminton-local-voice';
   const LOCAL_VOICE_STORE = 'voiceAssets';
   const LOCAL_VOICE_SPEC_VERSION = 'local-voice-v1';
   const LOCAL_VOICE_API = 'https://badminton-signup-v6-alpha.badminton-signup-v6-worker.workers.dev/api/voice/generate';
@@ -5209,6 +5210,7 @@
   function exposeDebugApi(){
     if(!DEBUG_MODE) return;
     window.__badmintonIpadV1 = {
+      setupTestMode:SETUP_TEST_MODE,
       getState:function(){ return clone(state); },
       setState:function(nextState){
         state = normalizeState(nextState || {});
@@ -5234,6 +5236,9 @@
       setCourtMode:setCourtMode,
       setNextCount:setNextCount,
       resetToday:resetToday,
+      randomFillCourts:randomFillCourts,
+      openPanel:openPanel,
+      closePanel:closePanel,
       clearAll:clearAll,
       importPlayersFromText:importPlayersFromText,
       showTodayRosterEditor:showTodayRosterEditor,

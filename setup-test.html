@@ -1,0 +1,147 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>新聚會導引測試</title><style>body{margin:0;background:#0f1115;}#gathering-flow{min-height:100vh;}#gathering-flow header{padding-top:10px;padding-top:calc(10px + env(safe-area-inset-top));}</style></head><body>
+<iframe id="setup-engine" title="測試排場" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;border:0;z-index:20"></iframe>
+<div id="gathering-flow">
+  <header><button id="gf-back" aria-label="返回"><i data-lucide="chevron-left" aria-hidden="true"></i>返回</button><h2>新聚會</h2><span id="gf-progress">1 / 5</span></header>
+  <div class="gf-track" aria-hidden="true"><span></span></div>
+  <main>
+    <section data-step="0"><div class="gf-roster-title"><h3>今日名單</h3><span id="gf-count">6 位成員</span><span id="gf-line-help">· 一行一位</span></div><textarea id="gf-roster" aria-label="今日名單，一行一人" rows="6">柔伊
+Chris
+簡哥
+Bobo
+Kevin
+雅雯</textarea><h4>人名卡顏色</h4><div id="gf-swatches" aria-label="球員顏色"></div><button id="gf-apply">全部套用此色</button><div id="gf-players" aria-label="選取成員修改顏色"></div></section>
+    <section data-step="1" hidden><h3>準備呼叫音源</h3><div class="gf-segments" id="gf-voice"><button data-mode="edge" aria-pressed="true">Edge 固定語音</button><button data-mode="browser">網頁合成語音</button><button data-mode="off">關閉</button></div><div id="gf-edge"><div class="gf-status"><strong id="gf-ready"></strong><span id="gf-missing"></span></div><button class="gf-primary" id="gf-generate">產生缺少音源</button><button id="gf-trial" disabled>試播</button></div><div id="gf-browser" hidden><label>中文人聲<select><option>自動推薦</option></select></label><label>英文人聲<select><option>自動推薦</option></select></label><div class="gf-two"><label>語速<select><option>正常</option><option>慢</option><option>快</option></select></label><label>音調<select><option>正常</option><option>低</option><option>高</option></select></label></div><button id="gf-browser-trial" class="gf-full">試播網頁語音</button></div></section>
+    <section data-step="2" hidden><h3>設定場地</h3><div id="gf-courts" class="gf-segments"><button data-courts="2">2 面</button><button data-courts="3" aria-pressed="true">3 面</button><button data-courts="4">4 面</button></div><div id="gf-labels" class="gf-two"></div><h4>預備區數量</h4><div id="gf-next" class="gf-segments"></div><div id="gf-court-status" class="gf-status" hidden></div><button id="gf-court-generate" class="gf-primary" hidden>補足場地音源</button></section>
+    <section data-step="3" hidden><h3>選擇排場方式</h3><div id="gf-arrange" class="gf-segments"><button data-arrange="free">自由暢打</button><button data-arrange="auto" aria-pressed="true">自動排場</button></div><h4>開始時的人員位置</h4><div id="gf-fill" class="gf-segments"><button data-fill="rest" aria-pressed="true">先留休息區</button><button data-fill="random">隨機填滿</button></div></section>
+    <section data-step="4" hidden><h3>準備開始</h3><dl id="gf-summary"></dl><div id="gf-complete" hidden>聚會已開始</div></section>
+    <div id="gf-notice" role="status" aria-live="polite"></div>
+    <div class="gf-footer-actions"><button id="gf-previous" hidden>上一步</button><button class="gf-primary gf-full" id="gf-forward">確認名單，下一步</button></div>
+  </main>
+</div>
+<style>
+#gathering-flow{background:#0f1115;color:#f5f7fa;border-radius:8px;font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:0;overflow:hidden;}
+#gathering-flow *{box-sizing:border-box;letter-spacing:0;}
+#gathering-flow [hidden]{display:none!important;}
+#gathering-flow header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:10px 18px;background:#171a21;}
+#gathering-flow h2{font-size:18px;margin:0;}#gathering-flow header>span{text-align:right;color:#b7c0cd;font-size:14px;}
+#gathering-flow button{font:inherit;min-height:48px;border:0;border-radius:8px;padding:10px 12px;background:#232834;color:#f5f7fa;touch-action:manipulation;}
+#gathering-flow button:disabled{opacity:.45;}#gathering-flow button:focus-visible{outline:2px solid #80acff;outline-offset:2px;}
+#gathering-flow header button{background:transparent;color:#80acff;display:flex;align-items:center;padding:0;width:max-content;}
+#gathering-flow svg{width:20px;height:20px;}#gathering-flow main{max-width:720px;margin:auto;padding:22px 20px;}
+#gathering-flow h3{font-size:21px;margin:0 0 18px;}#gathering-flow h4{font-size:15px;color:#b7c0cd;margin:22px 0 10px;}
+#gathering-flow textarea,#gathering-flow input,#gathering-flow select{font:inherit;font-size:16px;color:#fff;background:#232834;border:1px solid #3c4556;border-radius:8px;padding:12px;min-height:48px;max-width:100%;}
+#gathering-flow textarea{width:100%;resize:vertical;}#gathering-flow input,#gathering-flow select{width:100%;margin-top:6px;}
+#gathering-flow .gf-line{display:flex;justify-content:space-between;color:#b7c0cd;font-size:13px;margin-top:6px;}
+#gathering-flow .gf-roster-title{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+#gathering-flow .gf-roster-title h3{margin:0 8px 0 0;}
+#gathering-flow .gf-roster-title>span{font-size:13px;color:#b7c0cd;}
+#gathering-flow #gf-swatches{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:12px;}
+#gathering-flow #gf-swatches button{padding:6px;background:transparent;display:flex;justify-content:center;align-items:center;}
+#gathering-flow .gf-swatch{width:32px;height:32px;border-radius:50%;display:flex;justify-content:center;align-items:center;color:#111;font-weight:700;}
+#gathering-flow #gf-swatches button[aria-pressed=true]{outline:2px solid #fff;outline-offset:-2px;}
+#gathering-flow #gf-players{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px;max-height:224px;overflow-y:auto;padding:3px;align-content:start;}
+#gathering-flow .gf-player{padding:9px 6px;border-radius:6px;color:#111;text-align:center;overflow-wrap:anywhere;min-height:48px;}
+#gathering-flow .gf-player[aria-pressed=true]{outline:2px solid #fff;outline-offset:1px;}
+@media(min-width:600px){#gathering-flow #gf-players{grid-template-columns:repeat(4,minmax(0,1fr));}}
+@media(min-width:900px){#gathering-flow #gf-players{grid-template-columns:repeat(6,minmax(0,1fr));}}
+#gathering-flow .gf-segments{display:flex;gap:4px;background:#1e222b;border-radius:8px;padding:4px;}
+#gathering-flow .gf-segments button{flex:1;min-width:0;padding:8px 6px;background:transparent;}
+#gathering-flow .gf-segments button[aria-pressed=true]{background:#356be0;}
+#gathering-flow .gf-primary{background:#0f766e;color:#fff;}#gathering-flow .gf-full{width:100%;margin-top:16px;}
+#gathering-flow .gf-status{display:flex;flex-direction:column;gap:8px;padding:18px 0;color:#b7c0cd;white-space:pre-line;}#gathering-flow .gf-status strong{color:#71ddbb;font-size:18px;}
+#gathering-flow #gf-edge>button{width:100%;margin-bottom:10px;}
+#gathering-flow .gf-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}#gathering-flow #gf-labels{margin-top:20px;}#gathering-flow label{display:block;margin-top:12px;font-size:14px;}
+#gathering-flow #gf-notice{color:#ffca75;font-size:14px;min-height:20px;margin-top:16px;}
+#gathering-flow .gf-track{height:3px;background:#232834;}#gathering-flow .gf-track span{display:block;height:100%;background:#4f8cff;width:20%;}
+#gathering-flow dl{margin:0;}#gathering-flow dl>div{display:flex;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid #2e3442;}#gathering-flow dt{color:#b7c0cd;}#gathering-flow dd{margin:0;text-align:right;overflow-wrap:anywhere;}#gathering-flow #gf-complete{padding:20px 0;color:#71ddbb;font-size:20px;}
+#gathering-flow .gf-footer-actions{display:flex;gap:12px;margin-top:16px;}
+#gathering-flow .gf-footer-actions>button{flex:1;margin-top:0;}
+@media(min-width:900px){
+ #gathering-flow main{max-width:1024px;padding:24px 32px;}
+ #gathering-flow section[data-step="1"],#gathering-flow section[data-step="2"],#gathering-flow section[data-step="3"]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start;}
+ #gathering-flow section[data-step]>h3{grid-column:1 / -1;}
+ #gathering-flow .gf-setting-group{background:#171a21;border-radius:8px;padding:20px;min-width:0;}
+ #gathering-flow .gf-setting-group h4{margin:0 0 14px;}
+ #gathering-flow #gf-labels{margin-top:0;}
+ #gathering-flow #gf-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+ #gathering-flow #gf-summary>div{display:block;background:#171a21;border:0;border-radius:8px;padding:18px;}
+ #gathering-flow #gf-summary dd{text-align:left;margin-top:8px;font-size:18px;}
+ #gathering-flow .gf-footer-actions{max-width:560px;margin-left:auto;margin-right:auto;}
+}
+@media(min-width:850px){#gathering-flow #gf-swatches{grid-template-columns:repeat(12,minmax(0,1fr));}}
+@media(max-width:400px){#gathering-flow main{padding:20px 14px;}#gathering-flow #gf-voice button{font-size:14px;}}
+</style>
+<script>
+(function(){
+var r=document.getElementById('gathering-flow');function q(id){return r.querySelector('#'+id);}
+function group(ids,title){var first=q(ids[0]),parent=first.parentNode,box=document.createElement('div');box.className='gf-setting-group';parent.insertBefore(box,first);if(title){var h=document.createElement('h4');h.textContent=title;box.appendChild(h);}ids.forEach(function(id){box.appendChild(q(id));});}
+group(['gf-voice','gf-browser'],'呼叫方式');group(['gf-edge'],'本機音源');
+group(['gf-courts'],'場地數量');group(['gf-labels'],'場地名稱');
+var nextTitle=q('gf-next').previousElementSibling;nextTitle.parentNode.removeChild(nextTitle);
+group(['gf-next'],'預備區數量');group(['gf-court-status','gf-court-generate'],'場地音源');
+var fillTitle=q('gf-fill').previousElementSibling;fillTitle.parentNode.removeChild(fillTitle);
+group(['gf-arrange'],'排場方式');group(['gf-fill'],'開始時的人員位置');
+var colors=['#bfdbfe','#bbf7d0','#fde68a','#fecaca','#ddd6fe','#fed7aa','#bae6fd','#fbcfe8','#ccfbf1','#e9d5ff','#d9f99d','#fef3c7'];
+var s={step:0,color:colors[0],selected:null,helperTextEnabled:true,names:[],cards:{},mode:'edge',count:3,next:3,labels:['1','2','3','4'],arrange:'auto',fill:'rest',assets:{},missing:[],busy:false,complete:false};
+var engine=document.getElementById('setup-engine'),api=null,baseline=null,needsReset=false;
+q('gf-roster').value='';s.busy=true;
+try{if(!localStorage.getItem('badminton3x3.ipad.v1.setup-test')){var existing=localStorage.getItem('badminton3x3.ipad.v1.state');if(existing)localStorage.setItem('badminton3x3.ipad.v1.setup-test',existing);}}catch(err){}
+engine.onload=function(){
+ api=engine.contentWindow.__badmintonIpadV1;
+ if(!api||api.setupTestMode!==true){api=null;notice('測試引擎尚未更新，請連線後重新整理；未變更正式資料。');return;}
+ baseline=api.getState();var active=baseline.players.filter(function(p){return p.isActive!==false;});
+ needsReset=active.some(function(p){return p.zone!=='rest'||p.games>0;});
+ active.forEach(function(p){s.cards[p.name]=p.color;});s.names=active.map(function(p){return p.name;});q('gf-roster').value=s.names.join('\n');
+ s.count=Number(baseline.settings.courtCount)||3;s.next=Number(baseline.settings.nextCount)||3;s.labels=['court1','court2','court3','court4'].map(function(z,i){return baseline.settings.courtLabels[z]||String(i+1);});s.helperTextEnabled=baseline.settings.helperTextEnabled!==false;q('gf-line-help').hidden=!s.helperTextEnabled;
+ s.arrange=baseline.settings.autoArrangeMode?'auto':'free';s.mode=baseline.settings.autoCallMode==='edge'?'edge':baseline.settings.autoCallMode==='browser'?'browser':'edge';
+ active.forEach(function(p){p.zone='rest';p.slot=null;});api.setState(baseline);
+ var browserSelects=q('gf-browser').querySelectorAll('select');['zhVoiceSelect','enVoiceSelect','voiceRateSelect','voicePitchSelect'].forEach(function(id,i){var source=engine.contentDocument.getElementById(id);if(source){browserSelects[i].innerHTML=source.innerHTML;browserSelects[i].value=source.value;}});
+ q('gf-voice').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.mode===s.mode));});q('gf-courts').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(Number(b.dataset.courts)===s.count));});q('gf-arrange').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.arrange===s.arrange));});
+ s.busy=false;roster();render();notice('測試資料獨立保存，不影響正式聚會');
+};
+engine.src='./index.html?debug=1&setup-test=1';
+async function syncDraft(){
+ var ok=await api.saveTodayRosterFromText(s.names.join('\n'));if(!ok)throw new Error('名單無法儲存');
+ var st=api.getState();st.players.forEach(function(p){if(p.isActive!==false&&s.cards[p.name])p.color=s.cards[p.name];});
+ st.settings.courtCount=s.count;st.settings.courtLabels={court1:s.labels[0],court2:s.labels[1],court3:s.labels[2],court4:s.labels[3]};st.settings[s.count===2?'nextCount2x2':s.count===4?'nextCount4x4':'nextCount3x3']=s.next;st.settings.nextCount=s.next;
+ st.settings.autoCallEnabled=false;st.settings.autoCallMode='off';api.setState(st);
+ var browserSelects=q('gf-browser').querySelectorAll('select');st=api.getState();st.settings.zhVoiceId=browserSelects[0].value;st.settings.enVoiceId=browserSelects[1].value;st.settings.voiceRate=browserSelects[2].value;st.settings.voicePitch=browserSelects[3].value;api.setState(st);
+ var descs=api.requiredLocalVoiceAssetsForToday();var check=await api.localVoiceCheck(descs);s.missing=check.missing.map(function(d){return {key:d.key,text:d.spokenText};});
+}
+if(window.openai && window.openai.widgetState && window.openai.widgetState.helperTextEnabled===false)s.helperTextEnabled=false;
+q('gf-line-help').hidden=!s.helperTextEnabled;
+window.addEventListener('openai:set_globals',function(e){var w=e.detail&&e.detail.globals&&e.detail.globals.widgetState;if(w&&typeof w.helperTextEnabled==='boolean'){s.helperTextEnabled=w.helperTextEnabled;q('gf-line-help').hidden=!s.helperTextEnabled;}});
+function names(){return q('gf-roster').value.split(/\r?\n/).map(function(x){return x.trim();}).filter(Boolean);}
+function spoken(name){return /[\u3400-\u9fff]/.test(name.replace(/[哥姊]\s*$/,''))?name:name.replace(/\s*[哥姊]\s*$/,'');}
+function need(){return s.missing;}
+function notice(t){q('gf-notice').textContent=t;}
+function swatches(){q('gf-swatches').querySelectorAll('button').forEach(function(x,i){x.setAttribute('aria-pressed',String(colors[i]===s.color));x.firstChild.textContent=colors[i]===s.color?'✓':'';});}
+function roster(){var n=names();if(n.indexOf(s.selected)<0)s.selected=null;q('gf-count').textContent=n.length+' 位成員';q('gf-players').innerHTML='';n.forEach(function(name){if(!s.cards[name])s.cards[name]=s.color;var x=document.createElement('button');x.type='button';x.className='gf-player';x.textContent=name;x.style.background=s.cards[name];x.setAttribute('aria-pressed',String(s.selected===name));x.onclick=function(){s.selected=name;s.color=s.cards[name];swatches();roster();};q('gf-players').appendChild(x);});}
+function voice(){var missing=need();q('gf-edge').hidden=s.mode!=='edge';q('gf-browser').hidden=s.mode!=='browser';q('gf-ready').textContent=missing.length?'缺少 '+missing.length+' 個音源':'本機音源 Ready';q('gf-missing').textContent=missing.map(function(x){return x.text;}).join('、');q('gf-generate').hidden=!missing.length;q('gf-generate').disabled=s.busy;q('gf-trial').disabled=!!missing.length||s.busy;q('gf-court-status').hidden=s.mode!=='edge';q('gf-court-status').textContent=missing.length?'場名更新後需補足 '+missing.length+' 個音源':'場地音源 Ready';q('gf-court-generate').hidden=s.mode!=='edge'||!missing.length;q('gf-court-generate').disabled=s.busy;q('gf-forward').disabled=s.busy||(s.mode==='edge'&&(s.step===1||s.step===2)&&missing.length>0);}
+function courts(){q('gf-labels').innerHTML='';for(var i=0;i<s.count;i++){var l=document.createElement('label');l.textContent='場地'+(i+1);var input=document.createElement('input');input.value=s.labels[i];input.dataset.index=i;input.maxLength=8;input.setAttribute('aria-label','場地'+(i+1)+'名稱');input.oninput=function(){s.labels[Number(this.dataset.index)]=this.value;voice();};l.appendChild(input);q('gf-labels').appendChild(l);}q('gf-next').innerHTML='';var min=s.count===2?2:3;for(var n=min;n<=min+2;n++){var b=document.createElement('button');b.textContent=n+' 組';b.dataset.next=n;b.setAttribute('aria-pressed',String(n===s.next));q('gf-next').appendChild(b);}}
+function summary(){q('gf-summary').innerHTML='';[['球員',s.names.length+' 位'],['語音',s.mode==='edge'?'Edge · 本機音源 Ready':s.mode==='browser'?'網頁合成語音':'關閉'],['場地',s.labels.slice(0,s.count).join('、')],['預備區',s.next+' 組'],['排場',s.arrange==='auto'?'自動排場':'自由暢打'],['初始位置',s.fill==='rest'?'休息區':'隨機填滿']].forEach(function(pair){var row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=pair[0];dd.textContent=pair[1];row.appendChild(dt);row.appendChild(dd);q('gf-summary').appendChild(row);});}
+function render(){r.querySelectorAll('[data-step]').forEach(function(x){x.hidden=Number(x.dataset.step)!==s.step;});q('gf-progress').textContent=(s.step+1)+' / 5';r.querySelector('.gf-track span').style.width=((s.step+1)*20)+'%';q('gf-back').disabled=s.busy||s.step===0||s.complete;q('gf-previous').hidden=s.step===0||s.complete;q('gf-previous').disabled=s.busy;q('gf-forward').textContent=['確認名單，下一步','音源就緒，下一步','確認場地，下一步','確認排場，下一步','確認並開始'][s.step];q('gf-forward').hidden=s.complete;notice('');if(s.step===1||s.step===2)voice();else q('gf-forward').disabled=s.busy;if(s.step===2)courts();if(s.step===4)summary();}
+colors.forEach(function(color,i){var b=document.createElement('button');b.setAttribute('aria-label','色票 '+(i+1));b.setAttribute('aria-pressed',String(i===0));var sw=document.createElement('span');sw.className='gf-swatch';sw.style.background=color;sw.textContent=i===0?'✓':'';b.appendChild(sw);b.onclick=function(){s.color=color;if(s.selected)s.cards[s.selected]=color;swatches();roster();};q('gf-swatches').appendChild(b);});
+q('gf-roster').oninput=roster;q('gf-apply').onclick=function(){names().forEach(function(n){s.cards[n]=s.color;});roster();notice('已套用今日所有人員');};
+function segment(id,key,attr){q(id).onclick=function(e){var b=e.target;if(!b.dataset[attr]||s.busy)return;s[key]=b.dataset[attr];q(id).querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',String(x===b));});if(key==='mode')voice();};}
+segment('gf-voice','mode','mode');segment('gf-arrange','arrange','arrange');segment('gf-fill','fill','fill');
+q('gf-courts').onclick=function(e){if(!e.target.dataset.courts)return;s.count=Number(e.target.dataset.courts);s.next=s.count===2?2:3;q('gf-courts').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(Number(b.dataset.courts)===s.count));});courts();voice();};q('gf-next').onclick=function(e){if(!e.target.dataset.next)return;s.next=Number(e.target.dataset.next);courts();};
+async function generate(){if(s.busy||!api)return;s.busy=true;render();var timer=setInterval(function(){var progress=engine.contentDocument.getElementById('voiceGenerateStatus');if(progress)notice(progress.textContent);},200);try{await syncDraft();var result=await api.generateMissingVoiceAssets();await syncDraft();if(result.failed&&result.failed.length)notice('生成失敗：'+result.failed.join('、'));else notice('音源已完整');}catch(err){notice('產生失敗：'+err.message);}finally{clearInterval(timer);s.busy=false;voice();}}
+q('gf-generate').onclick=generate;q('gf-court-generate').onclick=generate;q('gf-trial').onclick=async function(){try{api.unlockLegacyVoiceAudio();await api.enableAutoCallWithEdgeCheck();api.tap('edgeTestBtn');notice('正在試播');}catch(err){notice('試播失敗');}};
+q('gf-browser-trial').onclick=async function(){try{await syncDraft();api.enableBrowserAutoCall();api.tap('voiceTestBtn');notice('正在試播');}catch(err){notice('試播失敗：'+err.message);}};
+q('gf-back').onclick=function(){if(s.step>0){s.step--;render();}};
+q('gf-previous').onclick=q('gf-back').onclick;
+q('gf-forward').onclick=async function(){if(s.busy||!api)return;try{if(s.step===0){var n=names();if(!n.length){notice('請輸入至少一位球員');return;}if(n.some(function(x,i){return n.indexOf(x)!==i;})){notice('姓名重複，請確認');return;}s.names=n;n.forEach(function(x){if(!s.cards[x])s.cards[x]=s.color;});}
+if(s.step===2&&s.labels.slice(0,s.count).some(function(x){return !x.trim();})){notice('請輸入場地名稱');return;}
+s.busy=true;q('gf-forward').disabled=true;await syncDraft();s.busy=false;if(s.mode==='edge'&&(s.step===1||s.step===2)&&need().length){voice();notice('請先補足音源');return;}
+if(s.step<4){s.step++;render();return;}
+if(needsReset){var previousLog=api.getState().gameLog.length;api.openPanel();engine.style.display='block';await api.resetToday();api.closePanel();engine.style.display='none';if(api.getState().gameLog.length===previousLog){notice('已取消開始新聚會');return;}}
+var finalState=api.getState();finalState.settings.autoArrangeMode=s.arrange==='auto';finalState.settings.freePlayMode=s.arrange==='free';api.setState(finalState);
+if(s.mode==='edge'){await api.enableAutoCallWithEdgeCheck();}else if(s.mode==='browser'){api.enableBrowserAutoCall();}else{api.disableAutoCall();}
+if(s.fill==='random')await api.randomFillCourts();s.complete=true;engine.style.display='block';r.hidden=true;api.render();
+}catch(err){notice(err.message);}finally{s.busy=false;if(!s.complete)voice();}};
+roster();render();
+q('gf-forward').disabled=true;
+})();
+</script>
+</body></html>
