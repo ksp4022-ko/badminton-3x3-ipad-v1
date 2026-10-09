@@ -5255,6 +5255,12 @@
       exportLogCsv:exportLogCsv,
       callPlayers:callPlayers,
       testBrowserVoice:function(){ return speakCallSequence(['雅雯','Kevin'], 'court1', 'browser'); },
+      prepareSetupTrial:async function(){
+        const parts = edgeCallSequenceParts(todayActiveNamesForEdgeCheck().slice(0,4), activeCourts()[0] || 'court1');
+        const result = await localVoiceUrlsForDescriptors([].concat.apply([], parts.map(function(p){ return p.descriptors || []; })));
+        if(result.missing.length) throw new Error('試播音源缺少');
+        return result.urls;
+      },
       testEdgeVoice:function(){
         if(currentAutoCallMode() !== 'edge') throw new Error('Edge 尚未 Ready');
         return callPlayers(todayActiveNamesForEdgeCheck().slice(0, 4), activeCourts()[0] || 'court1');

@@ -29,8 +29,9 @@ const server=http.createServer((req,res)=>{
    const geometry=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth,rects:Array.from(document.querySelectorAll('section[data-step="1"] .gf-setting-group')).map(x=>{const r=x.getBoundingClientRect();return {top:r.top,left:r.left,width:r.width};})}));
    assert.equal(geometry.overflow,false);if(legacy){assert.equal(geometry.rects[0].top,geometry.rects[1].top);assert(geometry.rects[1].left>geometry.rects[0].left);}
    await page.click('#gf-generate');await page.waitForFunction(()=>!document.getElementById('gf-forward').disabled);
-   await page.evaluate(()=>{const api=document.getElementById('setup-engine').contentWindow.__badmintonIpadV1;window.trialCalls=0;api.testEdgeVoice=function(){window.parent.trialCalls++;};});
-   await page.click('#gf-trial');await page.waitForFunction(()=>window.trialCalls===1);
+   await page.evaluate(()=>{window.trialCalls=0;HTMLMediaElement.prototype.play=function(){window.trialCalls++;const audio=this;setTimeout(()=>{if(audio.onended)audio.onended();},10);return Promise.resolve();};});
+   for(let repeat=0;repeat<2;repeat++){await page.click('#gf-trial');await page.waitForFunction(()=>document.getElementById('gf-notice').textContent==='試播完成');}
+   assert.equal(await page.evaluate(()=>window.trialCalls),6);
    await page.click('#gf-forward');await page.locator('#gf-labels input').first().fill('A');
    await page.click('#gf-forward');assert(await page.locator('#gf-forward').isDisabled());
    await page.click('#gf-court-generate');await page.waitForFunction(()=>!document.getElementById('gf-forward').disabled);
