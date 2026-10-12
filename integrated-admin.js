@@ -69,6 +69,53 @@
  tools.insertBefore(home,tools.firstChild);tools.insertBefore(detail,home.nextSibling);
  document.getElementById('floatPanel').classList.add('preview-admin-v3','preview-status-layout');
  window.PreviewAdminLayout={home:home,detail:detail};
+ if(location.search.indexOf('admin-compare=1')<0){
+  var panel=document.getElementById('floatPanel');panel.classList.add('preview-tabbed-layout');
+  var tabs=element('nav','status-tabs');tabs.id='statusAdminTabs';tabs.setAttribute('aria-label','控制台分類');
+  var tabEntries=[],route='today',settingsRoute='courts',panes={};
+  entries.forEach(function(entry){panes[entry.pane.getAttribute('data-preview-category')]=entry.pane;});
+  [['today','聚會'],['players','球員'],['voice','語音'],['settings','設定']].forEach(function(item){
+   var button=element('button','',item[1]);button.type='button';button.id='statusTab'+item[0];button.onclick=function(){showTab(item[0]);};tabs.appendChild(button);tabEntries.push({key:item[0],button:button});
+  });
+  tools.insertBefore(tabs,home);nav.hidden=true;detailHead.hidden=true;
+  var settingsNav=element('nav','status-settings-nav');settingsNav.hidden=true;settingsNav.id='statusSettingsNav';
+  [['courts','場地'],['settings','系統與資料']].forEach(function(item){var button=element('button','',item[1]);button.type='button';button.id='statusSetting'+item[0];button.onclick=function(){settingsRoute=item[0];showTab('settings');};settingsNav.appendChild(button);});detail.insertBefore(settingsNav,detail.firstChild);
+  sessionHead.querySelector('h2').textContent='目前聚會';rosterStatus.hidden=true;operationsTitle.hidden=true;
+  var metrics=element('div','status-metrics'),metricValues={};metrics.setAttribute('aria-live','polite');
+  [['roster','名單','users'],['voice','音源','volume-2'],['courts','場地','grid-2x2']].forEach(function(item){
+   var cell=element('div','status-metric'),icon=element('img');icon.src='./vendor/lucide/'+item[2]+'.svg';icon.alt='';icon.width=24;icon.height=24;
+   cell.appendChild(icon);cell.appendChild(element('span','status-metric-label',item[1]));var value=element('strong','');value.id='statusMetric'+item[0];cell.appendChild(value);metricValues[item[0]]=value;metrics.appendChild(cell);
+  });session.insertBefore(metrics,session.querySelector('#updateTodayRosterBtn'));
+  var update=session.querySelector('#updateTodayRosterBtn');update.textContent='更新今日名單 ›';
+  var modes=element('div','status-session-settings'),modeField=element('label','','排場模式'),modeSelect=element('select');modeSelect.id='statusArrangeMode';
+  [['free','自由暢打'],['auto','自動排場']].forEach(function(item){var option=element('option','',item[1]);option.value=item[0];modeSelect.appendChild(option);});
+  modeSelect.onchange=function(){today.querySelector(modeSelect.value==='auto'?'#autoModeBtn':'#freeModeBtn').click();};modeField.appendChild(modeSelect);modes.appendChild(modeField);
+  var voiceField=element('div','status-mode-field');voiceField.appendChild(element('span','','自動呼叫'));var voiceLink=element('button','');voiceLink.type='button';voiceLink.id='statusVoiceMode';voiceLink.onclick=function(){showTab('voice');};voiceField.appendChild(voiceLink);modes.appendChild(voiceField);quick.insertBefore(modes,today);
+  today.querySelector('.today-mode-control').hidden=true;
+  function textIfChanged(node,text){if(node.textContent!==text)node.textContent=text;}
+  function refreshSession(){
+   var state=window.__badmintonIpadV1.getState(),count=state.players.filter(function(p){return p.isActive!==false;}).length;
+   textIfChanged(metricValues.roster,count?'已載入 · '+count+' 人':'尚無名單');
+   var source=assets.querySelector('#localVoiceSummary').textContent;
+   textIfChanged(metricValues.voice,/Missing/.test(source)?'缺少音源':/Ready/.test(source)?'Ready':'檢查中');
+   textIfChanged(metricValues.courts,'已設定 · '+state.settings.courtCount+' 場');
+   modeSelect.value=state.settings.autoArrangeMode?'auto':'free';
+   var body=call.querySelector('#autoCallBody');textIfChanged(voiceLink,body.classList.contains('mode-edge')?'Edge 固定語音':body.classList.contains('mode-browser')?'網頁合成語音':body.classList.contains('mode-checking')?'檢查中…':'關閉');
+  }
+  function showTab(key){
+   route=key;home.hidden=key==='players'||key==='settings';detail.hidden=!home.hidden;top.hidden=key!=='today';voice.hidden=key!=='voice';settingsNav.hidden=key!=='settings';
+   Object.keys(panes).forEach(function(p){panes[p].hidden=!(key==='players'&&p==='players'||key==='settings'&&p===settingsRoute);});
+   tabEntries.forEach(function(item){item.button.setAttribute('aria-current',item.key===key?'page':'false');});
+   Array.from(settingsNav.children).forEach(function(button){button.setAttribute('aria-pressed',String(button.id==='statusSetting'+settingsRoute));});
+   document.querySelector('#floatPanel .panel-body').scrollTop=0;refreshSession();
+  }
+  var sessionObserver=new MutationObserver(refreshSession);
+  sessionObserver.observe(assets.querySelector('#localVoiceSummary'),{childList:true,subtree:true,characterData:true});
+  sessionObserver.observe(call.querySelector('#autoCallBody'),{attributes:true,attributeFilter:['class']});
+  sessionObserver.observe(today.querySelector('.mode-row'),{subtree:true,attributes:true,attributeFilter:['class']});
+  sessionObserver.observe(document.getElementById('courtRow'),{childList:true});
+  showTab('today');window.StatusAdmin={showTab:showTab};
+ }
  if(location.search.indexOf('admin-compare=1')>=0){
   var compareCss=document.createElement('link');compareCss.rel='stylesheet';compareCss.href='./admin-compare.css?v=20261012';document.head.appendChild(compareCss);
   var compareJs=document.createElement('script');compareJs.src='./admin-compare.js?v=20261012';document.body.appendChild(compareJs);

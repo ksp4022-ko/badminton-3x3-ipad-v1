@@ -1,7 +1,7 @@
 const fs=require('fs'),path=require('path'),http=require('http'),assert=require('assert/strict');
 const {chromium}=require('playwright');
 const root=path.resolve('.');
-const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL(req.url,'http://localhost').pathname);if(!p.startsWith(root+path.sep)||!fs.existsSync(p)){res.writeHead(404);return res.end();}res.setHeader('Content-Type',p.endsWith('.js')?'application/javascript':p.endsWith('.css')?'text/css':'text/html; charset=utf-8');res.end(fs.readFileSync(p));});
+const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL(req.url,'http://localhost').pathname);if(!p.startsWith(root+path.sep)||!fs.existsSync(p)){res.writeHead(404);return res.end();}res.setHeader('Content-Type',p.endsWith('.js')?'application/javascript':p.endsWith('.css')?'text/css':p.endsWith('.svg')?'image/svg+xml':'text/html; charset=utf-8');res.end(fs.readFileSync(p));});
 (async()=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch();
  try{
@@ -45,12 +45,21 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
    assert.equal(await page.locator('#selectedAdminBar').isVisible(),true);
    assert.equal(await page.locator('#selectedAdminBar').evaluate(el=>el.nextElementSibling.classList.contains('panel-body')),true);
    assert.equal(await page.locator('#previewAdminDetail').isVisible(),false);
+   assert.equal(await page.locator('#statusAdminTabs button').count(),4);
+   assert.equal(await page.locator('.status-metric img').evaluateAll(els=>els.every(el=>el.complete&&el.naturalWidth>0)),true);
+   assert.equal(await page.locator('#previewVoiceGrid').isVisible(),false);
+   assert((await page.locator('#statusMetricroster').innerText()).includes('8 人'));
+   assert.equal(await page.locator('#statusMetricvoice').innerText(),'缺少音源');
+   await page.selectOption('#statusArrangeMode','free');assert.equal(await page.evaluate(()=>window.__badmintonIpadV1.getState().settings.autoArrangeMode),false);
+   await page.selectOption('#statusArrangeMode','auto');assert.equal(await page.evaluate(()=>window.__badmintonIpadV1.getState().settings.autoArrangeMode),true);
+   await page.click('#statusTabvoice');
    assert.equal(await page.locator('#previewVoiceToggle').getAttribute('aria-expanded'),'false');
    assert.equal(await page.locator('#autoCallOffBtn').isVisible(),false);
    assert.equal(await page.locator('#previewAssetsToggle').getAttribute('aria-expanded'),'false');
    const modeBefore=await page.evaluate(()=>window.__badmintonIpadV1.getState().settings.autoCallMode);
    await page.click('#previewVoiceToggle');assert.equal(await page.locator('#autoCallOffBtn').isVisible(),true);
    await page.reload();await page.waitForFunction(()=>!!window.PreviewAdminLayout);await page.evaluate(()=>window.__badmintonIpadV1.openPanel());
+   await page.click('#statusTabvoice');
    assert.equal(await page.locator('#previewVoiceToggle').getAttribute('aria-expanded'),'true');
    await page.click('#previewVoiceToggle');assert.equal(await page.locator('#autoCallOffBtn').isVisible(),false);
    await page.click('#previewAssetsToggle');assert.equal(await page.locator('#toggleLocalVoiceDetailsBtn').isVisible(),true);
@@ -58,9 +67,9 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
    assert.equal(await page.evaluate(()=>window.__badmintonIpadV1.getState().settings.autoCallMode),modeBefore);
    const layout=await page.locator('#previewVoiceGrid').evaluate(el=>{const a=el.children[0].getBoundingClientRect(),b=el.children[1].getBoundingClientRect();return {topA:a.top,topB:b.top,leftA:a.left,leftB:b.left};});
    assert.equal(layout.topA,layout.topB);assert(layout.leftB>layout.leftA);
-   await page.click('#previewCategoryplayers');assert.equal(await page.locator('#previewAdminHome').isVisible(),false);await page.click('#showGamesDetailBtn');assert.equal(await page.locator('#plusGameBtn').isVisible(),true);await page.click('#hideGamesDetailBtn');await page.click('#previewAdminBackBtn');
-   await page.click('#previewCategorycourts');assert.equal(await page.locator('#saveCourtLabelsBtn').isVisible(),true);await page.click('#previewAdminBackBtn');
-   await page.click('#previewCategorysettings');assert.equal(await page.locator('#callEffectDurationSelect').isVisible(),true);assert.equal(await page.locator('#exportBackupBtn').isVisible(),true);await page.click('#previewAdminBackBtn');
+   await page.click('#statusTabplayers');assert.equal(await page.locator('#previewAdminHome').isVisible(),false);await page.click('#showGamesDetailBtn');assert.equal(await page.locator('#plusGameBtn').isVisible(),true);await page.click('#hideGamesDetailBtn');
+   await page.click('#statusTabsettings');assert.equal(await page.locator('#saveCourtLabelsBtn').isVisible(),true);
+   await page.click('#statusSettingsettings');assert.equal(await page.locator('#callEffectDurationSelect').isVisible(),true);assert.equal(await page.locator('#exportBackupBtn').isVisible(),true);await page.click('#statusTabtoday');
    assert.equal(await page.locator('#previewGatheringBtn').count(),1);
    assert.equal(await page.locator('.preview-retired').isVisible(),false);
    assert.equal(await page.locator('#callEffectDurationSelect').evaluate(el=>!!el.closest('#adminDataBody')),true);
@@ -75,14 +84,16 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
    await page.click('#selectedAdminCancelBtn');assert.equal(await page.locator('#selectedAdminEmpty').isVisible(),true);
    if(phone){
     await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);
+    await page.click('#statusTabvoice');
     const portrait=await page.locator('#previewVoiceGrid').evaluate(el=>{const a=el.children[0].getBoundingClientRect(),b=el.children[1].getBoundingClientRect();return {a:a.top,b:b.top,right:el.getBoundingClientRect().right};});
     assert(portrait.b>portrait.a);assert(portrait.right<=390);
     await page.click('#previewVoiceToggle');const modes=await page.locator('#autoCallOffBtn,#edgeCallBtn,#browserCallBtn').evaluateAll(els=>els.map(el=>el.getBoundingClientRect().top));assert(modes.every(top=>top===modes[0]));await page.click('#previewVoiceToggle');
+    await page.click('#statusTabtoday');
     assert.equal(await page.locator('#previewGatheringBtn').evaluate(el=>el.closest('.preview-session-head').querySelector('h2').getBoundingClientRect().top<=el.getBoundingClientRect().bottom),true);
     assert.equal(await page.locator('#previewRosterStatus').innerText(),'8 位成員 · 4 位上場 · 4 位預備');
-    await page.click('#previewCategorysettings');assert.equal(await page.locator('#callEffectDurationSelect').isVisible(),true);
+    await page.click('#statusTabsettings');await page.click('#statusSettingsettings');assert.equal(await page.locator('#callEffectDurationSelect').isVisible(),true);
     assert.equal(await page.locator('#floatPanel').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true);
-    await page.screenshot({path:path.join(require('os').tmpdir(),'badminton-integrated-admin-portrait-settings.png')});await page.click('#previewAdminBackBtn');
+    await page.screenshot({path:path.join(require('os').tmpdir(),'badminton-integrated-admin-portrait-settings.png')});await page.click('#statusTabtoday');
     await page.screenshot({path:path.join(require('os').tmpdir(),'badminton-integrated-admin-portrait.png')});
    }
    await page.click('#previewGatheringBtn');await page.waitForURL('**/setup-test.html?integrated=1');
