@@ -8,8 +8,22 @@
  var home=element('div','preview-admin-home');home.id='previewAdminHome';
  var top=element('div','preview-top-grid'),session=element('section','preview-session'),quick=element('section','preview-quick');
  session.setAttribute('aria-label','聚會與名單');quick.setAttribute('aria-label','排場操作');
- session.appendChild(document.getElementById('previewGatheringBtn'));session.appendChild(document.getElementById('updateTodayRosterBtn'));
+ var sessionHead=element('div','preview-session-head'),start=document.getElementById('previewGatheringBtn');
+ start.textContent='＋ 新聚會';sessionHead.appendChild(element('h2','','今日聚會'));sessionHead.appendChild(start);session.appendChild(sessionHead);
+ var rosterStatus=element('div','preview-roster-status');rosterStatus.id='previewRosterStatus';rosterStatus.setAttribute('aria-live','polite');session.appendChild(rosterStatus);
+ session.appendChild(document.getElementById('updateTodayRosterBtn'));
  var today=card('adminTodayBody');quick.appendChild(today);top.appendChild(session);top.appendChild(quick);home.appendChild(top);
+ var operationsTitle=element('h2','preview-operations-title','現場操作');quick.insertBefore(operationsTitle,today);
+ var actions=element('div','preview-secondary-actions');
+ ['regroupNextBtn','undoRegroupNextBtn','randomFillBtn'].forEach(function(id){actions.appendChild(today.querySelector('#'+id));});
+ today.querySelector('.admin-action-grid').appendChild(actions);
+ var resetRow=element('div','preview-reset-row');resetRow.appendChild(today.querySelector('#resetTodayBtn'));today.querySelector('.admin-action-grid').appendChild(resetRow);
+ function refreshRosterStatus(){
+  var players=window.__badmintonIpadV1.getState().players.filter(function(p){return p.isActive!==false;}),court=0,next=0;
+  players.forEach(function(p){if(/^court/.test(p.zone))court++;else if(/^next/.test(p.zone))next++;});
+  var text=players.length+' 位成員 · '+court+' 位上場 · '+next+' 位預備';if(rosterStatus.textContent!==text)rosterStatus.textContent=text;
+ }
+ new MutationObserver(refreshRosterStatus).observe(document.getElementById('courtRow'),{childList:true,subtree:true});refreshRosterStatus();
  var voice=element('div','preview-voice-grid');voice.id='previewVoiceGrid';
  var call=card('adminVoiceBody'),assets=card('adminLocalVoiceBody');heading(call,'自動呼叫',false);heading(assets,'本機音源',false);voice.appendChild(call);voice.appendChild(assets);home.appendChild(voice);
  var voicePanels=window.__badmintonIpadV1.getState().settings.previewVoicePanels || {};
@@ -53,7 +67,7 @@
   if(group.classList.contains('compact-state-row'))group.classList.add('preview-setting-field');
  });
  tools.insertBefore(home,tools.firstChild);tools.insertBefore(detail,home.nextSibling);
- document.getElementById('floatPanel').classList.add('preview-admin-v3');
+ document.getElementById('floatPanel').classList.add('preview-admin-v3','preview-status-layout');
  window.PreviewAdminLayout={home:home,detail:detail};
  if(location.search.indexOf('admin-compare=1')>=0){
   var compareCss=document.createElement('link');compareCss.rel='stylesheet';compareCss.href='./admin-compare.css?v=20261012';document.head.appendChild(compareCss);

@@ -38,6 +38,12 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
    await page.locator('#previewGatheringBtn').waitFor({state:'visible'});
    await page.waitForFunction(()=>!!window.PreviewAdminLayout);
    assert.equal(await page.locator('#previewAdminHome').isVisible(),true);
+   assert.equal(await page.locator('#floatPanel').evaluate(el=>el.classList.contains('preview-status-layout')),true);
+   assert.equal(await page.locator('#previewGatheringBtn').innerText(),'＋ 新聚會');
+   assert.equal(await page.locator('#previewGatheringBtn').evaluate(el=>el.getBoundingClientRect().width<el.closest('.preview-session').getBoundingClientRect().width*.7),true);
+   assert.equal(await page.locator('#previewRosterStatus').innerText(),'8 位成員 · 4 位上場 · 4 位預備');
+   assert.equal(await page.locator('#selectedAdminBar').isVisible(),true);
+   assert.equal(await page.locator('#selectedAdminBar').evaluate(el=>el.nextElementSibling.classList.contains('panel-body')),true);
    assert.equal(await page.locator('#previewAdminDetail').isVisible(),false);
    assert.equal(await page.locator('#previewVoiceToggle').getAttribute('aria-expanded'),'false');
    assert.equal(await page.locator('#autoCallOffBtn').isVisible(),false);
@@ -59,12 +65,21 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
    assert.equal(await page.locator('.preview-retired').isVisible(),false);
    assert.equal(await page.locator('#callEffectDurationSelect').evaluate(el=>!!el.closest('#adminDataBody')),true);
    await page.screenshot({path:path.join(require('os').tmpdir(),'badminton-integrated-admin-'+device+'.png')});
+   await page.evaluate(()=>window.__badmintonIpadV1.closePanel());
+   await page.click('.player-chip[data-player-id="p1"]');
+   await page.evaluate(()=>window.__badmintonIpadV1.openPanel());
+   assert.equal(await page.locator('#selectedAdminName').innerText(),'Chris');
+   assert.equal(await page.locator('#selectedAdminCount').innerText(),String(await page.evaluate(()=>window.__badmintonIpadV1.getState().players.find(p=>p.id==='p1').games)));
+   assert.equal(await page.locator('#selectedAdminName').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(191, 219, 254)');
+   await page.screenshot({path:path.join(require('os').tmpdir(),'badminton-integrated-admin-selected-'+device+'.png')});
+   await page.click('#selectedAdminCancelBtn');assert.equal(await page.locator('#selectedAdminEmpty').isVisible(),true);
    if(phone){
     await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);
     const portrait=await page.locator('#previewVoiceGrid').evaluate(el=>{const a=el.children[0].getBoundingClientRect(),b=el.children[1].getBoundingClientRect();return {a:a.top,b:b.top,right:el.getBoundingClientRect().right};});
     assert(portrait.b>portrait.a);assert(portrait.right<=390);
     await page.click('#previewVoiceToggle');const modes=await page.locator('#autoCallOffBtn,#edgeCallBtn,#browserCallBtn').evaluateAll(els=>els.map(el=>el.getBoundingClientRect().top));assert(modes.every(top=>top===modes[0]));await page.click('#previewVoiceToggle');
-    assert.equal(await page.locator('.preview-session').evaluate(el=>el.children[0].getBoundingClientRect().top===el.children[1].getBoundingClientRect().top),true);
+    assert.equal(await page.locator('#previewGatheringBtn').evaluate(el=>el.closest('.preview-session-head').querySelector('h2').getBoundingClientRect().top<=el.getBoundingClientRect().bottom),true);
+    assert.equal(await page.locator('#previewRosterStatus').innerText(),'8 位成員 · 4 位上場 · 4 位預備');
     await page.click('#previewCategorysettings');assert.equal(await page.locator('#callEffectDurationSelect').isVisible(),true);
     assert.equal(await page.locator('#floatPanel').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true);
     await page.screenshot({path:path.join(require('os').tmpdir(),'badminton-integrated-admin-portrait-settings.png')});await page.click('#previewAdminBackBtn');

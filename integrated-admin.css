@@ -64,3 +64,57 @@
  .preview-admin-v3 .preview-settings-inner{grid-template-columns:1fr 1fr;}
  .preview-admin-v3 #adminTools .preview-voice-grid .voice-grid>div:nth-child(-n+2){grid-column:auto;}
 }
+
+/* Status-first preview: existing controls keep their handlers and identities. */
+#floatPanel.preview-status-layout{background:#f3f5f7;color:#18202d;}
+.preview-status-layout.admin-v2 .panel-head,.preview-status-layout.admin-v2 .panel-body{background:#f3f5f7;color:#18202d;}
+.preview-status-layout.admin-v2 .panel-title{color:#18202d;}
+.preview-status-layout .selected-admin-bar{background:#fff;border-color:#d7dee7;}
+.preview-status-layout .selected-admin-empty{color:#657184;}
+.preview-status-layout .selected-admin-cancel{background:#e8edf3;color:#18202d;border-color:#d7dee7;}
+.preview-status-layout .admin-login-card{background:#fff;color:#18202d;border-color:#d7dee7;}
+.preview-status-layout .admin-login-card label{color:#526176;}
+.preview-status-layout .admin-login-card input{background:#fff;color:#18202d;border-color:#cdd6e1;}
+.preview-status-layout #adminTools{color:#18202d;}
+.preview-status-layout #adminTools .preview-managed-card{background:#fff;color:#18202d;border-radius:8px;}
+.preview-status-layout #adminTools h3,.preview-status-layout #adminTools h2,.preview-status-layout .preview-voice-title{color:#18202d;}
+.preview-status-layout #adminTools label,.preview-status-layout #adminTools .compact-row-label,.preview-status-layout .preview-voice-summary{color:#526176;}
+.preview-status-layout #adminTools button,.preview-status-layout #adminTools input,.preview-status-layout #adminTools select{background:#fff;color:#18202d;border-color:#cdd6e1;border-radius:8px;}
+.preview-status-layout #adminTools button.active,.preview-status-layout #adminTools button[aria-pressed="true"]{background:#2563eb;border-color:#2563eb;color:#fff;}
+.preview-status-layout #adminTools button.primary,.preview-status-layout #adminTools #generateMissingVoicesBtn{background:#0f766e;color:#fff;border-color:#0f766e;}
+.preview-status-layout #adminTools button.warn{background:#fff3d6;color:#875300;border-color:#e8d49c;}
+.preview-status-layout #adminTools button.danger{background:#ffe5e5;color:#a32424;border-color:#e9b4b4;}
+.preview-status-layout #adminTools .auto-off-status,.preview-status-layout #adminTools .edge-status{background:#edf1f5;color:#526176;}
+.preview-status-layout #adminTools .compact-help,.preview-status-layout #adminTools .help{color:#526176;}
+.preview-status-layout #adminTools #edgeReadyStatus.is-ready{color:#0f766e;}
+.preview-status-layout #adminTools #edgeReadyStatus.is-missing{color:#875300;}
+.preview-status-layout #adminTools #edgeReadyStatus.is-error{color:#a32424;}
+.preview-status-layout #adminTools .admin-subtitle{color:#18202d;}
+.preview-status-layout .admin-version-footer{color:#657184;}
+.preview-status-layout .preview-top-grid{gap:16px;margin:10px 0 16px;}
+.preview-status-layout .preview-session,.preview-status-layout .preview-quick{display:block;background:#fff;border-radius:8px;padding:16px;min-width:0;}
+.preview-status-layout .preview-session-head{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.preview-status-layout .preview-session-head h2,.preview-status-layout .preview-operations-title{font-size:18px;margin:0;line-height:1.4;}
+.preview-status-layout #adminTools #previewGatheringBtn{width:auto;min-width:100px;min-height:44px;padding:8px 12px;font-size:15px;background:#edf3ff;color:#245cbd;border:0;flex:0 0 auto;}
+.preview-status-layout .preview-roster-status{color:#526176;font-size:15px;line-height:1.5;margin:16px 0;}
+.preview-status-layout #adminTools .preview-session #updateTodayRosterBtn{width:100%;background:#0f766e;color:#fff;border-color:#0f766e;min-height:48px;}
+.preview-status-layout .preview-operations-title{margin-bottom:14px;}
+.preview-status-layout #adminTools .preview-quick .preview-managed-card{background:transparent;padding:0;}
+.preview-status-layout .preview-quick .admin-action-grid{display:flex;flex-direction:column;gap:14px;}
+.preview-status-layout .preview-quick .mode-row{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#e8edf3;border-radius:8px;padding:4px;}
+.preview-status-layout #adminTools .preview-quick .mode-row button{border:0;background:transparent;min-height:44px;}
+.preview-status-layout #adminTools .preview-quick .mode-row button.active{background:#2563eb;color:#fff;}
+.preview-status-layout .preview-secondary-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.preview-status-layout #adminTools #regroupNextBtn,.preview-status-layout #adminTools #undoRegroupNextBtn,.preview-status-layout #adminTools #randomFillBtn{grid-column:auto;grid-row:auto;min-height:48px;}
+.preview-status-layout .preview-reset-row{border-top:1px solid #e2e7ed;padding-top:12px;display:flex;justify-content:flex-end;}
+.preview-status-layout #adminTools #resetTodayBtn{width:auto;min-height:44px;font-size:15px;}
+.preview-status-layout #adminTools .preview-voice-toggle{background:transparent;border:0;}
+.preview-status-layout #adminTools .preview-category-entry{background:#fff;border:0;min-height:56px;}
+.preview-status-layout #adminTools .preview-detail-back{color:#245cbd;background:transparent;border:0;}
+.preview-status-layout #adminTools .preview-data-title{border-color:#d7dee7;}
+@media(min-width:760px){
+ .preview-status-layout .preview-top-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+ .preview-status-layout .preview-category-grid{grid-template-columns:1fr;gap:0;background:#fff;border-radius:8px;padding:0 16px;}
+ .preview-status-layout #adminTools .preview-category-entry{border-radius:0;padding:14px 0;}
+ .preview-status-layout #adminTools .preview-category-entry+ .preview-category-entry{border-top:1px solid #e2e7ed;}
+}
