@@ -84,6 +84,10 @@ group(['gf-arrange'],'排場方式');group(['gf-fill'],'開始時的人員位置
 var colors=['#bfdbfe','#bbf7d0','#fde68a','#fecaca','#ddd6fe','#fed7aa','#bae6fd','#fbcfe8','#ccfbf1','#e9d5ff','#d9f99d','#fef3c7'];
 var s={step:0,color:colors[0],selected:null,helperTextEnabled:true,names:[],cards:{},mode:'edge',count:3,next:3,labels:['1','2','3','4'],arrange:'auto',fill:'rest',assets:{},missing:[],busy:false,complete:false};
 var engine=document.getElementById('setup-engine'),api=null,baseline=null,needsReset=false;
+var edgeRateLabel=document.createElement('label');edgeRateLabel.textContent='音源倍速';edgeRateLabel.htmlFor='gf-edge-rate';
+var edgeRateSelect=document.createElement('select');edgeRateSelect.id='gf-edge-rate';edgeRateSelect.innerHTML='<option value="1">1.0 倍</option><option value="1.1">1.1 倍</option><option value="1.2">1.2 倍</option><option value="1.3">1.3 倍</option>';
+q('gf-edge').insertBefore(edgeRateLabel,q('gf-trial'));q('gf-edge').insertBefore(edgeRateSelect,q('gf-trial'));
+edgeRateSelect.onchange=function(){if(api){api.setEdgePlaybackRate(this.value);api.applyEdgePlaybackRate(trialAudio);}};
 var trialUrls=[],trialAudio=new Audio(),trialRun=0,trialTimer=null,trialPoll=null,browserTrialUtters=[],browserTrialTimer=null,browserTrialRun=0;
 function stopTrial(){trialRun++;clearTimeout(trialTimer);clearInterval(trialPoll);trialAudio.pause();trialAudio.onended=trialAudio.onerror=trialAudio.ontimeupdate=null;q('gf-trial').disabled=false;}
 function stopBrowserTrial(){browserTrialRun++;clearTimeout(browserTrialTimer);if(window.speechSynthesis)window.speechSynthesis.cancel();browserTrialUtters=[];q('gf-browser-trial').disabled=false;}
@@ -91,7 +95,7 @@ function startTrial(){
  stopBrowserTrial();stopTrial();if(!trialUrls.length){notice('試播音源尚未就緒，請重新整理');return;}
  var run=trialRun,index=0;q('gf-trial').disabled=true;notice('正在試播');
  function fail(err){if(run!==trialRun)return;stopTrial();notice('試播失敗：'+(err&&err.name?err.name:'音源播放錯誤')+'，請再點一次試播');}
- function play(){if(run!==trialRun)return;var finished=false,started=false;trialAudio.src=trialUrls[index];function complete(){if(finished||run!==trialRun)return;finished=true;clearTimeout(trialTimer);clearInterval(trialPoll);index++;if(index>=trialUrls.length){stopTrial();notice('試播完成');return;}trialTimer=setTimeout(play,index===trialUrls.length-1?110:90);}function checkEnd(){if(started&&(trialAudio.ended||(isFinite(trialAudio.duration)&&trialAudio.duration>0&&trialAudio.currentTime>=trialAudio.duration-0.025)))complete();}trialAudio.onended=complete;trialAudio.ontimeupdate=checkEnd;trialAudio.onerror=fail;try{var result=trialAudio.play();if(result&&result.then)result.then(function(){started=true;checkEnd();}).catch(fail);else started=true;trialPoll=setInterval(checkEnd,100);trialTimer=setTimeout(function(){fail({name:'播放逾時'});},20000);}catch(err){fail(err);}}
+ function play(){if(run!==trialRun)return;var finished=false,started=false;trialAudio.src=trialUrls[index];api.applyEdgePlaybackRate(trialAudio);function complete(){if(finished||run!==trialRun)return;finished=true;clearTimeout(trialTimer);clearInterval(trialPoll);index++;if(index>=trialUrls.length){stopTrial();notice('試播完成');return;}trialTimer=setTimeout(play,index===trialUrls.length-1?110:90);}function checkEnd(){if(started&&(trialAudio.ended||(isFinite(trialAudio.duration)&&trialAudio.duration>0&&trialAudio.currentTime>=trialAudio.duration-0.025)))complete();}trialAudio.onended=complete;trialAudio.ontimeupdate=checkEnd;trialAudio.onerror=fail;try{var result=trialAudio.play();if(result&&result.then)result.then(function(){started=true;checkEnd();}).catch(fail);else started=true;trialPoll=setInterval(checkEnd,100);trialTimer=setTimeout(function(){fail({name:'播放逾時'});},20000);}catch(err){fail(err);}}
  play();
 }
 q('gf-roster').value='';s.busy=true;
@@ -99,7 +103,7 @@ try{if(!localStorage.getItem('badminton3x3.ipad.v1.setup-test')){var existing=lo
 engine.onload=function(){
  api=engine.contentWindow.__badmintonIpadV1;
  if(!api||api.setupTestMode!==true){api=null;notice('測試引擎尚未更新，請連線後重新整理；未變更正式資料。');return;}
- baseline=api.getState();var active=baseline.players.filter(function(p){return p.isActive!==false;});
+ baseline=api.getState();edgeRateSelect.value=String(baseline.settings.edgePlaybackRate||1);var active=baseline.players.filter(function(p){return p.isActive!==false;});
  needsReset=active.some(function(p){return p.zone!=='rest'||p.games>0;});
  active.forEach(function(p){s.cards[p.name]=p.color;});s.names=active.map(function(p){return p.name;});q('gf-roster').value=s.names.join('\n');
  s.count=Number(baseline.settings.courtCount)||3;s.next=Number(baseline.settings.nextCount)||3;s.labels=['court1','court2','court3','court4'].map(function(z,i){return baseline.settings.courtLabels[z]||String(i+1);});s.helperTextEnabled=baseline.settings.helperTextEnabled!==false;q('gf-line-help').hidden=!s.helperTextEnabled;

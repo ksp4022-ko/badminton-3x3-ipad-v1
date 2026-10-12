@@ -768,6 +768,8 @@
                 <div class="edge-settings">
                   <div class="admin-subtitle">Edge 固定語音</div>
                   <div class="compact-help edge-status" id="edgeReadyStatus">Edge 固定語音</div>
+                  <label for="edgePlaybackRateSelect">音源倍速</label>
+                  <select id="edgePlaybackRateSelect"><option value="1">1.0 倍</option><option value="1.1">1.1 倍</option><option value="1.2">1.2 倍</option><option value="1.3">1.3 倍</option></select>
                   <button id="edgeTestBtn" disabled>試播 Edge</button>
                 </div>
                 <div class="browser-settings">
@@ -989,7 +991,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.0.13';
+  const APP_VERSION = '2.0.14';
   const SETUP_TEST_MODE = location.search.indexOf('setup-test=1') >= 0;
   const UI_PREVIEW_MODE = location.search.indexOf('ui-preview=1') >= 0;
   const STORAGE_KEY = SETUP_TEST_MODE ? 'badminton3x3.ipad.v1.setup-test' : 'badminton3x3.ipad.v1.state';
@@ -1370,6 +1372,7 @@
         autoCallEnabled:false,
         autoCallMode:'off',
         voiceRate:'normal',
+        edgePlaybackRate:1,
         voicePitch:'normal',
         voiceLang:'zh-TW-first',
         zhVoiceId:'',
@@ -1456,6 +1459,7 @@
       p.createdAt = p.createdAt || nowIso();
       p.updatedAt = p.updatedAt || nowIso();
     });
+    merged.settings.edgePlaybackRate = normalizeEdgePlaybackRate(merged.settings.edgePlaybackRate);
     merged.version = APP_VERSION;
     merged.updatedAt = nowIso();
     return merged;
@@ -2100,6 +2104,7 @@
     if($('use2x2Btn')) $('use2x2Btn').classList.toggle('active', currentMode() === '2x2');
     renderNextCountControls();
     $('voiceRateSelect').value = state.settings.voiceRate || 'normal';
+    if($('edgePlaybackRateSelect')) $('edgePlaybackRateSelect').value = String(normalizeEdgePlaybackRate(state.settings.edgePlaybackRate));
     $('voicePitchSelect').value = state.settings.voicePitch || 'normal';
     populateVoiceSelects();
     const p = selectedPlayer ? getPlayer(selectedPlayer.playerId) : null;
@@ -3412,6 +3417,25 @@
     }
   }
 
+  function normalizeEdgePlaybackRate(value){
+    const rate = Number(value);
+    return [1,1.1,1.2,1.3].includes(rate) ? rate : 1;
+  }
+
+  function applyEdgePlaybackRate(audio){
+    if(!audio) return;
+    try{ audio.playbackRate = normalizeEdgePlaybackRate(state.settings.edgePlaybackRate); }catch(err){}
+    try{ if('preservesPitch' in audio) audio.preservesPitch = true; }catch(err){}
+    try{ if('webkitPreservesPitch' in audio) audio.webkitPreservesPitch = true; }catch(err){}
+  }
+
+  function setEdgePlaybackRate(value){
+    state.settings.edgePlaybackRate = normalizeEdgePlaybackRate(value);
+    saveState();
+    applyEdgePlaybackRate(activeCallAudio);
+    if($('edgePlaybackRateSelect')) $('edgePlaybackRateSelect').value = String(state.settings.edgePlaybackRate);
+  }
+
   function playAudioUrl(url, token, done){
     if(!url || typeof Audio === 'undefined'){ done(false); return; }
     let audio;
@@ -3437,6 +3461,7 @@
     try{
       audio = isLegacyIpadRuntime() && legacyPlaybackAudio ? legacyPlaybackAudio : new Audio(url);
       audio.src = url;
+      applyEdgePlaybackRate(audio);
       lastEdgeAudioError = '';
       activeCallAudio = audio;
       audio.preload = 'auto';
@@ -5217,6 +5242,7 @@
       callPlayers(todayActiveNamesForEdgeCheck().slice(0, 4), activeCourts()[0] || 'court1');
     });
     tap('saveVoiceBtn', saveVoiceSettings);
+    if($('edgePlaybackRateSelect')) $('edgePlaybackRateSelect').addEventListener('change', function(){ setEdgePlaybackRate(this.value); });
     ['voiceRateSelect','voicePitchSelect','zhVoiceSelect','enVoiceSelect','callEffectDurationSelect','callEffectIntensitySelect','callEffectColorSelect','callMarqueeSelect','courtEntryAnimationModuleSelect'].forEach(function(id){
       const el = $(id);
       if(el) el.addEventListener('change', saveVoiceSettingsSilently);
@@ -5356,6 +5382,9 @@
       exportJson:exportJson,
       exportLogCsv:exportLogCsv,
       callPlayers:callPlayers,
+      normalizeEdgePlaybackRate:normalizeEdgePlaybackRate,
+      setEdgePlaybackRate:setEdgePlaybackRate,
+      applyEdgePlaybackRate:applyEdgePlaybackRate,
       testBrowserVoice:function(){ return speakCallSequence(['雅雯','Kevin'], 'court1', 'browser'); },
       createSetupTrialUtterance:createCallUtterance,
       prepareSetupTrial:async function(){
