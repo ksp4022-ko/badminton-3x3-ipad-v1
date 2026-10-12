@@ -61,7 +61,10 @@
   var observer=new MutationObserver(function(){if(display.parentNode===oldCard)oldCard.hidden=true;});observer.observe(display,{attributes:true,attributeFilter:['hidden','class']});
  }
  window.BoardPreview={onRender:onRender,captureMove:captureMove,enteringCourt:enteringCourt};
- document.body.classList.add('preview-test');setupAdmin();mountHeads();setInterval(tick,250);
+ document.body.classList.add('preview-test');setupAdmin();
+ var adminStyle=document.createElement('link');adminStyle.rel='stylesheet';adminStyle.href='./integrated-admin.css?v=20261012';document.head.appendChild(adminStyle);
+ var adminScript=document.createElement('script');adminScript.src='./integrated-admin.js?v=20261012';document.body.appendChild(adminScript);
+ mountHeads();setInterval(tick,250);
  new MutationObserver(function(){if(!legacy)requestAnimationFrame(mountHeads);}).observe(document.getElementById('courtRow'),{childList:true});
  document.addEventListener('visibilitychange',function(){if(document.hidden){clearMove();pending=[];}tick();});
  new MutationObserver(function(){if(document.body.classList.contains('admin-panel-open')){clearMove();pending=[];}tick();}).observe(document.body,{attributes:true,attributeFilter:['class']});

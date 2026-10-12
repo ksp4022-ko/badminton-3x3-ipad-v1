@@ -3,6 +3,9 @@
 Entry: `setup-test.html`. The normal `index.html` entry remains unchanged visually.
 Integrated preview entry: `integrated-test.html`. It uses the same isolated state
 and audio database, with a Start Gathering button opening `setup-test.html?integrated=1`.
+The preview admin home uses a responsive operation grid, adjacent speech/local
+audio sections, and player/court/system category detail pages. Existing controls
+are moved, not copied; IDs, event bindings and persistence remain the same.
 Modern preview adds Motion header flips and manual move/swap overlays. Legacy
 does not load Motion and retains its court headers. Normal production entry does
 not load preview assets. The bundled Motion file and license are copied from the

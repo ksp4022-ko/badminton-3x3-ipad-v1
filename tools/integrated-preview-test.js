@@ -13,7 +13,7 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
    await page.goto(base+'/index.html?debug=1');
    await page.evaluate(()=>{const api=window.__badmintonIpadV1,st=api.getState();st.players=Array.from({length:8},(_,i)=>({id:'p'+i,name:['柔伊','Chris','雅雯','Amy'][i%4],games:i,color:'#bfdbfe',isActive:true,zone:i<4?'court1':'next1',slot:i%4+1}));Object.assign(st.settings,{autoArrangeMode:true,autoCallEnabled:false,autoCallMode:'off',courtCount:3,callEffectDuration:3});api.setState(st);});
    const rects=await page.locator('#courtRow .slot').evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return [r.x,r.y,r.width,r.height];}));
-   await page.goto(base+'/integrated-test.html');await page.waitForFunction(()=>!!window.BoardPreview);
+   await page.goto(base+'/integrated-test.html');await page.waitForFunction(()=>!!window.PreviewAdminLayout);
    assert(await page.locator('#previewGatheringBtn').count());
    const afterRects=await page.locator('#courtRow .slot').evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return [r.x,r.y,r.width,r.height];}));
    assert.deepEqual(afterRects,rects);
@@ -36,9 +36,29 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
    await page.evaluate(()=>window.__badmintonIpadV1.openPanel());
    await page.fill('#adminPasswordInput',await page.evaluate(()=>window.__badmintonIpadV1.getState().settings.adminPassword));await page.click('#adminLoginBtn');
    await page.locator('#previewGatheringBtn').waitFor({state:'visible'});
+   await page.waitForFunction(()=>!!window.PreviewAdminLayout);
+   assert.equal(await page.locator('#previewAdminHome').isVisible(),true);
+   assert.equal(await page.locator('#previewAdminDetail').isVisible(),false);
+   const layout=await page.locator('#previewVoiceGrid').evaluate(el=>{const a=el.children[0].getBoundingClientRect(),b=el.children[1].getBoundingClientRect();return {topA:a.top,topB:b.top,leftA:a.left,leftB:b.left};});
+   assert.equal(layout.topA,layout.topB);assert(layout.leftB>layout.leftA);
+   await page.click('#previewCategoryplayers');assert.equal(await page.locator('#previewAdminHome').isVisible(),false);await page.click('#showGamesDetailBtn');assert.equal(await page.locator('#plusGameBtn').isVisible(),true);await page.click('#hideGamesDetailBtn');await page.click('#previewAdminBackBtn');
+   await page.click('#previewCategorycourts');assert.equal(await page.locator('#saveCourtLabelsBtn').isVisible(),true);await page.click('#previewAdminBackBtn');
+   await page.click('#previewCategorysettings');assert.equal(await page.locator('#callEffectDurationSelect').isVisible(),true);assert.equal(await page.locator('#exportBackupBtn').isVisible(),true);await page.click('#previewAdminBackBtn');
+   assert.equal(await page.locator('#previewGatheringBtn').count(),1);
    assert.equal(await page.locator('.preview-retired').isVisible(),false);
    assert.equal(await page.locator('#callEffectDurationSelect').evaluate(el=>!!el.closest('#adminDataBody')),true);
-   await page.screenshot({path:path.join(require('os').tmpdir(),'badminton-integrated-admin-'+legacy+'.png')});
+   await page.screenshot({path:path.join(require('os').tmpdir(),'badminton-integrated-admin-'+device+'.png')});
+   if(phone){
+    await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);
+    const portrait=await page.locator('#previewVoiceGrid').evaluate(el=>{const a=el.children[0].getBoundingClientRect(),b=el.children[1].getBoundingClientRect();return {a:a.top,b:b.top,right:el.getBoundingClientRect().right};});
+    assert(portrait.b>portrait.a);assert(portrait.right<=390);
+    const modes=await page.locator('#autoCallOffBtn,#edgeCallBtn,#browserCallBtn').evaluateAll(els=>els.map(el=>el.getBoundingClientRect().top));assert(modes.every(top=>top===modes[0]));
+    assert.equal(await page.locator('.preview-session').evaluate(el=>el.children[0].getBoundingClientRect().top===el.children[1].getBoundingClientRect().top),true);
+    await page.click('#previewCategorysettings');assert.equal(await page.locator('#callEffectDurationSelect').isVisible(),true);
+    assert.equal(await page.locator('#floatPanel').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true);
+    await page.screenshot({path:path.join(require('os').tmpdir(),'badminton-integrated-admin-portrait-settings.png')});await page.click('#previewAdminBackBtn');
+    await page.screenshot({path:path.join(require('os').tmpdir(),'badminton-integrated-admin-portrait.png')});
+   }
    await page.click('#previewGatheringBtn');await page.waitForURL('**/setup-test.html?integrated=1');
    await page.waitForFunction(()=>!document.getElementById('gf-forward').disabled);
    assert((await page.locator('#gf-roster').inputValue()).includes('Chris'));
