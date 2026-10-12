@@ -46,7 +46,7 @@ assert('admin unlock persisted', html.includes('saveAdminUnlock()') && html.incl
 assert('debug mode exists', html.includes("location.search.indexOf('debug=1')") && html.includes('function debugLog'));
 assert('debug mode tracks board actions', html.includes("debugLog('zone-head courtDown'") && html.includes("debugLog('slot move success'") && html.includes("debugLog(inRest ? 'chip rest select'"));
 assert('v1 storage key isolated', html.includes("badminton3x3.ipad.v1.state"));
-assert('release version synchronized', appVersion === '2.0.14' && pkg.version === appVersion && lock.version === appVersion && lock.packages[''].version === appVersion && sw.includes('v' + appVersion));
+assert('release version synchronized', appVersion === '2.0.15' && pkg.version === appVersion && lock.version === appVersion && lock.packages[''].version === appVersion && sw.includes('v' + appVersion));
 assert('copy paste player list exists', html.includes('function playerNamesText') && html.includes('function showImportPasteDialog') && html.includes('function importPlayersFromText'));
 assert('player list exports plain names', html.includes("showExportText('複製名單', playerNamesText())") && html.includes(".join('\\n')"));
 assert('player list import accepts plain lines', html.includes('function parsePlayerListText') && html.includes("placeholder=\"A&#10;B&#10;C\"") && html.includes("replace(/^\\s*\\[(.*)\\]\\s*$/, '$1')"));
@@ -96,7 +96,8 @@ assert('admin v2 sections exist', ['今日操作','自動呼叫','球員與場�
 assert('admin v2 uses detail views for player and games', html.includes('id="playerDetailView"') && html.includes('id="gamesDetailView"') && html.includes('function showAdminDetail'));
 assert('admin footer version exists', html.includes('id="adminVersion"') && html.includes("textContent = 'v' + APP_VERSION"));
 assert('bilingual speech helpers exist', html.includes('function detectNameLanguage') && html.includes('function findPreferredVoice') && html.includes('function speakCallSequence'));
-assert('court call speaks player names sequentially', html.includes('function callSequenceParts') && html.includes('function playAudioParts') && html.includes('function speakTextPart') && html.includes('const nameGap = 90') && html.includes('const courtGap = 110'));
+assert('court call speaks player names sequentially', html.includes('function callSequenceParts') && html.includes('function playAudioParts') && html.includes('function speakTextPart') && html.includes('const nameGap = edgeNameGapMs(mode)') && html.includes('const courtGap = 110'));
+assert('Legacy Edge name gap is configurable without changing Modern/Browser', html.includes("mode === 'edge' && isLegacyIpadRuntime()") && html.includes('legacyEdgeNameGapMs:30') && html.includes('id="legacyEdgeNameGapSelect"'));
 assert('auto call has mutually exclusive Edge and Browser modes', html.includes("autoCallMode:'off'") && html.includes('id="edgeCallBtn"') && html.includes('id="browserCallBtn"') && html.includes('function browserCallSequenceParts') && html.includes('function edgeCallSequenceParts'));
 assert('edge checking state keeps status visible', html.includes('mode-checking') && html.includes("edgeCheckInProgress || edgeCheckState === 'CHECKING'") && html.includes('.auto-call-content.mode-checking .browser-settings'));
 assert('local Edge voice uses IndexedDB and production generator', html.includes("badminton-local-voice") && html.includes("voiceAssets") && html.includes("local-voice-v1") && html.includes("en-US-AnaNeural") && html.includes("zh-TW-HsiaoChenNeural") && html.includes("api/voice/generate"));

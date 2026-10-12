@@ -88,6 +88,11 @@ var edgeRateLabel=document.createElement('label');edgeRateLabel.textContent='音
 var edgeRateSelect=document.createElement('select');edgeRateSelect.id='gf-edge-rate';edgeRateSelect.innerHTML='<option value="1">1.0 倍</option><option value="1.1">1.1 倍</option><option value="1.2">1.2 倍</option><option value="1.3">1.3 倍</option>';
 q('gf-edge').insertBefore(edgeRateLabel,q('gf-trial'));q('gf-edge').insertBefore(edgeRateSelect,q('gf-trial'));
 edgeRateSelect.onchange=function(){if(api){api.setEdgePlaybackRate(this.value);api.applyEdgePlaybackRate(trialAudio);}};
+var legacyGapBox=document.createElement('div');legacyGapBox.hidden=true;
+var legacyGapLabel=document.createElement('label');legacyGapLabel.textContent='姓名間隔';legacyGapLabel.htmlFor='gf-legacy-gap';
+var legacyGapSelect=document.createElement('select');legacyGapSelect.id='gf-legacy-gap';legacyGapSelect.innerHTML='<option value="0">0 ms</option><option value="30">30 ms</option><option value="60">60 ms</option><option value="90">90 ms</option><option value="150">150 ms</option>';
+legacyGapBox.appendChild(legacyGapLabel);legacyGapBox.appendChild(legacyGapSelect);q('gf-edge').insertBefore(legacyGapBox,q('gf-trial'));
+legacyGapSelect.onchange=function(){if(api)api.setLegacyEdgeNameGap(this.value);};
 var trialUrls=[],trialAudio=new Audio(),trialRun=0,trialTimer=null,trialPoll=null,browserTrialUtters=[],browserTrialTimer=null,browserTrialRun=0;
 function stopTrial(){trialRun++;clearTimeout(trialTimer);clearInterval(trialPoll);trialAudio.pause();trialAudio.onended=trialAudio.onerror=trialAudio.ontimeupdate=null;q('gf-trial').disabled=false;}
 function stopBrowserTrial(){browserTrialRun++;clearTimeout(browserTrialTimer);if(window.speechSynthesis)window.speechSynthesis.cancel();browserTrialUtters=[];q('gf-browser-trial').disabled=false;}
@@ -95,7 +100,7 @@ function startTrial(){
  stopBrowserTrial();stopTrial();if(!trialUrls.length){notice('試播音源尚未就緒，請重新整理');return;}
  var run=trialRun,index=0;q('gf-trial').disabled=true;notice('正在試播');
  function fail(err){if(run!==trialRun)return;stopTrial();notice('試播失敗：'+(err&&err.name?err.name:'音源播放錯誤')+'，請再點一次試播');}
- function play(){if(run!==trialRun)return;var finished=false,started=false;trialAudio.src=trialUrls[index];api.applyEdgePlaybackRate(trialAudio);function complete(){if(finished||run!==trialRun)return;finished=true;clearTimeout(trialTimer);clearInterval(trialPoll);index++;if(index>=trialUrls.length){stopTrial();notice('試播完成');return;}trialTimer=setTimeout(play,index===trialUrls.length-1?110:90);}function checkEnd(){if(started&&(trialAudio.ended||(isFinite(trialAudio.duration)&&trialAudio.duration>0&&trialAudio.currentTime>=trialAudio.duration-0.025)))complete();}trialAudio.onended=complete;trialAudio.ontimeupdate=checkEnd;trialAudio.onerror=fail;try{var result=trialAudio.play();if(result&&result.then)result.then(function(){started=true;checkEnd();}).catch(fail);else started=true;trialPoll=setInterval(checkEnd,100);trialTimer=setTimeout(function(){fail({name:'播放逾時'});},20000);}catch(err){fail(err);}}
+ function play(){if(run!==trialRun)return;var finished=false,started=false;trialAudio.src=trialUrls[index];api.applyEdgePlaybackRate(trialAudio);function complete(){if(finished||run!==trialRun)return;finished=true;clearTimeout(trialTimer);clearInterval(trialPoll);index++;if(index>=trialUrls.length){stopTrial();notice('試播完成');return;}trialTimer=setTimeout(play,index===trialUrls.length-1?110:api.edgeNameGapMs('edge'));}function checkEnd(){if(started&&(trialAudio.ended||(isFinite(trialAudio.duration)&&trialAudio.duration>0&&trialAudio.currentTime>=trialAudio.duration-0.025)))complete();}trialAudio.onended=complete;trialAudio.ontimeupdate=checkEnd;trialAudio.onerror=fail;try{var result=trialAudio.play();if(result&&result.then)result.then(function(){started=true;checkEnd();}).catch(fail);else started=true;trialPoll=setInterval(checkEnd,100);trialTimer=setTimeout(function(){fail({name:'播放逾時'});},20000);}catch(err){fail(err);}}
  play();
 }
 q('gf-roster').value='';s.busy=true;
@@ -103,7 +108,7 @@ try{if(!localStorage.getItem('badminton3x3.ipad.v1.setup-test')){var existing=lo
 engine.onload=function(){
  api=engine.contentWindow.__badmintonIpadV1;
  if(!api||api.setupTestMode!==true){api=null;notice('測試引擎尚未更新，請連線後重新整理；未變更正式資料。');return;}
- baseline=api.getState();edgeRateSelect.value=String(baseline.settings.edgePlaybackRate||1);var active=baseline.players.filter(function(p){return p.isActive!==false;});
+ baseline=api.getState();edgeRateSelect.value=String(baseline.settings.edgePlaybackRate||1);legacyGapBox.hidden=!api.isLegacyIpadRuntime();legacyGapSelect.value=String(baseline.settings.legacyEdgeNameGapMs);var active=baseline.players.filter(function(p){return p.isActive!==false;});
  needsReset=active.some(function(p){return p.zone!=='rest'||p.games>0;});
  active.forEach(function(p){s.cards[p.name]=p.color;});s.names=active.map(function(p){return p.name;});q('gf-roster').value=s.names.join('\n');
  s.count=Number(baseline.settings.courtCount)||3;s.next=Number(baseline.settings.nextCount)||3;s.labels=['court1','court2','court3','court4'].map(function(z,i){return baseline.settings.courtLabels[z]||String(i+1);});s.helperTextEnabled=baseline.settings.helperTextEnabled!==false;q('gf-line-help').hidden=!s.helperTextEnabled;

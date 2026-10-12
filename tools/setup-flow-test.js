@@ -30,10 +30,14 @@ const server=http.createServer((req,res)=>{
    assert.equal(geometry.overflow,false);if(legacy){assert.equal(geometry.rects[0].top,geometry.rects[1].top);assert(geometry.rects[1].left>geometry.rects[0].left);}
    await page.click('#gf-generate');await page.waitForFunction(()=>!document.getElementById('gf-forward').disabled);
    await page.selectOption('#gf-edge-rate','1.2');
+   assert.equal(await page.locator('#gf-legacy-gap').isVisible(),legacy);
+   if(legacy)await page.selectOption('#gf-legacy-gap','0');
+   await page.evaluate(()=>{window.trialGaps=[];const nativeTimeout=window.setTimeout;window.setTimeout=function(fn,delay){if(fn.name==='play')window.trialGaps.push(delay);return nativeTimeout.apply(window,arguments);};});
    await page.evaluate(()=>{window.trialCalls=0;window.trialRates=[];HTMLMediaElement.prototype.play=function(){window.trialCalls++;window.trialRates.push(this.playbackRate);const audio=this;setTimeout(()=>{if(audio.onended)audio.onended();},10);return Promise.resolve();};});
    for(let repeat=0;repeat<2;repeat++){await page.click('#gf-trial');await page.waitForFunction(()=>document.getElementById('gf-notice').textContent==='試播完成');}
    assert.equal(await page.evaluate(()=>window.trialCalls),6);
    assert((await page.evaluate(()=>window.trialRates)).every(rate=>rate===1.2));
+   assert.deepEqual(await page.evaluate(()=>window.trialGaps.slice(0,4)),[legacy?0:90,110,legacy?0:90,110]);
    await page.evaluate(()=>{HTMLMediaElement.prototype.play=function(){const audio=this;Object.defineProperty(audio,'duration',{configurable:true,value:1});Object.defineProperty(audio,'currentTime',{configurable:true,value:1});return Promise.resolve();};});
    await page.click('#gf-trial');await page.waitForFunction(()=>document.getElementById('gf-notice').textContent==='試播完成');
    await page.click('#gf-voice button[data-mode="browser"]');
