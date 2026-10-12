@@ -6,6 +6,9 @@ and audio database, with a Start Gathering button opening `setup-test.html?integ
 The preview admin home uses a responsive operation grid, adjacent speech/local
 audio sections, and player/court/system category detail pages. Existing controls
 are moved, not copied; IDs, event bindings and persistence remain the same.
+`admin-compare.html` is an additional A/B comparison entry: A has a light tabbed
+layout; B has a dark on-site tool layout. Both move the same existing controls and
+share isolated test data. The normal integrated preview remains unchanged.
 Modern preview adds Motion header flips and manual move/swap overlays. Legacy
 does not load Motion and retains its court headers. Normal production entry does
 not load preview assets. The bundled Motion file and license are copied from the

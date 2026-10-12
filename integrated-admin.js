@@ -55,4 +55,8 @@
  tools.insertBefore(home,tools.firstChild);tools.insertBefore(detail,home.nextSibling);
  document.getElementById('floatPanel').classList.add('preview-admin-v3');
  window.PreviewAdminLayout={home:home,detail:detail};
+ if(location.search.indexOf('admin-compare=1')>=0){
+  var compareCss=document.createElement('link');compareCss.rel='stylesheet';compareCss.href='./admin-compare.css?v=20261012';document.head.appendChild(compareCss);
+  var compareJs=document.createElement('script');compareJs.src='./admin-compare.js?v=20261012';document.body.appendChild(compareJs);
+ }
 })();

@@ -1,0 +1,50 @@
+.compare-root [hidden]{display:none!important;}
+.compare-chooser,.compare-tabs,.compare-setting-tabs{display:grid;gap:8px;}
+.compare-chooser{grid-template-columns:1fr 1fr;margin:8px 0 18px;}
+.preview-admin-v3 #adminTools .compare-chooser button{font-size:14px;min-height:44px;border-radius:8px;}
+.preview-admin-v3 #adminTools .compare-chooser button[aria-pressed="true"]{background:#2563EB;color:#fff;border-color:#2563EB;}
+.compare-tabs{grid-template-columns:repeat(4,minmax(0,1fr));position:sticky;top:0;z-index:4;margin-bottom:18px;padding:8px 0;}
+.compare-setting-tabs{grid-template-columns:1fr 1fr;margin-bottom:16px;}
+.preview-admin-v3 #adminTools .compare-tabs button[aria-current="page"],.preview-admin-v3 #adminTools .compare-setting-tabs button[aria-pressed="true"]{background:#2563EB;color:#fff;border-color:#2563EB;}
+.compare-content{min-width:0;}
+.compare-content>.preview-top-grid{margin-top:0;}
+.compare-b-categories{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0;}
+.preview-admin-v3 #adminTools .compare-b-categories button{min-height:74px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px;border-radius:8px;text-align:left;}
+.compare-chevron{font-size:24px;color:#8892a0;}
+.compare-detail-head{display:flex;gap:14px;align-items:center;margin-bottom:16px;}
+.compare-detail-head h2{font-size:19px;margin:0;}
+.compare-content>.preview-managed-card{background:transparent!important;padding:0!important;}
+#floatPanel.compare-style-a{background:#F3F5F7;color:#18202D;}
+.compare-style-a.admin-v2 .panel-head{background:#F3F5F7;color:#18202D;border:0;}
+.compare-style-a.admin-v2 .panel-body{background:#F3F5F7;color:#18202D;}
+.compare-style-a.admin-v2 .panel-title{color:#18202D;}
+.compare-style-a .admin-login-card{background:#fff;border-color:#CDD6E1;color:#18202D;}
+.compare-style-a .admin-login-card label{color:#526176;}
+.compare-style-a .admin-login-card input{background:#fff;color:#18202D;border-color:#CDD6E1;}
+.compare-style-a #adminTools{color:#18202D;}
+.compare-style-a .selected-admin-bar{background:#fff;border-color:#D7DEE7;}
+.compare-style-a .selected-admin-empty{color:#657184;}
+.compare-style-a .selected-admin-cancel{background:#E8EDF3;color:#18202D;border-color:#D7DEE7;}
+.compare-style-a .compare-tabs{background:#F3F5F7;}
+.compare-style-a #adminTools .preview-managed-card{background:#fff;color:#18202D;border-radius:8px;}
+.compare-style-a #adminTools h3,.compare-style-a .preview-voice-title{color:#18202D;}
+.compare-style-a #adminTools label,.compare-style-a #adminTools .compact-row-label,.compare-style-a .preview-voice-summary{color:#526176;}
+.compare-style-a #adminTools button,.compare-style-a #adminTools input,.compare-style-a #adminTools select{background:#fff;border-color:#CDD6E1;color:#18202D;border-radius:8px;}
+.compare-style-a #adminTools button.active{background:#2563EB;border-color:#2563EB;color:#fff;}
+.compare-style-a #adminTools button.primary,.compare-style-a #adminTools #generateMissingVoicesBtn{background:#0F766E;color:#fff;border-color:#0F766E;}
+.compare-style-a #adminTools button.warn{background:#FFF3D6;color:#875300;border-color:#E8D49C;}
+.compare-style-a #adminTools button.danger{background:#FFE5E5;color:#A32424;border-color:#E9B4B4;}
+.compare-style-a #adminTools .auto-off-status,.compare-style-a #adminTools .edge-status{background:#E8EDF3;color:#526176;}
+.compare-style-a #adminTools .compact-help,.compare-style-a #adminTools .help{color:#526176;}
+.compare-style-a #adminTools #edgeReadyStatus.is-ready{color:#0F766E;}
+.compare-style-a #adminTools #edgeReadyStatus.is-missing{color:#875300;}
+.compare-style-a #adminTools #edgeReadyStatus.is-error{color:#A32424;}
+.compare-style-a #adminTools .admin-subtitle{color:#18202D;}
+.compare-style-a #adminTools .preview-voice-toggle{background:transparent;border:0;}
+.compare-style-a #adminTools .detail-back{color:#2563EB;}
+.compare-style-a .admin-version-footer{color:#657184;}
+.compare-style-b .compare-content>.preview-top-grid{padding-bottom:16px;border-bottom:1px solid #2E3442;}
+@media(min-width:760px){
+ .compare-style-a .compare-content>.preview-top-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+ .compare-b-categories{grid-template-columns:repeat(4,minmax(0,1fr));}
+}
