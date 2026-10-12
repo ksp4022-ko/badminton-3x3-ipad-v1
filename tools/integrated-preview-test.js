@@ -39,6 +39,17 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
    await page.waitForFunction(()=>!!window.PreviewAdminLayout);
    assert.equal(await page.locator('#previewAdminHome').isVisible(),true);
    assert.equal(await page.locator('#previewAdminDetail').isVisible(),false);
+   assert.equal(await page.locator('#previewVoiceToggle').getAttribute('aria-expanded'),'false');
+   assert.equal(await page.locator('#autoCallOffBtn').isVisible(),false);
+   assert.equal(await page.locator('#previewAssetsToggle').getAttribute('aria-expanded'),'false');
+   const modeBefore=await page.evaluate(()=>window.__badmintonIpadV1.getState().settings.autoCallMode);
+   await page.click('#previewVoiceToggle');assert.equal(await page.locator('#autoCallOffBtn').isVisible(),true);
+   await page.reload();await page.waitForFunction(()=>!!window.PreviewAdminLayout);await page.evaluate(()=>window.__badmintonIpadV1.openPanel());
+   assert.equal(await page.locator('#previewVoiceToggle').getAttribute('aria-expanded'),'true');
+   await page.click('#previewVoiceToggle');assert.equal(await page.locator('#autoCallOffBtn').isVisible(),false);
+   await page.click('#previewAssetsToggle');assert.equal(await page.locator('#toggleLocalVoiceDetailsBtn').isVisible(),true);
+   await page.click('#previewAssetsToggle');assert.equal(await page.locator('#toggleLocalVoiceDetailsBtn').isVisible(),false);
+   assert.equal(await page.evaluate(()=>window.__badmintonIpadV1.getState().settings.autoCallMode),modeBefore);
    const layout=await page.locator('#previewVoiceGrid').evaluate(el=>{const a=el.children[0].getBoundingClientRect(),b=el.children[1].getBoundingClientRect();return {topA:a.top,topB:b.top,leftA:a.left,leftB:b.left};});
    assert.equal(layout.topA,layout.topB);assert(layout.leftB>layout.leftA);
    await page.click('#previewCategoryplayers');assert.equal(await page.locator('#previewAdminHome').isVisible(),false);await page.click('#showGamesDetailBtn');assert.equal(await page.locator('#plusGameBtn').isVisible(),true);await page.click('#hideGamesDetailBtn');await page.click('#previewAdminBackBtn');
@@ -52,7 +63,7 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
     await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);
     const portrait=await page.locator('#previewVoiceGrid').evaluate(el=>{const a=el.children[0].getBoundingClientRect(),b=el.children[1].getBoundingClientRect();return {a:a.top,b:b.top,right:el.getBoundingClientRect().right};});
     assert(portrait.b>portrait.a);assert(portrait.right<=390);
-    const modes=await page.locator('#autoCallOffBtn,#edgeCallBtn,#browserCallBtn').evaluateAll(els=>els.map(el=>el.getBoundingClientRect().top));assert(modes.every(top=>top===modes[0]));
+    await page.click('#previewVoiceToggle');const modes=await page.locator('#autoCallOffBtn,#edgeCallBtn,#browserCallBtn').evaluateAll(els=>els.map(el=>el.getBoundingClientRect().top));assert(modes.every(top=>top===modes[0]));await page.click('#previewVoiceToggle');
     assert.equal(await page.locator('.preview-session').evaluate(el=>el.children[0].getBoundingClientRect().top===el.children[1].getBoundingClientRect().top),true);
     await page.click('#previewCategorysettings');assert.equal(await page.locator('#callEffectDurationSelect').isVisible(),true);
     assert.equal(await page.locator('#floatPanel').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true);
