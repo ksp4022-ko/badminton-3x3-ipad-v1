@@ -86,6 +86,9 @@
    var cell=element('div','status-metric'),icon=element('img');icon.src='./vendor/lucide/'+item[2]+'.svg';icon.alt='';icon.width=24;icon.height=24;
    cell.appendChild(icon);cell.appendChild(element('span','status-metric-label',item[1]));var value=element('strong','');value.id='statusMetric'+item[0];if(item[0]==='courts'){value.classList.add('status-court-value');value.appendChild(element('span','status-court-main'));value.appendChild(element('span','status-court-sub'));}cell.appendChild(value);metricValues[item[0]]=value;metrics.appendChild(cell);
   });session.insertBefore(metrics,session.querySelector('#updateTodayRosterBtn'));
+  var nextStep=element('button','status-next-step'),nextMeta=element('span','status-next-meta'),nextText=element('span','status-next-text'),nextTitle=element('span','status-next-title'),nextSub=element('span','status-next-sub'),nextArrow=element('span','status-next-arrow','→'),nextAction=null;
+  nextStep.type='button';nextStep.id='statusNextStep';nextArrow.setAttribute('aria-hidden','true');nextText.appendChild(nextTitle);nextText.appendChild(nextSub);nextStep.appendChild(nextMeta);nextStep.appendChild(nextText);nextStep.appendChild(nextArrow);
+  nextStep.onclick=function(){if(nextAction)nextAction();};session.insertBefore(nextStep,metrics);
   var update=session.querySelector('#updateTodayRosterBtn');update.textContent='更新今日名單 ›';
   var modes=element('div','status-session-settings'),modeField=element('label','','排場模式'),modeSelect=element('select');modeSelect.id='statusArrangeMode';
   [['free','自由暢打'],['auto','自動排場']].forEach(function(item){var option=element('option','',item[1]);option.value=item[0];modeSelect.appendChild(option);});
@@ -101,6 +104,12 @@
    var courtCount=Number(state.settings.courtCount),nextCount=window.__legacyIpad?(courtCount===2?2:3):Number(state.settings.nextCount);
    textIfChanged(metricValues.courts.firstChild,String(courtCount));textIfChanged(metricValues.courts.lastChild,'x'+nextCount);
    if(metricValues.courts.getAttribute('aria-label')!==courtCount+' 面場，預備 '+nextCount+' 組')metricValues.courts.setAttribute('aria-label',courtCount+' 面場，預備 '+nextCount+' 組');
+   var pending=[];
+   if(!count)pending.push({title:'更新今日名單',sub:'尚無名單，排場前要先載入球員',run:function(){update.click();}});
+   if(/Missing/.test(source))pending.push({title:'補齊本機音源',sub:'缺少音源，Edge 呼叫無法播報',run:function(){showTab('voice');var toggle=document.getElementById('previewAssetsToggle');if(toggle&&toggle.getAttribute('aria-expanded')!=='true')toggle.click();}});
+   var first=pending[0];nextAction=first?first.run:null;nextStep.classList.toggle('is-done',!first);nextStep.setAttribute('aria-disabled',String(!first));
+   textIfChanged(nextMeta,first?'下一步・還有 '+pending.length+' 項待處理':'狀態');textIfChanged(nextTitle,first?first.title:'準備完成');
+   textIfChanged(nextSub,first?first.sub:courtCount+' 面場・預備 '+nextCount+' 組');
    modeSelect.value=state.settings.autoArrangeMode?'auto':'free';
    var body=call.querySelector('#autoCallBody');textIfChanged(voiceLink,body.classList.contains('mode-edge')?'Edge 固定語音':body.classList.contains('mode-browser')?'網頁合成語音':body.classList.contains('mode-checking')?'檢查中…':'關閉');
   }

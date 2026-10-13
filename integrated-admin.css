@@ -195,3 +195,14 @@
 .status-metric strong.status-court-value{display:flex;align-items:baseline;justify-content:center;gap:1px;line-height:1;font-variant-numeric:tabular-nums;}
 .status-court-main{font-size:30px;font-weight:800;}
 .status-court-sub{font-size:16px;font-weight:700;color:#526176;}
+/* Next-step card: the first pending item (roster, then local voice); taps reuse existing entries. */
+.preview-tabbed-layout #adminTools .status-next-step{display:grid;grid-template-columns:minmax(0,1fr) 52px;gap:10px 14px;align-items:center;width:100%;margin:0 0 18px;padding:16px 18px;border:0;border-radius:16px;background:#18202d;color:#fff;text-align:left;}
+.status-next-meta{grid-column:1 / -1;font-size:13px;color:#b7c0cd;}
+.status-next-text{display:grid;gap:4px;min-width:0;}
+.status-next-title{font-size:22px;font-weight:800;line-height:1.25;}
+.status-next-sub{font-size:14px;color:#cfd6e0;line-height:1.4;}
+.status-next-arrow{width:52px;height:52px;border-radius:999px;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;}
+.preview-tabbed-layout #adminTools .status-next-step.is-done{background:#fff;color:#18202d;border:1px solid #d7dee7;}
+.status-next-step.is-done .status-next-meta,.status-next-step.is-done .status-next-sub{color:#526176;}
+.status-next-step.is-done .status-next-arrow{display:none;}
+.preview-tabbed-layout #adminTools .status-next-step.is-done:active{transform:none;}
