@@ -114,6 +114,34 @@
   sessionObserver.observe(call.querySelector('#autoCallBody'),{attributes:true,attributeFilter:['class']});
   sessionObserver.observe(today.querySelector('.mode-row'),{subtree:true,attributes:true,attributeFilter:['class']});
   sessionObserver.observe(document.getElementById('courtRow'),{childList:true});
+  var settingToggles=[];
+  Array.from(display.querySelectorAll('.compact-state-row')).forEach(function(row){
+   var original=Array.from(row.querySelectorAll('button'));if(original.length!==2)return;
+   var label=row.querySelector('.compact-row-label').textContent,button=element('button','status-toggle');button.type='button';button.setAttribute('aria-label',label);button.setAttribute('data-setting-label',label);
+   original.forEach(function(b){b.hidden=true;});row.querySelector('.compact-row-label').hidden=true;row.appendChild(button);
+   function selected(){return original[1].classList.contains('active')||original[1].getAttribute('aria-pressed')==='true';}
+   function refresh(){var on=selected(),helpers=window.__badmintonIpadV1.getState().settings.helperTextEnabled!==false;button.setAttribute('aria-pressed',String(on));button.disabled=original[1].disabled;button.textContent=(helpers&&on?'✓ ':'')+label+(helpers?(on?'・已開啟':'・已關閉'):'');}
+   button.onclick=function(){original[selected()?0:1].click();settingToggles.forEach(function(refresh){refresh();});};
+   var observer=new MutationObserver(refresh);original.forEach(function(b){observer.observe(b,{attributes:true,attributeFilter:['class','aria-pressed','disabled']});});settingToggles.push(refresh);row.classList.add('status-single-toggle');refresh();
+  });
+  new MutationObserver(function(){settingToggles.forEach(function(refresh){refresh();});}).observe(document.body,{attributes:true,attributeFilter:['class']});
+  var autoBody=call.querySelector('#autoCallBody'),oldModes=autoBody.querySelector('.three-state-row'),modeButtons=Array.from(oldModes.children),sliderGroup=element('div','status-voice-slider');
+  oldModes.hidden=true;var labels=element('div','status-slider-labels'),slider=element('input');slider.type='range';slider.min='0';slider.max='2';slider.step='1';slider.id='statusVoiceSlider';slider.setAttribute('aria-label','自動呼叫模式');
+  var names=['關閉','Edge 固定語音','網頁合成語音'],labelButtons=[];
+  names.forEach(function(name,i){var b=element('button','',name);b.type='button';b.onclick=function(){modeButtons[i].click();};labels.appendChild(b);labelButtons.push(b);});sliderGroup.appendChild(labels);sliderGroup.appendChild(slider);autoBody.insertBefore(sliderGroup,oldModes);
+  slider.onchange=function(){modeButtons[Number(slider.value)].click();};
+  slider.oninput=function(){slider.setAttribute('aria-valuetext',names[Number(slider.value)]);};
+  function refreshSlider(){
+   var index=autoBody.classList.contains('mode-browser')?2:autoBody.classList.contains('mode-edge')?1:0;
+   slider.value=String(index);slider.setAttribute('aria-valuetext',names[index]);slider.disabled=modeButtons.some(function(b){return b.disabled;});
+   labelButtons.forEach(function(b,i){b.disabled=slider.disabled;b.setAttribute('aria-pressed',String(i===index));});
+  }
+  var sliderObserver=new MutationObserver(refreshSlider);sliderObserver.observe(autoBody,{attributes:true,attributeFilter:['class']});modeButtons.forEach(function(b){sliderObserver.observe(b,{attributes:true,attributeFilter:['disabled']});});refreshSlider();
+  if(!window.__badmintonIpadV1.isLegacyIpadRuntime()){
+   var gapField=element('div','status-edge-gap'),gapLabel=element('label','','姓名間隔'),gapSelect=element('select');gapSelect.id='previewEdgeNameGapSelect';gapLabel.htmlFor=gapSelect.id;gapField.appendChild(gapLabel);
+   [0,30,60,90,150].forEach(function(value){var option=element('option','',value+' ms');option.value=String(value);gapSelect.appendChild(option);});
+   gapSelect.value=String(window.__badmintonIpadV1.edgeNameGapMs('edge'));gapSelect.onchange=function(){window.__badmintonIpadV1.savePreviewSettings({modernEdgeNameGapMs:Number(gapSelect.value)});};gapField.appendChild(gapSelect);call.querySelector('.edge-settings').insertBefore(gapField,call.querySelector('#edgeTestBtn'));
+  }
   showTab('today');window.StatusAdmin={showTab:showTab};
  }
  if(location.search.indexOf('admin-compare=1')>=0){
