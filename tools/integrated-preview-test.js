@@ -64,9 +64,26 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
    await page.locator('#statusVoiceSlider').evaluate(el=>el.dispatchEvent(new Event('change',{bubbles:true})));
    await page.waitForFunction(()=>window.__badmintonIpadV1.getState().settings.autoCallMode==='edge'&&!document.getElementById('statusVoiceSlider').disabled);
    const gapSelector=legacy?'#legacyEdgeNameGapSelect':'#previewEdgeNameGapSelect';await page.selectOption(gapSelector,'30');assert.equal(await page.evaluate(()=>window.__badmintonIpadV1.edgeNameGapMs('edge')),30);
-   await page.tap('.status-slider-labels button:nth-child(3)');assert.equal(await page.evaluate(()=>window.__badmintonIpadV1.getState().settings.autoCallMode),'browser');
+   const sliderBox=await page.locator('#statusVoiceSlider').boundingBox();
+   await page.locator('#statusVoiceSlider').tap({position:{x:sliderBox.width*5/6,y:26}});assert.equal(await page.evaluate(()=>window.__badmintonIpadV1.getState().settings.autoCallMode),'browser');
+   assert.equal(await page.locator('.browser-settings').isVisible(),true);assert.equal(await page.locator('.edge-settings').isVisible(),false);
    assert.equal(await page.evaluate(()=>window.__badmintonIpadV1.edgeNameGapMs('browser')),90);
-   await page.tap('.status-slider-labels button:nth-child(1)');
+   await page.locator('#statusVoiceSlider').tap({position:{x:sliderBox.width/6,y:26}});
+   await page.locator('#statusVoiceSlider').scrollIntoViewIfNeeded();
+   const dragBox=await page.locator('#statusVoiceSlider').boundingBox(),cdp=await context.newCDPSession(page),y=dragBox.y+dragBox.height/2;
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:dragBox.x+dragBox.width/6,y}]});
+   for(let i=1;i<=5;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:dragBox.x+dragBox.width/6+dragBox.width*2/3*i/5,y}]});
+   assert.equal(await page.evaluate(()=>window.__badmintonIpadV1.getState().settings.autoCallMode),'off');
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+   await page.waitForFunction(()=>window.__badmintonIpadV1.getState().settings.autoCallMode==='browser');assert.equal(await page.locator('.browser-settings').isVisible(),true);await cdp.detach();
+   await page.locator('#statusVoiceSlider').tap({position:{x:sliderBox.width/6,y:26}});
+   assert.equal(await page.locator('.auto-off-status').isVisible(),true);
+   // Reproduce the Admin post-scroll guard before releasing a range change.
+   await page.locator('#statusVoiceSlider').evaluate(el=>{
+    function touch(type,x){const t=new Touch({identifier:9,target:el,clientX:x,clientY:300});el.dispatchEvent(new TouchEvent(type,{bubbles:true,touches:type==='touchend'?[]:[t],changedTouches:[t]}));}
+    touch('touchstart',30);touch('touchmove',90);touch('touchend',90);el.value='2';el.dispatchEvent(new Event('change',{bubbles:true}));
+   });assert.equal(await page.evaluate(()=>window.__badmintonIpadV1.getState().settings.autoCallMode),'browser');assert.equal(await page.locator('.browser-settings').isVisible(),true);
+   await page.locator('#statusVoiceSlider').tap({position:{x:sliderBox.width/6,y:26}});
    await page.reload();await page.waitForFunction(()=>!!window.PreviewAdminLayout);await page.evaluate(()=>window.__badmintonIpadV1.openPanel());
    assert.equal(await page.evaluate(()=>window.__badmintonIpadV1.edgeNameGapMs('edge')),30);
    await page.click('#statusTabvoice');

@@ -127,14 +127,22 @@
   new MutationObserver(function(){settingToggles.forEach(function(refresh){refresh();});}).observe(document.body,{attributes:true,attributeFilter:['class']});
   var autoBody=call.querySelector('#autoCallBody'),oldModes=autoBody.querySelector('.three-state-row'),modeButtons=Array.from(oldModes.children),sliderGroup=element('div','status-voice-slider');
   oldModes.hidden=true;var labels=element('div','status-slider-labels'),slider=element('input');slider.type='range';slider.min='0';slider.max='2';slider.step='1';slider.id='statusVoiceSlider';slider.setAttribute('aria-label','自動呼叫模式');
-  var names=['關閉','Edge 固定語音','網頁合成語音'],labelButtons=[];
-  names.forEach(function(name,i){var b=element('button','',name);b.type='button';b.onclick=function(){modeButtons[i].click();};labels.appendChild(b);labelButtons.push(b);});sliderGroup.appendChild(labels);sliderGroup.appendChild(slider);autoBody.insertBefore(sliderGroup,oldModes);
-  slider.onchange=function(){modeButtons[Number(slider.value)].click();};
-  slider.oninput=function(){slider.setAttribute('aria-valuetext',names[Number(slider.value)]);};
+  var names=['關閉','Edge 模式','網頁音模式'],labelButtons=[],pill=element('span','status-slider-pill');pill.setAttribute('aria-hidden','true');
+  function previewMode(index){pill.style.transform='translateX('+(index*100)+'%)';slider.setAttribute('aria-valuetext',names[index]);labelButtons.forEach(function(b,i){b.setAttribute('aria-pressed',String(i===index));});}
+  function commitMode(index){
+   if(modeButtons[index].disabled){refreshSlider();return;}
+   // A range drag is not a button tap: bypass the panel's post-scroll click guard.
+   var api=window.__badmintonIpadV1;
+   if(index===1)api.enableAutoCallWithEdgeCheck();else if(index===2)api.enableBrowserAutoCall();else api.disableAutoCall();
+   refreshSlider();
+  }
+  labels.setAttribute('aria-hidden','true');names.forEach(function(name){var b=element('button','',name);b.type='button';b.tabIndex=-1;labels.appendChild(b);labelButtons.push(b);});labels.appendChild(pill);sliderGroup.appendChild(labels);sliderGroup.appendChild(slider);autoBody.insertBefore(sliderGroup,oldModes);
+  slider.onchange=function(){commitMode(Number(slider.value));};
+  slider.oninput=function(){previewMode(Number(slider.value));};
   function refreshSlider(){
    var index=autoBody.classList.contains('mode-browser')?2:autoBody.classList.contains('mode-edge')?1:0;
-   slider.value=String(index);slider.setAttribute('aria-valuetext',names[index]);slider.disabled=modeButtons.some(function(b){return b.disabled;});
-   labelButtons.forEach(function(b,i){b.disabled=slider.disabled;b.setAttribute('aria-pressed',String(i===index));});
+   slider.value=String(index);slider.disabled=modeButtons.some(function(b){return b.disabled;});sliderGroup.classList.toggle('is-disabled',slider.disabled);previewMode(index);
+   labelButtons.forEach(function(b){b.disabled=slider.disabled;});
   }
   var sliderObserver=new MutationObserver(refreshSlider);sliderObserver.observe(autoBody,{attributes:true,attributeFilter:['class']});modeButtons.forEach(function(b){sliderObserver.observe(b,{attributes:true,attributeFilter:['disabled']});});refreshSlider();
   if(!window.__badmintonIpadV1.isLegacyIpadRuntime()){
