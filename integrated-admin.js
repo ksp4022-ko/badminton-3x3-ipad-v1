@@ -84,7 +84,7 @@
   var metrics=element('div','status-metrics'),metricValues={};metrics.setAttribute('aria-live','polite');
   [['roster','名單','users'],['voice','音源','volume-2'],['courts','場地','grid-2x2']].forEach(function(item){
    var cell=element('div','status-metric'),icon=element('img');icon.src='./vendor/lucide/'+item[2]+'.svg';icon.alt='';icon.width=24;icon.height=24;
-   cell.appendChild(icon);cell.appendChild(element('span','status-metric-label',item[1]));var value=element('strong','');value.id='statusMetric'+item[0];cell.appendChild(value);metricValues[item[0]]=value;metrics.appendChild(cell);
+   cell.appendChild(icon);cell.appendChild(element('span','status-metric-label',item[1]));var value=element('strong','');value.id='statusMetric'+item[0];if(item[0]==='courts'){value.classList.add('status-court-value');value.appendChild(element('span','status-court-main'));value.appendChild(element('span','status-court-sub'));}cell.appendChild(value);metricValues[item[0]]=value;metrics.appendChild(cell);
   });session.insertBefore(metrics,session.querySelector('#updateTodayRosterBtn'));
   var update=session.querySelector('#updateTodayRosterBtn');update.textContent='更新今日名單 ›';
   var modes=element('div','status-session-settings'),modeField=element('label','','排場模式'),modeSelect=element('select');modeSelect.id='statusArrangeMode';
@@ -98,7 +98,9 @@
    textIfChanged(metricValues.roster,count?'已載入 · '+count+' 人':'尚無名單');
    var source=assets.querySelector('#localVoiceSummary').textContent;
    textIfChanged(metricValues.voice,/Missing/.test(source)?'缺少音源':/Ready/.test(source)?'Ready':'檢查中');
-   textIfChanged(metricValues.courts,'已設定 · '+state.settings.courtCount+' 場');
+   var courtCount=Number(state.settings.courtCount),nextCount=window.__legacyIpad?(courtCount===2?2:3):Number(state.settings.nextCount);
+   textIfChanged(metricValues.courts.firstChild,String(courtCount));textIfChanged(metricValues.courts.lastChild,'x'+nextCount);
+   if(metricValues.courts.getAttribute('aria-label')!==courtCount+' 面場，預備 '+nextCount+' 組')metricValues.courts.setAttribute('aria-label',courtCount+' 面場，預備 '+nextCount+' 組');
    modeSelect.value=state.settings.autoArrangeMode?'auto':'free';
    var body=call.querySelector('#autoCallBody');textIfChanged(voiceLink,body.classList.contains('mode-edge')?'Edge 固定語音':body.classList.contains('mode-browser')?'網頁合成語音':body.classList.contains('mode-checking')?'檢查中…':'關閉');
   }
@@ -114,6 +116,11 @@
   sessionObserver.observe(call.querySelector('#autoCallBody'),{attributes:true,attributeFilter:['class']});
   sessionObserver.observe(today.querySelector('.mode-row'),{subtree:true,attributes:true,attributeFilter:['class']});
   sessionObserver.observe(document.getElementById('courtRow'),{childList:true});
+  var courtModes=panes.courts&&panes.courts.querySelector('#courtModeControls');
+  if(courtModes){var courtModeLabel=element('div','compact-row-label status-court-count-label','場地數量');courtModes.insertBefore(courtModeLabel,courtModes.querySelector('.mode-row'));
+   [['use2x2Btn','2 面場'],['use3x3Btn','3 面場'],['use4x4Btn','4 面場']].forEach(function(item){var b=courtModes.querySelector('#'+item[0]);if(b)b.textContent=item[1];});
+   sessionObserver.observe(courtModes,{subtree:true,attributes:true,attributeFilter:['class']});}
+  var nextCounts=panes.courts&&panes.courts.querySelector('#nextCountControls');if(nextCounts)sessionObserver.observe(nextCounts,{subtree:true,attributes:true,attributeFilter:['class']});
   var settingToggles=[];
   Array.from(display.querySelectorAll('.compact-state-row')).forEach(function(row){
    var original=Array.from(row.querySelectorAll('button'));if(original.length!==2)return;

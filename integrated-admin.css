@@ -189,3 +189,9 @@
 .preview-tabbed-layout #adminTools .status-tabs button:active,.preview-tabbed-layout #adminTools .status-slider-labels button:active{transform:none;}
 .preview-tabbed-layout #adminTools .status-tabs button:active:not([aria-current="page"]){background:#eef2f7;}
 @media(prefers-reduced-motion:reduce){.preview-tabbed-layout #adminTools button{transition:none;}.preview-tabbed-layout #adminTools button:active:not(:disabled){transform:none;filter:brightness(.94);}}
+/* Court status reads courts x prep zones (3x4); court mode buttons ordered 2/3/4. */
+.preview-tabbed-layout #adminTools #courtModeStatus{display:none;}
+.preview-tabbed-layout #adminTools #use2x2Btn{order:-1;}
+.status-metric strong.status-court-value{display:flex;align-items:baseline;justify-content:center;gap:1px;line-height:1;font-variant-numeric:tabular-nums;}
+.status-court-main{font-size:30px;font-weight:800;}
+.status-court-sub{font-size:16px;font-weight:700;color:#526176;}
