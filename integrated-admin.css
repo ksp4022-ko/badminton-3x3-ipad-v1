@@ -175,3 +175,17 @@
 .preview-tabbed-layout #adminTools .status-data-card .preview-data-title{margin:0 0 14px!important;padding:0;border:0;}
 .preview-tabbed-layout #adminTools .status-data-card .danger-row{border-top:1px solid #e2e7ed;padding-top:14px;}
 .preview-tabbed-layout #adminTools .status-data-card .danger-row button{width:auto;}
+/* Admin polish 2026-10-13: court fields aligned, voice field reads as a field, light-blue start chip, pressed feedback. */
+.preview-tabbed-layout #adminTools #courtModeControls .mode-row{grid-template-columns:repeat(3,minmax(0,1fr));}
+.preview-tabbed-layout #adminTools .court-label-grid{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:10px;align-items:start;margin:8px 0 12px;}
+.preview-tabbed-layout #adminTools .court-label-grid label{display:grid;gap:6px;min-width:0;font-size:14px;color:#526176;}
+.preview-tabbed-layout #adminTools .court-label-grid input{width:100%;min-width:0;max-width:none;min-height:44px;margin:0;box-sizing:border-box;}
+.preview-tabbed-layout #adminTools #systemOpsBody>.admin-subtitle{margin-top:16px;}
+.preview-tabbed-layout #adminTools #statusVoiceMode{position:relative;padding-right:40px;}
+.preview-tabbed-layout #adminTools #statusVoiceMode::after{content:'›';position:absolute;right:16px;top:50%;transform:translateY(-52%);font-size:22px;line-height:1;color:#657184;}
+.preview-tabbed-layout #adminTools #previewGatheringBtn{background:#e4edff!important;color:#245cbd!important;}
+.preview-tabbed-layout #adminTools button{transition:transform .12s ease-out,background-color .12s ease-out;}
+.preview-tabbed-layout #adminTools button:active:not(:disabled){transform:scale(.97);}
+.preview-tabbed-layout #adminTools .status-tabs button:active,.preview-tabbed-layout #adminTools .status-slider-labels button:active{transform:none;}
+.preview-tabbed-layout #adminTools .status-tabs button:active:not([aria-current="page"]){background:#eef2f7;}
+@media(prefers-reduced-motion:reduce){.preview-tabbed-layout #adminTools button{transition:none;}.preview-tabbed-layout #adminTools button:active:not(:disabled){transform:none;filter:brightness(.94);}}

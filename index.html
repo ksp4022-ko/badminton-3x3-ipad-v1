@@ -5483,7 +5483,7 @@
   if(UI_PREVIEW_MODE && SETUP_TEST_MODE && DEBUG_MODE){
     const style = document.createElement('link');style.rel = 'stylesheet';style.href = './integrated-preview.css';document.head.appendChild(style);
     const motion = document.createElement('script');motion.src = './vendor/motion.js';
-    const loadPreview = function(){const script=document.createElement('script');script.src='./integrated-preview.js?v=cards-20261013';document.body.appendChild(script);};
+    const loadPreview = function(){const script=document.createElement('script');script.src='./integrated-preview.js?v=polish-20261013';document.body.appendChild(script);};
     motion.onload = loadPreview;motion.onerror = loadPreview;
     if(isLegacyIpadRuntime()) loadPreview();else document.body.appendChild(motion);
   }
