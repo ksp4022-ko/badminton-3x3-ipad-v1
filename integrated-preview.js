@@ -62,8 +62,8 @@
  }
  window.BoardPreview={onRender:onRender,captureMove:captureMove,enteringCourt:enteringCourt};
  document.body.classList.add('preview-test');setupAdmin();
- var adminStyle=document.createElement('link');adminStyle.rel='stylesheet';adminStyle.href='./integrated-admin.css?v=pill-20261013';document.head.appendChild(adminStyle);
- var adminScript=document.createElement('script');adminScript.src='./integrated-admin.js?v=pill-20261013';document.body.appendChild(adminScript);
+ var adminStyle=document.createElement('link');adminStyle.rel='stylesheet';adminStyle.href='./integrated-admin.css?v=cards-20261013';document.head.appendChild(adminStyle);
+ var adminScript=document.createElement('script');adminScript.src='./integrated-admin.js?v=cards-20261013';document.body.appendChild(adminScript);
  mountHeads();setInterval(tick,250);
  new MutationObserver(function(){if(!legacy)requestAnimationFrame(mountHeads);}).observe(document.getElementById('courtRow'),{childList:true});
  document.addEventListener('visibilitychange',function(){if(document.hidden){clearMove();pending=[];}tick();});

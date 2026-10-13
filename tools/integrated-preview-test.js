@@ -97,6 +97,10 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
    await page.click('#statusTabplayers');assert.equal(await page.locator('#previewAdminHome').isVisible(),false);await page.click('#showGamesDetailBtn');assert.equal(await page.locator('#plusGameBtn').isVisible(),true);await page.click('#hideGamesDetailBtn');
    await page.click('#statusTabsettings');assert.equal(await page.locator('#saveCourtLabelsBtn').isVisible(),true);
    await page.click('#statusSettingsettings');assert.equal(await page.locator('#callEffectDurationSelect').isVisible(),true);assert.equal(await page.locator('#exportBackupBtn').isVisible(),true);
+   assert.equal(await page.locator('.status-info-card').count(),6);
+   assert.equal(await page.locator('.status-info-card').evaluateAll(els=>els[0].getBoundingClientRect().top===els[1].getBoundingClientRect().top),true);
+   assert.equal(await page.locator('#courtEntryAnimationModuleSelect').evaluate(el=>el.closest('.status-info-card').getAttribute('aria-label')),'上場特效');
+   assert.equal(await page.locator('.status-toggle').evaluateAll(els=>els.every(el=>el.getBoundingClientRect().width<el.closest('.status-info-card').getBoundingClientRect().width-20&&el.getBoundingClientRect().height>=44)),true);
    const helpers=page.locator('.status-toggle[data-setting-label="輔助文字"]'),animation=page.locator('.status-toggle[data-setting-label="上場動畫"]');
    assert.equal(await page.locator('#courtEntryAnimationOnBtn').isVisible(),false);
    assert((await animation.innerText()).includes('已關閉'));await animation.click();assert.equal(await animation.getAttribute('aria-pressed'),'true');assert((await animation.innerText()).includes('已開啟'));await animation.click();
@@ -124,6 +128,7 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
     assert.equal(await page.locator('#previewGatheringBtn').evaluate(el=>el.closest('.preview-session-head').querySelector('h2').getBoundingClientRect().top<=el.getBoundingClientRect().bottom),true);
     assert.equal(await page.locator('#previewRosterStatus').innerText(),'8 位成員 · 4 位上場 · 4 位預備');
     await page.click('#statusTabsettings');await page.click('#statusSettingsettings');assert.equal(await page.locator('#callEffectDurationSelect').isVisible(),true);
+    assert.equal(await page.locator('.status-info-card').evaluateAll(els=>els[1].getBoundingClientRect().top>els[0].getBoundingClientRect().top),true);
     assert.equal(await page.locator('#floatPanel').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true);
     await page.screenshot({path:path.join(require('os').tmpdir(),'badminton-integrated-admin-portrait-settings.png')});await page.click('#statusTabtoday');
     await page.screenshot({path:path.join(require('os').tmpdir(),'badminton-integrated-admin-portrait.png')});

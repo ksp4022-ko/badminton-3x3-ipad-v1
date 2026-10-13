@@ -124,6 +124,19 @@
    button.onclick=function(){original[selected()?0:1].click();settingToggles.forEach(function(refresh){refresh();});};
    var observer=new MutationObserver(refresh);original.forEach(function(b){observer.observe(b,{attributes:true,attributeFilter:['class','aria-pressed','disabled']});});settingToggles.push(refresh);row.classList.add('status-single-toggle');refresh();
   });
+  function settingRow(id){return display.querySelector('#'+id).closest('.compact-state-row');}
+  function infoCard(title,nodes){
+   var section=element('section','status-info-card');section.setAttribute('aria-label',title);section.appendChild(element('h3','status-info-title',title));
+   nodes.forEach(function(node){section.appendChild(node);});display.appendChild(section);
+  }
+  infoCard('上場提示',[settingRow('callEffectOnBtn'),display.querySelector('.effect-grid')]);
+  infoCard('球員姓名',[display.querySelector('#playerNameScaleSelect').closest('.player-text-grid')]);
+  var moduleFields=display.querySelector('#courtEntryAnimationModuleSelect').closest('.player-text-grid');moduleFields.classList.add('status-module-fields');infoCard('上場特效',[settingRow('courtEntryAnimationOnBtn'),moduleFields]);
+  var manual=display.querySelector('.status-toggle[data-setting-label="手動移動動畫"]');
+  if(manual)infoCard('手動操作',[manual.closest('.compact-state-row')]);
+  infoCard('介面提示',[settingRow('helperTextOnBtn')]);
+  infoCard('畫面方向',[settingRow('portraitAdminModeOnBtn')]);
+  var dataCard=element('section','status-data-card');dataCard.setAttribute('aria-label','資料工具');dataCard.appendChild(dataTitle);dataCard.appendChild(data.querySelector('.data-grid'));var dangerRow=data.querySelector('.danger-row');if(dangerRow)dataCard.appendChild(dangerRow);data.appendChild(dataCard);
   new MutationObserver(function(){settingToggles.forEach(function(refresh){refresh();});}).observe(document.body,{attributes:true,attributeFilter:['class']});
   var autoBody=call.querySelector('#autoCallBody'),oldModes=autoBody.querySelector('.three-state-row'),modeButtons=Array.from(oldModes.children),sliderGroup=element('div','status-voice-slider');
   oldModes.hidden=true;var labels=element('div','status-slider-labels'),slider=element('input');slider.type='range';slider.min='0';slider.max='2';slider.step='1';slider.id='statusVoiceSlider';slider.setAttribute('aria-label','自動呼叫模式');
