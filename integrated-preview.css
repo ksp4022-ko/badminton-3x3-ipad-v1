@@ -20,3 +20,6 @@ body.console-alpha .zone-row.next-scroll>.zone-card{scroll-snap-align:start;}
 /* Rest columns sit inside overflow:hidden boxes (their own scroll containers), so their snap stops are 1px markers placed directly in the row. */
 body.console-alpha #nextRow.next-scroll{position:relative;}
 .snap-marker{position:absolute;top:0;width:1px;height:1px;pointer-events:none;scroll-snap-align:start;}
+/* Test entry only: the court row (scrolls with 4 courts on a phone) snaps to court edges too. */
+body.console-alpha #courtRow{scroll-snap-type:x mandatory;}
+body.console-alpha #courtRow>.zone-card{scroll-snap-align:start;}
