@@ -47,9 +47,9 @@
   if(legacy)return;heads.forEach(cancelHead);heads=[];
   document.querySelectorAll('#courtRow .zone-head').forEach(function(button){var zone=button.getAttribute('data-court');if(!zone)return;var height=button.getBoundingClientRect().height;var count=button.querySelector('.zone-count');button.style.height=height+'px';button.innerHTML='';var face=document.createElement('span');face.className='preview-flip-face';button.appendChild(face);if(count)button.appendChild(count);button.classList.add('preview-flip-head');var head={button:button,face:face,zone:zone,key:null,control:null};heads.push(head);setFace(head,entering[zone]>Date.now()?'entering':'identity',true);});tick();
  }
- // Test entry: give the 預備區/休息區 row just enough trailing space that its last scroll stop also lands on a card or rest-column start.
+ // Give the 預備區/休息區 row just enough trailing space that its last scroll stop also lands on a card or rest-column start.
  function snapRowEnd(){
-  var row=document.getElementById('nextRow');if(!row||!document.body.classList.contains('console-alpha'))return;
+  var row=document.getElementById('nextRow');if(!row||!document.body.classList.contains('preview-test'))return;
   if(!row.__snapApplied||row.style.gridTemplateColumns!==row.__snapApplied)row.__snapBase=row.style.gridTemplateColumns;
   row.style.gridTemplateColumns=row.__snapBase;row.__snapApplied=null;
   function clearMarkers(){Array.prototype.forEach.call(row.querySelectorAll('.snap-marker'),function(m){m.remove();});}
@@ -91,8 +91,8 @@
  }
  window.BoardPreview={onRender:onRender,captureMove:captureMove,enteringCourt:enteringCourt};
  document.body.classList.add('preview-test');if(api.setupTestMode)document.body.classList.add('console-alpha');setupAdmin();snapRowEnd();
- var adminStyle=document.createElement('link');adminStyle.rel='stylesheet';adminStyle.href='./integrated-admin.css?v=2.1.0';document.head.appendChild(adminStyle);
- var adminScript=document.createElement('script');adminScript.src='./integrated-admin.js?v=2.1.0';document.body.appendChild(adminScript);
+ var adminStyle=document.createElement('link');adminStyle.rel='stylesheet';adminStyle.href='./integrated-admin.css?v=2.1.1';document.head.appendChild(adminStyle);
+ var adminScript=document.createElement('script');adminScript.src='./integrated-admin.js?v=2.1.1';document.body.appendChild(adminScript);
  mountHeads();setInterval(tick,250);
  new MutationObserver(function(){if(!legacy)requestAnimationFrame(mountHeads);}).observe(document.getElementById('courtRow'),{childList:true});
  document.addEventListener('visibilitychange',function(){if(document.hidden){clearMove();pending=[];}tick();});

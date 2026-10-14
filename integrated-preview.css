@@ -14,15 +14,15 @@ html:not(.legacyIpad) .preview-flip-head{position:relative;perspective:700px;pad
 .preview-admin .preview-retired{display:none!important;}
 .preview-test #debugPanel{display:none!important;}
 .preview-admin .compact-state-row button[aria-pressed="true"]{background:#2563EB!important;color:#fff!important;}
-/* Test entry only (ALPHA): after a swipe the 預備區 / 休息區 row snaps to a card or rest-column start, so names are never cut. */
-body.console-alpha .zone-row.next-scroll{scroll-snap-type:x mandatory;}
-body.console-alpha .zone-row.next-scroll>.zone-card{scroll-snap-align:start;}
+/* After a swipe the 預備區 / 休息區 row snaps to a card or rest-column start, so names are never cut. */
+body.preview-test .zone-row.next-scroll{scroll-snap-type:x mandatory;}
+body.preview-test .zone-row.next-scroll>.zone-card{scroll-snap-align:start;}
 /* Rest columns sit inside overflow:hidden boxes (their own scroll containers), so their snap stops are 1px markers placed directly in the row. */
-body.console-alpha #nextRow.next-scroll{position:relative;}
+body.preview-test #nextRow.next-scroll{position:relative;}
 .snap-marker{position:absolute;top:0;width:1px;height:1px;pointer-events:none;scroll-snap-align:start;}
-/* Test entry only: the court row (scrolls with 4 courts on a phone) snaps to court edges too. */
-body.console-alpha #courtRow{scroll-snap-type:x mandatory;}
-body.console-alpha #courtRow>.zone-card{scroll-snap-align:start;}
-/* Test entry: courts are a little narrower than half the screen so the next court peeks in as a scroll hint; the last court snaps to the end edge. */
-html:not(.legacyIpad):not(.modernIpad):not(.modernDesktop) body.console-alpha #courtRow.mode-4{grid-template-columns:repeat(4,calc((100% - 10px) / 2 - 28px));}
-body.console-alpha #courtRow>.zone-card:last-child{scroll-snap-align:start end;}
+/* The court row (scrolls with 4 courts on a phone) snaps to court edges too. */
+body.preview-test #courtRow{scroll-snap-type:x mandatory;}
+body.preview-test #courtRow>.zone-card{scroll-snap-align:start;}
+/* Courts are a little narrower than half the screen so the next court peeks in as a scroll hint; the last court snaps to the end edge. */
+html:not(.legacyIpad):not(.modernIpad):not(.modernDesktop) body.preview-test #courtRow.mode-4{grid-template-columns:repeat(4,calc((100% - 10px) / 2 - 28px));}
+body.preview-test #courtRow>.zone-card:last-child{scroll-snap-align:start end;}

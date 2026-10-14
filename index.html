@@ -995,7 +995,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.1.0';
+  const APP_VERSION = '2.1.1';
   const SETUP_TEST_MODE = location.search.indexOf('setup-test=1') >= 0;
   const UI_PREVIEW_MODE = location.search.indexOf('ui-preview=1') >= 0;
   const CLASSIC_UI = location.search.indexOf('classic=1') >= 0;
@@ -1008,8 +1008,8 @@
   const DEBUG_MODE = location.search.indexOf('debug=1') >= 0;
   // The status-first console is the formal admin UI (2.1.0). ?classic=1 keeps the old console; test mode still needs ui-preview=1.
   const NEW_CONSOLE = !CLASSIC_UI && (SETUP_TEST_MODE ? (UI_PREVIEW_MODE && DEBUG_MODE) : true);
-  // Test entry first: an odd 休息區 gets one more drop slot so its two rows end even.
-  const REST_EVEN_SLOTS = SETUP_TEST_MODE && UI_PREVIEW_MODE;
+  // With the new console (2.1.1), an odd 休息區 gets one more drop slot so its two rows end even.
+  const REST_EVEN_SLOTS = NEW_CONSOLE;
   const COURTS = ['court1','court2','court3','court4'];
   const NEXTS = ['next1','next2','next3','next4','next5'];
   const SLOTS = [1,2,3,4];
@@ -5488,9 +5488,9 @@
 
   init();
   if(NEW_CONSOLE && document.head && document.body){
-    const style = document.createElement('link');style.rel = 'stylesheet';style.href = './integrated-preview.css?v=2.1.0-snap7';document.head.appendChild(style);
+    const style = document.createElement('link');style.rel = 'stylesheet';style.href = './integrated-preview.css?v=2.1.1';document.head.appendChild(style);
     const motion = document.createElement('script');motion.src = './vendor/motion.js';
-    const loadPreview = function(){const script=document.createElement('script');script.src='./integrated-preview.js?v=2.1.0-snap7';document.body.appendChild(script);};
+    const loadPreview = function(){const script=document.createElement('script');script.src='./integrated-preview.js?v=2.1.1';document.body.appendChild(script);};
     motion.onload = loadPreview;motion.onerror = loadPreview;
     if(isLegacyIpadRuntime()) loadPreview();else document.body.appendChild(motion);
   }
