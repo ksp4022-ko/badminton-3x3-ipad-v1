@@ -89,7 +89,7 @@
   var nextStep=element('button','status-next-step'),nextMeta=element('span','status-next-meta'),nextText=element('span','status-next-text'),nextTitle=element('span','status-next-title'),nextSub=element('span','status-next-sub'),nextArrow=element('span','status-next-arrow','→'),nextAction=null;
   nextStep.type='button';nextStep.id='statusNextStep';nextArrow.setAttribute('aria-hidden','true');nextText.appendChild(nextTitle);nextText.appendChild(nextSub);nextStep.appendChild(nextMeta);nextStep.appendChild(nextText);nextStep.appendChild(nextArrow);
   nextStep.onclick=function(){if(nextAction)nextAction();};session.insertBefore(nextStep,metrics);
-  var update=session.querySelector('#updateTodayRosterBtn');update.textContent='更新今日名單 ›';
+  var update=session.querySelector('#updateTodayRosterBtn');update.textContent='更新今日名單 ›';update.hidden=true;
   var modes=element('div','status-session-settings'),modeField=element('label','','排場模式'),modeSelect=element('select');modeSelect.id='statusArrangeMode';
   [['free','自由暢打'],['auto','自動排場']].forEach(function(item){var option=element('option','',item[1]);option.value=item[0];modeSelect.appendChild(option);});
   modeSelect.onchange=function(){today.querySelector(modeSelect.value==='auto'?'#autoModeBtn':'#freeModeBtn').click();};modeField.appendChild(modeSelect);modes.appendChild(modeField);
@@ -106,7 +106,7 @@
    if(metricValues.courts.getAttribute('aria-label')!==courtCount+' 面場，預備 '+nextCount+' 組')metricValues.courts.setAttribute('aria-label',courtCount+' 面場，預備 '+nextCount+' 組');
    var pending=[];
    if(!count)pending.push({title:'更新今日名單',sub:'尚無名單，排場前要先載入球員',run:function(){update.click();}});
-   if(/Missing/.test(source))pending.push({title:'補齊本機音源',sub:'缺少音源，Edge 呼叫無法播報',run:function(){showTab('voice');var toggle=document.getElementById('previewAssetsToggle');if(toggle&&toggle.getAttribute('aria-expanded')!=='true')toggle.click();}});
+   if(/Missing/.test(source)&&call.querySelector('#autoCallBody').classList.contains('mode-edge'))pending.push({title:'補齊本機音源',sub:'缺少音源，Edge 呼叫無法播報',run:function(){showTab('voice');var toggle=document.getElementById('previewAssetsToggle');if(toggle&&toggle.getAttribute('aria-expanded')!=='true')toggle.click();}});
    var first=pending[0];nextAction=first?first.run:null;nextStep.classList.toggle('is-done',!first);nextStep.setAttribute('aria-disabled',String(!first));
    textIfChanged(nextMeta,first?'下一步・還有 '+pending.length+' 項待處理':'狀態');textIfChanged(nextTitle,first?first.title:'準備完成');
    textIfChanged(nextSub,first?first.sub:courtCount+' 面場・預備 '+nextCount+' 組');

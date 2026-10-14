@@ -206,3 +206,5 @@
 .status-next-step.is-done .status-next-meta,.status-next-step.is-done .status-next-sub{color:#526176;}
 .status-next-step.is-done .status-next-arrow{display:none;}
 .preview-tabbed-layout #adminTools .status-next-step.is-done:active{transform:none;}
+/* Preview console is alpha: tag beside the panel title (pseudo-element, since render resets the title text). */
+.preview-tabbed-layout #panelTitle::after{content:'ALPHA';display:inline-block;margin-left:8px;padding:2px 7px;border-radius:6px;background:#fb9b36;color:#18202d;font-size:11px;font-weight:800;letter-spacing:.08em;line-height:1.4;vertical-align:middle;}
