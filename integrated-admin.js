@@ -16,7 +16,7 @@
  var operationsTitle=element('h2','preview-operations-title','現場操作');quick.insertBefore(operationsTitle,today);
  var actions=element('div','preview-secondary-actions');
  var regroupSplit=element('div','status-regroup-split');['regroupNextBtn','undoRegroupNextBtn'].forEach(function(id){regroupSplit.appendChild(today.querySelector('#'+id));});actions.appendChild(regroupSplit);actions.appendChild(today.querySelector('#randomFillBtn'));
- var undoRegroup=regroupSplit.querySelector('#undoRegroupNextBtn');undoRegroup.textContent='↶';undoRegroup.setAttribute('aria-label','復原重組');undoRegroup.title='復原重組';
+ var undoRegroup=regroupSplit.querySelector('#undoRegroupNextBtn');undoRegroup.textContent='↩️';undoRegroup.setAttribute('aria-label','復原重組');undoRegroup.title='復原重組';
  today.querySelector('.admin-action-grid').appendChild(actions);
  var resetRow=element('div','preview-reset-row');resetRow.appendChild(today.querySelector('#resetTodayBtn'));today.querySelector('.admin-action-grid').appendChild(resetRow);
  function refreshRosterStatus(){
@@ -85,10 +85,10 @@
   var metrics=element('div','status-metrics'),metricValues={};metrics.setAttribute('aria-live','polite');
   [['roster','名單','users'],['voice','音源','volume-2'],['courts','場地','grid-2x2']].forEach(function(item){
    var cell=element('button','status-metric'),icon=element('img');cell.type='button';cell.id='statusTile'+item[0];icon.src='./vendor/lucide/'+item[2]+'.svg';icon.alt='';icon.width=24;icon.height=24;
-   cell.appendChild(icon);cell.appendChild(element('span','status-metric-label',item[1]));var value=element('strong','');value.id='statusMetric'+item[0];if(item[0]==='roster'){value.classList.add('status-roster-value');value.appendChild(element('span','status-roster-mark'));value.appendChild(element('span','status-roster-count'));}if(item[0]==='courts'){value.classList.add('status-court-value');value.appendChild(element('span','status-court-main'));value.appendChild(element('span','status-court-sub'));}cell.appendChild(value);metricValues[item[0]]=value;metrics.appendChild(cell);
+   cell.appendChild(icon);cell.appendChild(element('span','status-metric-label',item[1]));var value=element('strong','');value.id='statusMetric'+item[0];if(item[0]==='roster'){value.classList.add('status-roster-value');value.appendChild(element('span','status-roster-mark'));value.appendChild(element('span','status-roster-count'));}if(item[0]==='voice'){value.classList.add('status-baseline-value');value.appendChild(element('span','status-value-text'));}if(item[0]==='courts'){value.classList.add('status-court-value','status-baseline-value');value.appendChild(element('span','status-court-main'));value.appendChild(element('span','status-court-sub'));}cell.appendChild(value);metricValues[item[0]]=value;metrics.appendChild(cell);
   });session.insertBefore(metrics,session.querySelector('#updateTodayRosterBtn'));
-  var nextStep=element('button','status-next-step'),nextMeta=element('span','status-next-meta'),nextText=element('span','status-next-text'),nextTitle=element('span','status-next-title'),nextSub=element('span','status-next-sub'),nextArrow=element('span','status-next-arrow','→'),nextAction=null;
-  nextStep.type='button';nextStep.id='statusNextStep';nextArrow.setAttribute('aria-hidden','true');nextText.appendChild(nextTitle);nextText.appendChild(nextSub);nextStep.appendChild(nextMeta);nextStep.appendChild(nextText);nextStep.appendChild(nextArrow);
+  var nextStep=element('button','status-next-step'),nextMeta=element('span','status-next-meta'),nextMetaWord=element('span','status-next-word'),nextMetaCount=element('span','status-next-count'),nextText=element('span','status-next-text'),nextTitle=element('span','status-next-title'),nextSub=element('span','status-next-sub'),nextArrow=element('span','status-next-arrow','→'),nextAction=null;
+  nextMeta.appendChild(nextMetaWord);nextMeta.appendChild(nextMetaCount);nextStep.type='button';nextStep.id='statusNextStep';nextArrow.setAttribute('aria-hidden','true');nextText.appendChild(nextTitle);nextText.appendChild(nextSub);nextStep.appendChild(nextMeta);nextStep.appendChild(nextText);nextStep.appendChild(nextArrow);
   nextStep.onclick=function(){if(nextAction)nextAction();};metrics.insertBefore(nextStep,metrics.firstChild);
   function openRoster(){update.click();}
   function openVoice(){showTab('voice');var toggle=document.getElementById('previewAssetsToggle');if(toggle&&toggle.getAttribute('aria-expanded')!=='true')toggle.click();}
@@ -106,7 +106,7 @@
    var rosterValue=metricValues.roster;rosterValue.classList.toggle('is-loaded',count>0);textIfChanged(rosterValue.firstChild,count?'✓':'✗');textIfChanged(rosterValue.lastChild,count+' 人');
    if(rosterValue.getAttribute('aria-label')!==(count?'已載入 '+count+' 人':'尚無名單'))rosterValue.setAttribute('aria-label',count?'已載入 '+count+' 人':'尚無名單');rosterValue.firstChild.setAttribute('aria-hidden','true');
    var source=assets.querySelector('#localVoiceSummary').textContent;
-   textIfChanged(metricValues.voice,/Missing/.test(source)?'缺少音源':/Ready/.test(source)?'Ready':'檢查中');
+   textIfChanged(metricValues.voice.firstChild,/Missing/.test(source)?'缺少音源':/Ready/.test(source)?'Ready':'檢查中');
    var courtCount=Number(state.settings.courtCount),nextCount=window.__legacyIpad?(courtCount===2?2:3):Number(state.settings.nextCount);
    textIfChanged(metricValues.courts.firstChild,String(courtCount));textIfChanged(metricValues.courts.lastChild,'x'+nextCount);
    if(metricValues.courts.getAttribute('aria-label')!==courtCount+' 面場，預備 '+nextCount+' 組')metricValues.courts.setAttribute('aria-label',courtCount+' 面場，預備 '+nextCount+' 組');
@@ -114,7 +114,7 @@
    if(!count)pending.push({title:'更新今日名單',sub:'尚無名單，排場前要先載入球員',run:openRoster});
    if(/Missing/.test(source)&&call.querySelector('#autoCallBody').classList.contains('mode-edge'))pending.push({title:'補齊本機音源',sub:'缺少音源，Edge 呼叫無法播報',run:openVoice});
    var first=pending[0];nextAction=first?first.run:null;nextStep.classList.toggle('is-done',!first);nextStep.setAttribute('aria-disabled',String(!first));
-   textIfChanged(nextMeta,first?'下一步・還有 '+pending.length+' 項待處理':'狀態');textIfChanged(nextTitle,first?first.title:'準備完成');
+   textIfChanged(nextMetaWord,first?'下一步':'狀態');textIfChanged(nextMetaCount,first?'還有 '+pending.length+' 項':'');textIfChanged(nextTitle,first?first.title:'準備完成');
    textIfChanged(nextSub,first?first.sub:courtCount+' 面場・預備 '+nextCount+' 組');
    metrics.classList.toggle('helpers-off',state.settings.helperTextEnabled===false);start.classList.toggle('helpers-off',state.settings.helperTextEnabled===false);
    [['roster','名單'],['voice','音源'],['courts','場地']].forEach(function(item){var tile=document.getElementById('statusTile'+item[0]),label=item[1]+'：'+(metricValues[item[0]].getAttribute('aria-label')||metricValues[item[0]].textContent);if(tile.getAttribute('aria-label')!==label)tile.setAttribute('aria-label',label);});
@@ -192,12 +192,12 @@
    playersPane.classList.add('status-players');
    ['#adminDetailNav','#hidePlayerDetailBtn','#hideGamesDetailBtn'].forEach(function(sel){var n=playersPane.querySelector(sel);if(n)n.hidden=true;});
    var playerGrid=element('div','status-players-grid');
-   function playerCard(titleNode,rows){var c=element('section','status-player-card');if(typeof titleNode==='string')titleNode=element('h3','status-info-title',titleNode);else titleNode.classList.add('status-info-title');c.appendChild(titleNode);rows.forEach(function(r){c.appendChild(r);});playerGrid.appendChild(c);return c;}
+   function playerCard(titleNode,rows,headAction){var c=element('section','status-player-card');if(typeof titleNode==='string')titleNode=element('h3','status-info-title',titleNode);else titleNode.classList.add('status-info-title');var head=element('div','status-player-head');head.appendChild(titleNode);if(headAction){var a=document.getElementById(headAction);if(a)head.appendChild(a);}c.appendChild(head);rows.forEach(function(r){c.appendChild(r);});playerGrid.appendChild(c);return c;}
    function row(cls,ids){var r=element('div',cls);ids.forEach(function(id){var n=document.getElementById(id);if(n)r.appendChild(n);});return r;}
    playerCard('新增球員',[row('status-player-row',['newPlayerInput','addPlayerBtn'])]);
    playerCard(document.getElementById('sharedColorLabel'),[document.getElementById('newPlayerColorGrid')]);
-   playerCard('已選球員',[row('status-player-row',['renamePlayerInput','renamePlayerBtn']),row('status-player-danger',['deletePlayerBtn'])]);
-   playerCard('場次',[row('status-games-row',['plusGameBtn','minusGameBtn','zeroPlayerBtn']),row('status-player-danger',['resetAllGamesBtn'])]);
+   playerCard('已選球員',[row('status-player-row',['renamePlayerInput','renamePlayerBtn'])],'deletePlayerBtn');
+   playerCard('場次',[row('status-games-row',['plusGameBtn','minusGameBtn','zeroPlayerBtn'])],'resetAllGamesBtn');
    playersPane.querySelector('#adminPlayersBody').insertBefore(playerGrid,playersPane.querySelector('#playerDetailView'));
    ['#playerDetailView','#gamesDetailView'].forEach(function(sel){var n=playersPane.querySelector(sel);if(n)n.hidden=true;});
   }

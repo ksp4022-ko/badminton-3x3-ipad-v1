@@ -261,3 +261,23 @@
 .preview-tabbed-layout #adminTools .status-player-card #newPlayerColorGrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:0;}
 .preview-tabbed-layout #adminTools .status-players{border:0;}
 @media(min-width:760px){.preview-tabbed-layout .status-players-grid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;}}
+/* Round 7: sticky tabs, larger status word, player card header actions, swatch check kept inside. */
+.preview-tabbed-layout #adminTools .status-tabs{position:sticky;top:0;z-index:5;}
+.preview-tabbed-layout .status-metrics .status-next-meta{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px;}
+.status-next-word{font-size:22px;font-weight:800;color:#3b4656;line-height:1.2;}
+.status-next-count{font-size:13px;font-weight:700;color:#657184;}
+.status-next-step:not(.is-done) .status-next-word{color:#3b4656;}
+.preview-tabbed-layout #adminTools .status-player-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;min-height:44px;}
+.preview-tabbed-layout #adminTools .status-player-head .status-info-title{margin:0;}
+.preview-tabbed-layout #adminTools .status-player-head button{width:auto;min-height:40px;margin:0;padding:8px 12px;font-size:15px;}
+.preview-tabbed-layout #adminTools .status-player-card .color-swatch.active{transform:none;box-shadow:0 0 0 2px #18202d;}
+.preview-tabbed-layout #adminTools .status-player-card .color-swatch.active::after{top:3px;right:3px;width:18px;height:18px;font-size:12px;line-height:18px;}
+/* Baseline lock: 音源 / 場地 values and the message's last line share one 13px/20px strut at the same bottom inset. */
+.preview-tabbed-layout #adminTools .status-metric strong.status-baseline-value{display:block;height:auto;align-self:end;padding-top:10px;font-size:13px;line-height:20px;}
+.preview-tabbed-layout .status-baseline-value .status-value-text{font-size:16px;line-height:0;}
+.preview-tabbed-layout .status-baseline-value .status-court-main{font-size:26px;line-height:0;}
+.preview-tabbed-layout .status-baseline-value .status-court-sub{font-size:14px;line-height:0;}
+.preview-tabbed-layout .status-metrics .status-next-sub{font-size:13px;line-height:20px;}
+.preview-tabbed-layout #adminTools .status-metrics .status-next-step,.preview-tabbed-layout #adminTools .status-metrics .status-next-step.is-done{padding:10px;}
+@media(max-width:519px){.preview-tabbed-layout #adminTools .status-metrics .status-next-step,.preview-tabbed-layout #adminTools .status-metrics .status-next-step.is-done{padding:8px;}}
+.preview-tabbed-layout #adminTools .status-metrics .status-next-step.is-done{grid-template-rows:auto 1fr;}
