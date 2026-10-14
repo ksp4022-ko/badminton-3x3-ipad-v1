@@ -208,15 +208,25 @@
 .preview-tabbed-layout #adminTools .status-next-step.is-done:active{transform:none;}
 /* Preview console is alpha: tag beside the panel title (pseudo-element, since render resets the title text). */
 .preview-tabbed-layout #panelTitle::after{content:'ALPHA';display:inline-block;margin-left:8px;padding:2px 7px;border-radius:6px;background:#fb9b36;color:#18202d;font-size:11px;font-weight:800;letter-spacing:.08em;line-height:1.4;vertical-align:middle;}
-/* Session status as a 2x2 board: next-step card top-left, then roster / voice / courts tiles; tiles open their pages. */
-.preview-tabbed-layout .status-metrics{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(132px,auto);gap:10px;padding:0;margin:0 0 18px;border:0;}
-.preview-tabbed-layout #adminTools .status-metric{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:6px;width:100%;height:100%;min-height:132px;margin:0;padding:14px;background:#fff;border:1px solid #d7dee7;border-radius:16px;text-align:left;color:#18202d;}
-.preview-tabbed-layout .status-metric-label{font-size:14px;}
-.preview-tabbed-layout .status-metric strong{font-size:18px;}
+/* Session status: one full-width frame, message on the left, 名單 (top right) / 音源 / 場地 (bottom row) on the right. */
+.preview-tabbed-layout .status-metrics{grid-template-columns:minmax(0,1.5fr) repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(72px,auto));gap:8px;padding:10px;margin:0 0 18px;background:#fff;border:1px solid #d7dee7;border-radius:18px;}
+.preview-tabbed-layout #adminTools .status-metric{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:4px;width:100%;height:100%;min-height:72px;margin:0;padding:10px;background:#f3f5f7;border:0;border-radius:12px;text-align:left;color:#18202d;}
+.preview-tabbed-layout #statusTileroster{grid-column:3;grid-row:1;}
+.preview-tabbed-layout #statusTilevoice{grid-column:2;grid-row:2;}
+.preview-tabbed-layout #statusTilecourts{grid-column:3;grid-row:2;}
+.preview-tabbed-layout .status-metric img{width:20px;height:20px;}
+.preview-tabbed-layout .status-metric-label{font-size:13px;}
+.preview-tabbed-layout .status-metric strong{font-size:16px;line-height:1.25;}
 .preview-tabbed-layout .status-metric strong.status-court-value{justify-content:flex-start;}
+.preview-tabbed-layout .status-court-main{font-size:26px;}
+.preview-tabbed-layout .status-court-sub{font-size:14px;}
+.status-roster-value{display:flex;align-items:center;gap:6px;}
+.status-roster-mark{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:999px;font-size:13px;font-weight:900;color:#fff;background:#dc2626;}
+.status-roster-value.is-loaded .status-roster-mark{background:#15803d;}
 .status-metrics.helpers-off .status-metric-label{display:none;}
-.preview-tabbed-layout #adminTools .status-metrics .status-next-step{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr auto;gap:6px;height:100%;min-height:132px;margin:0;padding:14px;}
-.preview-tabbed-layout .status-metrics .status-next-meta{grid-column:auto;font-size:12px;}
+.preview-tabbed-layout #adminTools .status-metrics .status-next-step,.preview-tabbed-layout #adminTools .status-metrics .status-next-step.is-done{grid-column:1;grid-row:1 / 3;grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr auto;gap:6px;height:100%;margin:0;padding:8px 6px 8px 8px;background:transparent;border:0;border-radius:12px;color:#18202d;}
+.preview-tabbed-layout .status-metrics .status-next-meta{grid-column:auto;font-size:12px;color:#526176;}
 .preview-tabbed-layout .status-metrics .status-next-title{font-size:19px;}
-.preview-tabbed-layout .status-metrics .status-next-sub{font-size:13px;}
-.preview-tabbed-layout .status-metrics .status-next-arrow{justify-self:end;width:40px;height:40px;font-size:20px;}
+.preview-tabbed-layout .status-metrics .status-next-sub{font-size:13px;color:#526176;}
+.preview-tabbed-layout .status-metrics .status-next-arrow{justify-self:start;width:40px;height:40px;font-size:20px;}
+@media(max-width:519px){.preview-tabbed-layout .status-metrics .status-next-title{font-size:17px;}.preview-tabbed-layout .status-metrics .status-next-meta{font-size:11px;}.preview-tabbed-layout #adminTools .status-metric{padding:8px;}}

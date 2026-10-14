@@ -84,7 +84,7 @@
   var metrics=element('div','status-metrics'),metricValues={};metrics.setAttribute('aria-live','polite');
   [['roster','名單','users'],['voice','音源','volume-2'],['courts','場地','grid-2x2']].forEach(function(item){
    var cell=element('button','status-metric'),icon=element('img');cell.type='button';cell.id='statusTile'+item[0];icon.src='./vendor/lucide/'+item[2]+'.svg';icon.alt='';icon.width=24;icon.height=24;
-   cell.appendChild(icon);cell.appendChild(element('span','status-metric-label',item[1]));var value=element('strong','');value.id='statusMetric'+item[0];if(item[0]==='courts'){value.classList.add('status-court-value');value.appendChild(element('span','status-court-main'));value.appendChild(element('span','status-court-sub'));}cell.appendChild(value);metricValues[item[0]]=value;metrics.appendChild(cell);
+   cell.appendChild(icon);cell.appendChild(element('span','status-metric-label',item[1]));var value=element('strong','');value.id='statusMetric'+item[0];if(item[0]==='roster'){value.classList.add('status-roster-value');value.appendChild(element('span','status-roster-mark'));value.appendChild(element('span','status-roster-count'));}if(item[0]==='courts'){value.classList.add('status-court-value');value.appendChild(element('span','status-court-main'));value.appendChild(element('span','status-court-sub'));}cell.appendChild(value);metricValues[item[0]]=value;metrics.appendChild(cell);
   });session.insertBefore(metrics,session.querySelector('#updateTodayRosterBtn'));
   var nextStep=element('button','status-next-step'),nextMeta=element('span','status-next-meta'),nextText=element('span','status-next-text'),nextTitle=element('span','status-next-title'),nextSub=element('span','status-next-sub'),nextArrow=element('span','status-next-arrow','→'),nextAction=null;
   nextStep.type='button';nextStep.id='statusNextStep';nextArrow.setAttribute('aria-hidden','true');nextText.appendChild(nextTitle);nextText.appendChild(nextSub);nextStep.appendChild(nextMeta);nextStep.appendChild(nextText);nextStep.appendChild(nextArrow);
@@ -102,7 +102,8 @@
   function textIfChanged(node,text){if(node.textContent!==text)node.textContent=text;}
   function refreshSession(){
    var state=window.__badmintonIpadV1.getState(),count=state.players.filter(function(p){return p.isActive!==false;}).length;
-   textIfChanged(metricValues.roster,count?'已載入 · '+count+' 人':'尚無名單');
+   var rosterValue=metricValues.roster;rosterValue.classList.toggle('is-loaded',count>0);textIfChanged(rosterValue.firstChild,count?'✓':'✗');textIfChanged(rosterValue.lastChild,count+' 人');
+   if(rosterValue.getAttribute('aria-label')!==(count?'已載入 '+count+' 人':'尚無名單'))rosterValue.setAttribute('aria-label',count?'已載入 '+count+' 人':'尚無名單');rosterValue.firstChild.setAttribute('aria-hidden','true');
    var source=assets.querySelector('#localVoiceSummary').textContent;
    textIfChanged(metricValues.voice,/Missing/.test(source)?'缺少音源':/Ready/.test(source)?'Ready':'檢查中');
    var courtCount=Number(state.settings.courtCount),nextCount=window.__legacyIpad?(courtCount===2?2:3):Number(state.settings.nextCount);
