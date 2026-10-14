@@ -45,6 +45,7 @@ https://ksp4022-ko.github.io/badminton-3x3-ipad-v1/integrated-test.html
 - 浮動按鈕（••• / 重叫 / 預備）維持浮動，不改成固定工具列佔版面。
 - 已有人的位置保留虛線框，除非之後有明顯更好的顯示方式。
 - 區頭人數字級、「點此放入」淡字不是重點，有提醒即可。
+- 排場以橫向使用為主；iPad 直向卡片偏細長不處理，維持現狀。
 
 排場狀態：
 - 正式 localStorage：`badminton3x3.ipad.v1.state`
