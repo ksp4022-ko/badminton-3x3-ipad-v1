@@ -104,10 +104,11 @@ function startTrial(){
  play();
 }
 q('gf-roster').value='';s.busy=true;
-try{if(!localStorage.getItem('badminton3x3.ipad.v1.setup-test')){var existing=localStorage.getItem('badminton3x3.ipad.v1.state');if(existing)localStorage.setItem('badminton3x3.ipad.v1.setup-test',existing);}}catch(err){}
+var FORMAL=location.search.indexOf('formal=1')>=0;
+try{if(!FORMAL&&!localStorage.getItem('badminton3x3.ipad.v1.setup-test')){var existing=localStorage.getItem('badminton3x3.ipad.v1.state');if(existing)localStorage.setItem('badminton3x3.ipad.v1.setup-test',existing);}}catch(err){}
 engine.onload=function(){
  api=engine.contentWindow.__badmintonIpadV1;
- if(!api||api.setupTestMode!==true){api=null;notice('測試引擎尚未更新，請連線後重新整理；未變更正式資料。');return;}
+ if(!api||api.setupTestMode!==!FORMAL){api=null;notice(FORMAL?'排場引擎尚未更新，請連線後重新整理；未變更資料。':'測試引擎尚未更新，請連線後重新整理；未變更正式資料。');return;}
  baseline=api.getState();originalState=JSON.parse(JSON.stringify(baseline));edgeRateSelect.value=String(baseline.settings.edgePlaybackRate||1);legacyGapBox.hidden=!api.isLegacyIpadRuntime();legacyGapSelect.value=String(baseline.settings.legacyEdgeNameGapMs);var active=baseline.players.filter(function(p){return p.isActive!==false;});
  needsReset=active.some(function(p){return p.zone!=='rest'||p.games>0;});
  active.forEach(function(p){s.cards[p.name]=p.color;});s.names=active.map(function(p){return p.name;});q('gf-roster').value=s.names.join('\n');
@@ -116,9 +117,10 @@ engine.onload=function(){
  active.forEach(function(p){p.zone='rest';p.slot=null;});api.setState(baseline);
  var browserSelects=q('gf-browser').querySelectorAll('select');['zhVoiceSelect','enVoiceSelect','voiceRateSelect','voicePitchSelect'].forEach(function(id,i){var source=engine.contentDocument.getElementById(id);if(source){browserSelects[i].innerHTML=source.innerHTML;browserSelects[i].value=source.value;}});
  q('gf-voice').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.mode===s.mode));});q('gf-courts').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(Number(b.dataset.courts)===s.count));});q('gf-arrange').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.arrange===s.arrange));});
- s.busy=false;roster();render();notice('測試資料獨立保存，不影響正式聚會');
+ s.busy=false;roster();render();notice(FORMAL?'':'測試資料獨立保存，不影響正式聚會');
 };
-engine.src='./index.html?debug=1&setup-test=1'+(location.search.indexOf('integrated=1')>=0?'&ui-preview=1':'')+(location.search.indexOf('admin-compare=1')>=0?'&admin-compare=1':'');
+function homeUrl(){return FORMAL?'./index.html':'./index.html?debug=1&setup-test=1'+(location.search.indexOf('integrated=1')>=0?'&ui-preview=1':'')+(location.search.indexOf('admin-compare=1')>=0?'&admin-compare=1':'');}
+engine.src=FORMAL?'./index.html?debug=1':'./index.html?debug=1&setup-test=1'+(location.search.indexOf('integrated=1')>=0?'&ui-preview=1':'')+(location.search.indexOf('admin-compare=1')>=0?'&admin-compare=1':'');
 async function syncDraft(){
  var ok=await api.saveTodayRosterFromText(s.names.join('\n'));if(!ok)throw new Error('名單無法儲存');
  var st=api.getState();st.players.forEach(function(p){if(p.isActive!==false&&s.cards[p.name])p.color=s.cards[p.name];});
@@ -163,7 +165,7 @@ q('gf-browser-trial').onclick=function(){
 };
 q('gf-previous').onclick=function(){if(s.step>0){s.step--;render();}};
 q('gf-back').onclick=function(){if(s.busy||s.complete)return;if(s.step>0&&!confirm('離開新聚會？這次的設定不會保存。'))return;if(api&&originalState)api.setState(originalState);
- location.replace('./index.html?debug=1&setup-test=1'+(location.search.indexOf('integrated=1')>=0?'&ui-preview=1':'')+(location.search.indexOf('admin-compare=1')>=0?'&admin-compare=1':''));};
+ location.replace(homeUrl());};
 q('gf-forward').onclick=async function(){if(s.busy||!api)return;try{if(s.step===0){var n=names();if(!n.length){notice('請輸入至少一位球員');return;}if(n.some(function(x,i){return n.indexOf(x)!==i;})){notice('姓名重複，請確認');return;}s.names=n;n.forEach(function(x){if(!s.cards[x])s.cards[x]=s.color;});}
 if(s.step===2&&s.labels.slice(0,s.count).some(function(x){return !x.trim();})){notice('請輸入場地名稱');return;}
 s.busy=true;q('gf-forward').disabled=true;await syncDraft();s.busy=false;if(s.mode==='edge'&&(s.step===1||s.step===2)&&need().length){voice();notice('請先補足音源');return;}
@@ -171,7 +173,7 @@ if(s.step<4){s.step++;render();return;}
 if(needsReset){var previousLog=api.getState().gameLog.length;api.openPanel();engine.style.display='block';await api.resetToday();api.closePanel();engine.style.display='none';if(api.getState().gameLog.length===previousLog){notice('已取消開始新聚會');return;}}
 var finalState=api.getState();finalState.settings.autoArrangeMode=s.arrange==='auto';finalState.settings.freePlayMode=s.arrange==='free';api.setState(finalState);
 if(s.mode==='edge'){await api.enableAutoCallWithEdgeCheck();}else if(s.mode==='browser'){api.enableBrowserAutoCall();}else{api.disableAutoCall();}
-if(s.fill==='random')await api.randomFillCourts();s.complete=true;engine.style.display='block';r.hidden=true;api.render();
+if(s.fill==='random')await api.randomFillCourts();s.complete=true;if(FORMAL){location.replace(homeUrl());return;}engine.style.display='block';r.hidden=true;api.render();
 }catch(err){notice(err.message);}finally{s.busy=false;if(!s.complete)voice();}};
 roster();render();
 q('gf-forward').disabled=true;

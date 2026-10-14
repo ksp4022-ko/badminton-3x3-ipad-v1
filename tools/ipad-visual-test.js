@@ -3,7 +3,8 @@ const { chromium } = require('playwright');
 
 const iPadAirIos12Ua = 'Mozilla/5.0 (iPad; CPU OS 12_5_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1.2 Mobile/15E148 Safari/604.1';
 const modernIpadUa = 'Mozilla/5.0 (iPad; CPU OS 17_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Mobile/15E148 Safari/604.1';
-const appUrl = 'file:///' + path.resolve(__dirname, '..', 'index.html').replace(/\\/g, '/');
+// The classic console is checked here (?classic=1); the 2.1.0 console is covered by integrated-preview-test.
+const appUrl = 'file:///' + path.resolve(__dirname, '..', 'index.html').replace(/\\/g, '/') + '?classic=1';
 
 function assert(name, condition, details) {
   if (!condition) throw new Error('FAIL: ' + name + (details ? ' | ' + details : ''));
@@ -177,7 +178,7 @@ async function runAdminCase(browser, scenario) {
     window.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(state));
     window.localStorage.setItem('badminton3x3.ipad.v1.state.adminUnlockedDate', key);
   }, { state: stateForMode('3x3'), standalone: !!scenario.standalone });
-  await page.goto(appUrl + '?debug=1');
+  await page.goto(appUrl + '&debug=1');
   await page.waitForSelector('#floatButton');
   await page.click('#floatButton', { force: true });
   await page.waitForSelector('#floatPanel.open');
@@ -319,7 +320,7 @@ async function runPortraitAdminToLandscapeFitCase(browser, action) {
     window.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(state));
     window.localStorage.setItem('badminton3x3.ipad.v1.state.adminUnlockedDate', key);
   }, portraitFitState());
-  await page.goto(appUrl + '?debug=1');
+  await page.goto(appUrl + '&debug=1');
   await openUnlockedAdmin(page);
   if (action === 'roster') {
     await page.evaluate(async () => {
@@ -388,7 +389,7 @@ async function runEntryAnimationCase(browser) {
   await page.addInitScript((state) => {
     window.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(state));
   }, animationState(3));
-  await page.goto(appUrl + '?debug=1');
+  await page.goto(appUrl + '&debug=1');
   await page.waitForSelector('#nextRow .player-chip');
   await page.evaluate(() => {
     const api = window.__badmintonIpadV1;
@@ -444,7 +445,7 @@ async function runLegacyNoEntryAnimationCase(browser) {
   await page.addInitScript((state) => {
     window.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(state));
   }, animationState(4));
-  await page.goto(appUrl + '?debug=1');
+  await page.goto(appUrl + '&debug=1');
   await page.evaluate(() => {
     Array.from(document.styleSheets[0].cssRules).forEach(rule => {
       if(rule.selectorText === '.entry-animation-overlay') rule.style.removeProperty('inset');
@@ -497,7 +498,7 @@ async function runNextScrollTouchCase(browser) {
   await page.addInitScript((nextState) => {
     window.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(nextState));
   }, state);
-  await page.goto(appUrl + '?debug=1');
+  await page.goto(appUrl + '&debug=1');
   await page.waitForSelector('#nextRow.next-scroll .player-chip');
   await page.waitForTimeout(100);
 
@@ -580,7 +581,7 @@ async function runPortraitAdminModeCase(browser) {
   await page.addInitScript((nextState) => {
     window.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(nextState));
   }, state);
-  await page.goto(appUrl + '?debug=1');
+  await page.goto(appUrl + '&debug=1');
   await page.waitForSelector('#floatPanel.open');
   const portrait = await page.evaluate(() => ({
     panelOpen: document.getElementById('floatPanel').classList.contains('open'),
@@ -611,7 +612,7 @@ async function runPortraitAdminModeCase(browser) {
   await quietPage.addInitScript((nextState) => {
     window.localStorage.setItem('badminton3x3.ipad.v1.state', JSON.stringify(nextState));
   }, quietState);
-  await quietPage.goto(appUrl + '?debug=1');
+  await quietPage.goto(appUrl + '&debug=1');
   await quietPage.waitForSelector('#floatPanel.open');
   const quietHint = await quietPage.evaluate(() => document.getElementById('orientationHint').classList.contains('show'));
   assert('portrait admin startup hint follows helper text setting', quietHint === false);
@@ -624,7 +625,7 @@ async function runLegacyRestCase(browser){
   const state=stateForMode('3x3');
   for(let i=0;i<8;i++)state.players.push(player('rest'+i,['Chris 哥','雅雯','Kevin','國泰 哥'][i%4],'rest',null));
   await page.addInitScript(state=>localStorage.setItem('badminton3x3.ipad.v1.state',JSON.stringify(state)),state);
-  await page.goto(appUrl+'?debug=1');
+  await page.goto(appUrl+'&debug=1');
   await page.addStyleTag({content:'#debugPanel{display:none!important}'});
   await page.waitForTimeout(300);
   const before=await page.evaluate(()=>{

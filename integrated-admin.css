@@ -207,7 +207,7 @@
 .status-next-step.is-done .status-next-arrow{display:none;}
 .preview-tabbed-layout #adminTools .status-next-step.is-done:active{transform:none;}
 /* Preview console is alpha: tag beside the panel title (pseudo-element, since render resets the title text). */
-.preview-tabbed-layout #panelTitle::after{content:'ALPHA';display:inline-block;margin-left:8px;padding:2px 7px;border-radius:6px;background:#fb9b36;color:#18202d;font-size:11px;font-weight:800;letter-spacing:.08em;line-height:1.4;vertical-align:middle;}
+body.console-alpha .preview-tabbed-layout #panelTitle::after{content:'ALPHA';display:inline-block;margin-left:8px;padding:2px 7px;border-radius:6px;background:#fb9b36;color:#18202d;font-size:11px;font-weight:800;letter-spacing:.08em;line-height:1.4;vertical-align:middle;}
 /* Session status: one full-width frame, message on the left, 名單 (top right) / 音源 / 場地 (bottom row) on the right. */
 .preview-tabbed-layout .status-metrics{grid-template-columns:minmax(0,1.5fr) repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(72px,auto));gap:8px;padding:10px;margin:0 0 18px;background:#fff;border:1px solid #d7dee7;border-radius:18px;}
 .preview-tabbed-layout #adminTools .status-metric{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:4px;width:100%;height:100%;min-height:72px;margin:0;padding:10px;background:#f3f5f7;border:0;border-radius:12px;text-align:left;color:#18202d;}

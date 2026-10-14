@@ -6,7 +6,7 @@
 - Git: `https://github.com/ksp4022-ko/badminton-3x3-ipad-v1.git`
 - Branch: `main`
 - 本次交接的功能基線：`be7b964`。
-- 目前 APP_VERSION / package version：`2.0.15`。
+- 目前 APP_VERSION / package version：`2.1.0`（2026-10-14 新版控制台升為正式）。
 - 交接文件本身會有較新的提交；請讀最新 main，不要 checkout 回上述舊提交。
 - 先讀 `AGENTS.md`、`CLAUDE.md`，再依使用者下一個要求修改。
 - Windows 目前工作目錄：`C:\Users\kosp\Documents\Roate_sim\github-publish-badminton-3x3-ipad-v1`。
@@ -23,8 +23,13 @@ https://ksp4022-ko.github.io/badminton-3x3-ipad-v1/integrated-test.html
 `integrated-test.html` 轉向：
 `index.html?debug=1&setup-test=1&ui-preview=1`
 
-重要：main 已包含測試版檔案，但新版控制台不是正式入口的預設 UI。
-只有上述條件成立才載入 preview JS/CSS。使用者尚未授權搬回正式入口。
+2.1.0（使用者 2026-10-14 授權）起，新版控制台是正式入口的預設 UI：
+`index.html` 無參數即載入 integrated-preview / integrated-admin（`NEW_CONSOLE`）。
+- `?classic=1`：保留舊控制台（備援）。
+- 測試入口仍需 `debug=1&setup-test=1&ui-preview=1`，只有測試入口顯示 ALPHA。
+- 正式「▶ 快速開場」走 `setup-test.html?formal=1`，使用正式資料，完成或返回後回到 `index.html`；
+  返回會還原進入前的狀態。
+- `tools/ipad-visual-test.js` 以 `?classic=1` 檢查舊控制台；新版由 integrated-preview-test 覆蓋。
 
 排場狀態：
 - 正式 localStorage：`badminton3x3.ipad.v1.state`

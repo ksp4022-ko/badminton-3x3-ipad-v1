@@ -995,9 +995,10 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.0.15';
+  const APP_VERSION = '2.1.0';
   const SETUP_TEST_MODE = location.search.indexOf('setup-test=1') >= 0;
   const UI_PREVIEW_MODE = location.search.indexOf('ui-preview=1') >= 0;
+  const CLASSIC_UI = location.search.indexOf('classic=1') >= 0;
   const STORAGE_KEY = SETUP_TEST_MODE ? 'badminton3x3.ipad.v1.setup-test' : 'badminton3x3.ipad.v1.state';
   const ADMIN_UNLOCK_KEY = STORAGE_KEY + '.adminUnlockedDate';
   const SELECTED_PLAYER_KEY = STORAGE_KEY + '.selectedPlayer';
@@ -1005,6 +1006,8 @@
   const ROSTER_SOURCE_PAGE = 'https://ksp4022-ko.github.io/shuttle-burst-dynamic/rian';
   const SHUTTLE_ROSTER_API_BASE = 'https://badminton-signup-v6-alpha.badminton-signup-v6-worker.workers.dev/api/v7-shuttle';
   const DEBUG_MODE = location.search.indexOf('debug=1') >= 0;
+  // The status-first console is the formal admin UI (2.1.0). ?classic=1 keeps the old console; test mode still needs ui-preview=1.
+  const NEW_CONSOLE = !CLASSIC_UI && (SETUP_TEST_MODE ? (UI_PREVIEW_MODE && DEBUG_MODE) : true);
   const COURTS = ['court1','court2','court3','court4'];
   const NEXTS = ['next1','next2','next3','next4','next5'];
   const SLOTS = [1,2,3,4];
@@ -3432,7 +3435,7 @@
   }
 
   function edgeNameGapMs(mode){
-    if(mode === 'edge' && UI_PREVIEW_MODE && SETUP_TEST_MODE && !isLegacyIpadRuntime()){
+    if(mode === 'edge' && NEW_CONSOLE && !isLegacyIpadRuntime()){
       const gap = state.settings.modernEdgeNameGapMs;
       return [0,30,60,90,150].includes(gap) ? gap : 90;
     }
@@ -5362,9 +5365,10 @@
   }
 
   function exposeDebugApi(){
-    if(!DEBUG_MODE) return;
+    if(!DEBUG_MODE && !NEW_CONSOLE) return;
     window.__badmintonIpadV1 = {
       setupTestMode:SETUP_TEST_MODE,
+      newConsole:NEW_CONSOLE,
       isLegacyIpadRuntime:isLegacyIpadRuntime,
       movePlayer:movePlayer,
       savePreviewSettings:function(values){ Object.assign(state.settings,values); saveState(); },
@@ -5480,10 +5484,10 @@
   }
 
   init();
-  if(UI_PREVIEW_MODE && SETUP_TEST_MODE && DEBUG_MODE){
-    const style = document.createElement('link');style.rel = 'stylesheet';style.href = './integrated-preview.css';document.head.appendChild(style);
+  if(NEW_CONSOLE && document.head && document.body){
+    const style = document.createElement('link');style.rel = 'stylesheet';style.href = './integrated-preview.css?v=2.1.0';document.head.appendChild(style);
     const motion = document.createElement('script');motion.src = './vendor/motion.js';
-    const loadPreview = function(){const script=document.createElement('script');script.src='./integrated-preview.js?v=r7-20261014';document.body.appendChild(script);};
+    const loadPreview = function(){const script=document.createElement('script');script.src='./integrated-preview.js?v=2.1.0';document.body.appendChild(script);};
     motion.onload = loadPreview;motion.onerror = loadPreview;
     if(isLegacyIpadRuntime()) loadPreview();else document.body.appendChild(motion);
   }

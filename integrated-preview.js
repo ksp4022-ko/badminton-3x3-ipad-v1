@@ -1,7 +1,7 @@
 (function(){
  'use strict';
  var api=window.__badmintonIpadV1;
- if(!api||!api.setupTestMode)return;
+ if(!api||!api.newConsole)return;
  var legacy=api.isLegacyIpadRuntime(),motion=window.Motion,heads=[],pending=[],moveOverlay=null,moveControls=[],moveTimer=null,arrivalTimer=null,epoch=Date.now(),entering={},paused=false;
  var reduced=function(){return window.matchMedia('(prefers-reduced-motion: reduce)').matches;};
  function animate(el,frames,options){return motion?motion.animate(el,frames,options):null;}
@@ -52,7 +52,7 @@
  function addSetting(parent,label,key){var row=document.createElement('div');row.className='compact-state-row';var title=document.createElement('div');title.className='compact-row-label';title.textContent=label;row.appendChild(title);[false,true].forEach(function(value){var b=document.createElement('button');b.textContent=value?'開啟':'關閉';b.type='button';b.disabled=legacy;b.setAttribute('aria-pressed',String((api.getState().settings[key]!==false)===value));b.onclick=function(){var settings={};settings[key]=value;api.savePreviewSettings(settings);row.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',String(x===b));});if(!value)clearMove();};row.appendChild(b);});parent.appendChild(row);}
  function setupAdmin(){
   var tools=document.getElementById('adminTools');document.getElementById('floatPanel').classList.add('preview-admin');
-  var start=document.createElement('button');start.id='previewGatheringBtn';start.textContent='開始新聚會';start.onclick=function(){location.href='./setup-test.html?integrated=1';};tools.insertBefore(start,tools.firstChild);
+  var start=document.createElement('button');start.id='previewGatheringBtn';start.textContent='開始新聚會';start.onclick=function(){location.href=api.setupTestMode?'./setup-test.html?integrated=1':'./setup-test.html?formal=1';};tools.insertBefore(start,tools.firstChild);
   var today=document.getElementById('adminTodayBody');today.parentNode.classList.add('preview-today-card');today.parentNode.querySelector('h3').classList.add('preview-today-title');
   var data=document.getElementById('adminDataBody'),display=document.getElementById('adminDisplayBody'),oldCard=display.parentNode;
   data.parentNode.querySelector('.admin-collapse-head').textContent='系統設定';
@@ -61,9 +61,9 @@
   var observer=new MutationObserver(function(){if(display.parentNode===oldCard)oldCard.hidden=true;});observer.observe(display,{attributes:true,attributeFilter:['hidden','class']});
  }
  window.BoardPreview={onRender:onRender,captureMove:captureMove,enteringCourt:enteringCourt};
- document.body.classList.add('preview-test');setupAdmin();
- var adminStyle=document.createElement('link');adminStyle.rel='stylesheet';adminStyle.href='./integrated-admin.css?v=r7-20261014';document.head.appendChild(adminStyle);
- var adminScript=document.createElement('script');adminScript.src='./integrated-admin.js?v=r7-20261014';document.body.appendChild(adminScript);
+ document.body.classList.add('preview-test');if(api.setupTestMode)document.body.classList.add('console-alpha');setupAdmin();
+ var adminStyle=document.createElement('link');adminStyle.rel='stylesheet';adminStyle.href='./integrated-admin.css?v=2.1.0';document.head.appendChild(adminStyle);
+ var adminScript=document.createElement('script');adminScript.src='./integrated-admin.js?v=2.1.0';document.body.appendChild(adminScript);
  mountHeads();setInterval(tick,250);
  new MutationObserver(function(){if(!legacy)requestAnimationFrame(mountHeads);}).observe(document.getElementById('courtRow'),{childList:true});
  document.addEventListener('visibilitychange',function(){if(document.hidden){clearMove();pending=[];}tick();});
