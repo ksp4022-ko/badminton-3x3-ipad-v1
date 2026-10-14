@@ -1008,6 +1008,8 @@
   const DEBUG_MODE = location.search.indexOf('debug=1') >= 0;
   // The status-first console is the formal admin UI (2.1.0). ?classic=1 keeps the old console; test mode still needs ui-preview=1.
   const NEW_CONSOLE = !CLASSIC_UI && (SETUP_TEST_MODE ? (UI_PREVIEW_MODE && DEBUG_MODE) : true);
+  // Test entry first: an odd 休息區 gets one more drop slot so its two rows end even.
+  const REST_EVEN_SLOTS = SETUP_TEST_MODE && UI_PREVIEW_MODE;
   const COURTS = ['court1','court2','court3','court4'];
   const NEXTS = ['next1','next2','next3','next4','next5'];
   const SLOTS = [1,2,3,4];
@@ -1939,7 +1941,8 @@
 
   function renderRestBoardCard(minWidth){
     const players = restPlayers();
-    const openSlots = '<div class="rest-board-space rest-board-drop" data-rest-target="rest">點此放入</div><div class="rest-board-space rest-board-drop" data-rest-target="rest">點此放入</div>';
+    const openSlot = '<div class="rest-board-space rest-board-drop" data-rest-target="rest">點此放入</div>';
+    const openSlots = openSlot + openSlot + (REST_EVEN_SLOTS && players.length % 2 ? openSlot : '');
     const content = players.length
       ? players.map(function(p){ return '<div class="rest-board-player">' + playerChipHtml(p) + '</div>'; }).join('') + openSlots
       : (isLegacyIpadRuntime() ? openSlots : '<div class="rest-board-empty">休息區目前沒有人</div>');
