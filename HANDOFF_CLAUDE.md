@@ -36,6 +36,7 @@ https://ksp4022-ko.github.io/badminton-3x3-ipad-v1/integrated-test.html
 - 列尾需要對齊時優先加寬休息區（`snapRowEnd`），休息區比螢幕寬時才補不到一欄的空白。
 - 4 場手機的場地比半屏窄 28px，露出相鄰場 56px 當提示。
 - 休息區奇數人時多一個「點此放入」（`REST_EVEN_SLOTS`）。
+- 2026-10-14 使用者正式網址實機驗收 2.1.1：PASS。
 
 排場狀態：
 - 正式 localStorage：`badminton3x3.ipad.v1.state`
