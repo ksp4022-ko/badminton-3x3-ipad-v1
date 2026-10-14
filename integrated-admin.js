@@ -9,13 +9,14 @@
  var top=element('div','preview-top-grid'),session=element('section','preview-session'),quick=element('section','preview-quick');
  session.setAttribute('aria-label','聚會與名單');quick.setAttribute('aria-label','排場操作');
  var sessionHead=element('div','preview-session-head'),start=document.getElementById('previewGatheringBtn');
- start.textContent='＋ 新聚會';sessionHead.appendChild(element('h2','','今日聚會'));sessionHead.appendChild(start);session.appendChild(sessionHead);
+ start.textContent='';start.setAttribute('aria-label','快速開場');var startIcon=element('span','status-start-icon','▶');startIcon.setAttribute('aria-hidden','true');start.appendChild(startIcon);start.appendChild(element('span','status-start-text','快速開場'));sessionHead.appendChild(element('h2','','今日聚會'));sessionHead.appendChild(start);session.appendChild(sessionHead);
  var rosterStatus=element('div','preview-roster-status');rosterStatus.id='previewRosterStatus';rosterStatus.setAttribute('aria-live','polite');session.appendChild(rosterStatus);
  session.appendChild(document.getElementById('updateTodayRosterBtn'));
  var today=card('adminTodayBody');quick.appendChild(today);top.appendChild(session);top.appendChild(quick);home.appendChild(top);
  var operationsTitle=element('h2','preview-operations-title','現場操作');quick.insertBefore(operationsTitle,today);
  var actions=element('div','preview-secondary-actions');
- ['regroupNextBtn','undoRegroupNextBtn','randomFillBtn'].forEach(function(id){actions.appendChild(today.querySelector('#'+id));});
+ var regroupSplit=element('div','status-regroup-split');['regroupNextBtn','undoRegroupNextBtn'].forEach(function(id){regroupSplit.appendChild(today.querySelector('#'+id));});actions.appendChild(regroupSplit);actions.appendChild(today.querySelector('#randomFillBtn'));
+ var undoRegroup=regroupSplit.querySelector('#undoRegroupNextBtn');undoRegroup.textContent='↶';undoRegroup.setAttribute('aria-label','復原重組');undoRegroup.title='復原重組';
  today.querySelector('.admin-action-grid').appendChild(actions);
  var resetRow=element('div','preview-reset-row');resetRow.appendChild(today.querySelector('#resetTodayBtn'));today.querySelector('.admin-action-grid').appendChild(resetRow);
  function refreshRosterStatus(){
@@ -115,7 +116,7 @@
    var first=pending[0];nextAction=first?first.run:null;nextStep.classList.toggle('is-done',!first);nextStep.setAttribute('aria-disabled',String(!first));
    textIfChanged(nextMeta,first?'下一步・還有 '+pending.length+' 項待處理':'狀態');textIfChanged(nextTitle,first?first.title:'準備完成');
    textIfChanged(nextSub,first?first.sub:courtCount+' 面場・預備 '+nextCount+' 組');
-   metrics.classList.toggle('helpers-off',state.settings.helperTextEnabled===false);
+   metrics.classList.toggle('helpers-off',state.settings.helperTextEnabled===false);start.classList.toggle('helpers-off',state.settings.helperTextEnabled===false);
    [['roster','名單'],['voice','音源'],['courts','場地']].forEach(function(item){var tile=document.getElementById('statusTile'+item[0]),label=item[1]+'：'+(metricValues[item[0]].getAttribute('aria-label')||metricValues[item[0]].textContent);if(tile.getAttribute('aria-label')!==label)tile.setAttribute('aria-label',label);});
    modeSelect.value=state.settings.autoArrangeMode?'auto':'free';
    var body=call.querySelector('#autoCallBody');textIfChanged(voiceLink,body.classList.contains('mode-edge')?'Edge 固定語音':body.classList.contains('mode-browser')?'網頁合成語音':body.classList.contains('mode-checking')?'檢查中…':'關閉');
@@ -169,15 +170,15 @@
    if(modeButtons[index].disabled){refreshSlider();return;}
    // A range drag is not a button tap: bypass the panel's post-scroll click guard.
    var api=window.__badmintonIpadV1;
-   if(index===1)api.enableAutoCallWithEdgeCheck();else if(index===2)api.enableBrowserAutoCall();else api.disableAutoCall();
+   if(index===1){previewMode(1);sliderGroup.classList.add('is-pending');api.enableAutoCallWithEdgeCheck();}else if(index===2)api.enableBrowserAutoCall();else api.disableAutoCall();
    refreshSlider();
   }
   labels.setAttribute('aria-hidden','true');names.forEach(function(name){var b=element('button','',name);b.type='button';b.tabIndex=-1;labels.appendChild(b);labelButtons.push(b);});labels.appendChild(pill);sliderGroup.appendChild(labels);sliderGroup.appendChild(slider);autoBody.insertBefore(sliderGroup,oldModes);
   slider.onchange=function(){commitMode(Number(slider.value));};
   slider.oninput=function(){previewMode(Number(slider.value));};
   function refreshSlider(){
-   var index=autoBody.classList.contains('mode-browser')?2:autoBody.classList.contains('mode-edge')?1:0;
-   slider.value=String(index);slider.disabled=modeButtons.some(function(b){return b.disabled;});sliderGroup.classList.toggle('is-disabled',slider.disabled);previewMode(index);
+   var checking=autoBody.classList.contains('mode-checking'),index=autoBody.classList.contains('mode-browser')?2:(checking||autoBody.classList.contains('mode-edge'))?1:0;
+   slider.value=String(index);slider.disabled=modeButtons.some(function(b){return b.disabled;});sliderGroup.classList.toggle('is-disabled',slider.disabled);sliderGroup.classList.toggle('is-pending',checking);previewMode(index);
    labelButtons.forEach(function(b){b.disabled=slider.disabled;});
   }
   var sliderObserver=new MutationObserver(refreshSlider);sliderObserver.observe(autoBody,{attributes:true,attributeFilter:['class']});modeButtons.forEach(function(b){sliderObserver.observe(b,{attributes:true,attributeFilter:['disabled']});});refreshSlider();
@@ -185,6 +186,20 @@
    var gapField=element('div','status-edge-gap'),gapLabel=element('label','','姓名間隔'),gapSelect=element('select');gapSelect.id='previewEdgeNameGapSelect';gapLabel.htmlFor=gapSelect.id;gapField.appendChild(gapLabel);
    [0,30,60,90,150].forEach(function(value){var option=element('option','',value+' ms');option.value=String(value);gapSelect.appendChild(option);});
    gapSelect.value=String(window.__badmintonIpadV1.edgeNameGapMs('edge'));gapSelect.onchange=function(){window.__badmintonIpadV1.savePreviewSettings({modernEdgeNameGapMs:Number(gapSelect.value)});};gapField.appendChild(gapSelect);call.querySelector('.edge-settings').insertBefore(gapField,call.querySelector('#edgeTestBtn'));
+  }
+  var playersPane=panes.players;
+  if(playersPane){
+   playersPane.classList.add('status-players');
+   ['#adminDetailNav','#hidePlayerDetailBtn','#hideGamesDetailBtn'].forEach(function(sel){var n=playersPane.querySelector(sel);if(n)n.hidden=true;});
+   var playerGrid=element('div','status-players-grid');
+   function playerCard(titleNode,rows){var c=element('section','status-player-card');if(typeof titleNode==='string')titleNode=element('h3','status-info-title',titleNode);else titleNode.classList.add('status-info-title');c.appendChild(titleNode);rows.forEach(function(r){c.appendChild(r);});playerGrid.appendChild(c);return c;}
+   function row(cls,ids){var r=element('div',cls);ids.forEach(function(id){var n=document.getElementById(id);if(n)r.appendChild(n);});return r;}
+   playerCard('新增球員',[row('status-player-row',['newPlayerInput','addPlayerBtn'])]);
+   playerCard(document.getElementById('sharedColorLabel'),[document.getElementById('newPlayerColorGrid')]);
+   playerCard('已選球員',[row('status-player-row',['renamePlayerInput','renamePlayerBtn']),row('status-player-danger',['deletePlayerBtn'])]);
+   playerCard('場次',[row('status-games-row',['plusGameBtn','minusGameBtn','zeroPlayerBtn']),row('status-player-danger',['resetAllGamesBtn'])]);
+   playersPane.querySelector('#adminPlayersBody').insertBefore(playerGrid,playersPane.querySelector('#playerDetailView'));
+   ['#playerDetailView','#gamesDetailView'].forEach(function(sel){var n=playersPane.querySelector(sel);if(n)n.hidden=true;});
   }
   showTab('today');window.StatusAdmin={showTab:showTab};
  }

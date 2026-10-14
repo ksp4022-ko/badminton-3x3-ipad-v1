@@ -230,3 +230,34 @@
 .preview-tabbed-layout .status-metrics .status-next-sub{font-size:13px;color:#526176;}
 .preview-tabbed-layout .status-metrics .status-next-arrow{justify-self:start;width:40px;height:40px;font-size:20px;}
 @media(max-width:519px){.preview-tabbed-layout .status-metrics .status-next-title{font-size:17px;}.preview-tabbed-layout .status-metrics .status-next-meta{font-size:11px;}.preview-tabbed-layout #adminTools .status-metric{padding:8px;}}
+/* 2: done message sits bottom-left. 3: tile labels and values share rows so values line up. */
+.preview-tabbed-layout #adminTools .status-metrics .status-next-step.is-done .status-next-text{align-self:end;}
+.preview-tabbed-layout #adminTools .status-metric{display:grid;grid-template-rows:auto auto 1fr;justify-content:stretch;align-items:start;}
+.preview-tabbed-layout .status-metric strong{align-self:end;display:flex;align-items:flex-end;height:28px;line-height:1;}
+.preview-tabbed-layout .status-metric strong.status-court-value{align-items:baseline;}
+.preview-tabbed-layout .status-metric strong.status-court-value .status-court-main{line-height:1;}
+/* 1: 快速開場 = play icon + helper text. */
+.preview-tabbed-layout #adminTools #previewGatheringBtn{display:inline-flex;align-items:center;gap:6px;}
+.status-start-icon{font-size:13px;line-height:1;}
+#previewGatheringBtn.helpers-off .status-start-text{display:none;}
+.preview-tabbed-layout #adminTools #previewGatheringBtn.helpers-off{min-width:44px;justify-content:center;}
+/* 4: 預備區重組 with its undo attached on the right. */
+.status-regroup-split{display:flex;gap:6px;min-width:0;}
+.preview-tabbed-layout #adminTools .status-regroup-split #regroupNextBtn{flex:1;min-width:0;}
+.preview-tabbed-layout #adminTools .status-regroup-split #undoRegroupNextBtn:not([hidden]){flex:none;width:48px;padding:0;font-size:20px;font-weight:800;color:#2563eb;}
+/* 5: Edge check pending: pill already on Edge, labels faded until the check finishes. */
+.status-voice-slider.is-pending,.status-voice-slider.is-pending.is-disabled{opacity:1;}
+.status-voice-slider.is-pending .status-slider-labels button{opacity:.4;}
+/* 6: players tab in the session style. */
+.preview-tabbed-layout .status-players-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+.preview-tabbed-layout #adminTools .status-player-card{background:#fff;border:1px solid #d7dee7;border-radius:16px;padding:16px;min-width:0;}
+.preview-tabbed-layout #adminTools .status-player-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;}
+.preview-tabbed-layout #adminTools .status-player-row input{width:100%;min-width:0;min-height:48px;margin:0;}
+.preview-tabbed-layout #adminTools .status-player-row button{min-width:88px;min-height:48px;margin:0;}
+.preview-tabbed-layout #adminTools .status-games-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.preview-tabbed-layout #adminTools .status-games-row button{min-height:48px;margin:0;}
+.preview-tabbed-layout #adminTools .status-player-danger{display:flex;justify-content:flex-end;margin-top:12px;padding-top:12px;border-top:1px solid #e2e7ed;}
+.preview-tabbed-layout #adminTools .status-player-danger button{width:auto;min-height:44px;margin:0;}
+.preview-tabbed-layout #adminTools .status-player-card #newPlayerColorGrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:0;}
+.preview-tabbed-layout #adminTools .status-players{border:0;}
+@media(min-width:760px){.preview-tabbed-layout .status-players-grid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;}}

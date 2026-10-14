@@ -39,7 +39,7 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
    await page.waitForFunction(()=>!!window.PreviewAdminLayout);
    assert.equal(await page.locator('#previewAdminHome').isVisible(),true);
    assert.equal(await page.locator('#floatPanel').evaluate(el=>el.classList.contains('preview-status-layout')),true);
-   assert.equal(await page.locator('#previewGatheringBtn').innerText(),'＋ 新聚會');
+   assert.equal(await page.locator('#previewGatheringBtn').getAttribute('aria-label'),'快速開場');assert.equal(await page.locator('#previewGatheringBtn .status-start-text').innerText(),'快速開場');
    assert.equal(await page.locator('#previewGatheringBtn').evaluate(el=>el.getBoundingClientRect().width<el.closest('.preview-session').getBoundingClientRect().width*.7),true);
    assert.equal(await page.locator('#previewRosterStatus').innerText(),'8 位成員 · 4 位上場 · 4 位預備');
    assert.equal(await page.locator('#selectedAdminBar').isVisible(),true);
@@ -94,7 +94,7 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
    assert.equal(await page.evaluate(()=>window.__badmintonIpadV1.getState().settings.autoCallMode),modeBefore);
    const layout=await page.locator('#previewVoiceGrid').evaluate(el=>{const a=el.children[0].getBoundingClientRect(),b=el.children[1].getBoundingClientRect();return {topA:a.top,topB:b.top,leftA:a.left,leftB:b.left};});
    assert.equal(layout.topA,layout.topB);assert(layout.leftB>layout.leftA);
-   await page.click('#statusTabplayers');assert.equal(await page.locator('#previewAdminHome').isVisible(),false);await page.click('#showGamesDetailBtn');assert.equal(await page.locator('#plusGameBtn').isVisible(),true);await page.click('#hideGamesDetailBtn');
+   await page.click('#statusTabplayers');assert.equal(await page.locator('#previewAdminHome').isVisible(),false);assert.equal(await page.locator('#plusGameBtn').isVisible(),true);assert.equal(await page.locator('#addPlayerBtn').isVisible(),true);assert.equal(await page.locator('#showGamesDetailBtn').isVisible(),false);
    await page.click('#statusTabsettings');assert.equal(await page.locator('#saveCourtLabelsBtn').isVisible(),true);
    await page.click('#statusSettingsettings');assert.equal(await page.locator('#callEffectDurationSelect').isVisible(),true);assert.equal(await page.locator('#exportBackupBtn').isVisible(),true);
    assert.equal(await page.locator('.status-info-card').count(),6);
