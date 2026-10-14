@@ -995,7 +995,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.1.1';
+  const APP_VERSION = '2.1.2';
   const SETUP_TEST_MODE = location.search.indexOf('setup-test=1') >= 0;
   const UI_PREVIEW_MODE = location.search.indexOf('ui-preview=1') >= 0;
   const CLASSIC_UI = location.search.indexOf('classic=1') >= 0;
@@ -5488,9 +5488,9 @@
 
   init();
   if(NEW_CONSOLE && document.head && document.body){
-    const style = document.createElement('link');style.rel = 'stylesheet';style.href = './integrated-preview.css?v=2.1.1-head1';document.head.appendChild(style);
+    const style = document.createElement('link');style.rel = 'stylesheet';style.href = './integrated-preview.css?v=2.1.2';document.head.appendChild(style);
     const motion = document.createElement('script');motion.src = './vendor/motion.js';
-    const loadPreview = function(){const script=document.createElement('script');script.src='./integrated-preview.js?v=2.1.1';document.body.appendChild(script);};
+    const loadPreview = function(){const script=document.createElement('script');script.src='./integrated-preview.js?v=2.1.2';document.body.appendChild(script);};
     motion.onload = loadPreview;motion.onerror = loadPreview;
     if(isLegacyIpadRuntime()) loadPreview();else document.body.appendChild(motion);
   }

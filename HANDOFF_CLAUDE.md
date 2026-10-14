@@ -6,7 +6,7 @@
 - Git: `https://github.com/ksp4022-ko/badminton-3x3-ipad-v1.git`
 - Branch: `main`
 - 本次交接的功能基線：`be7b964`。
-- 目前 APP_VERSION / package version：`2.1.1`（2.1.0 新版控制台升為正式；2.1.1 看板橫向磁吸）。
+- 目前 APP_VERSION / package version：`2.1.2`（2.1.0 新版控制台升為正式；2.1.1 看板橫向磁吸；2.1.2 區頭統一樣式）。
 - 交接文件本身會有較新的提交；請讀最新 main，不要 checkout 回上述舊提交。
 - 先讀 `AGENTS.md`、`CLAUDE.md`，再依使用者下一個要求修改。
 - Windows 目前工作目錄：`C:\Users\kosp\Documents\Roate_sim\github-publish-badminton-3x3-ipad-v1`。
@@ -37,6 +37,8 @@ https://ksp4022-ko.github.io/badminton-3x3-ipad-v1/integrated-test.html
 - 4 場手機的場地比半屏窄 28px，露出相鄰場 56px 當提示。
 - 休息區奇數人時多一個「點此放入」（`REST_EVEN_SLOTS`）。
 - 2026-10-14 使用者正式網址實機驗收 2.1.1：PASS。
+
+2.1.2 區頭（新版控制台頁面）：純色、同形狀；場地深青綠白字、預備區淡青綠深青綠字、休息區淡灰深灰字；場地區頭邊框同底色（移除黃框）。翻牌顏色不變。
 
 排場狀態：
 - 正式 localStorage：`badminton3x3.ipad.v1.state`

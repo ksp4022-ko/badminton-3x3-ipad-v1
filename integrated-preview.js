@@ -91,8 +91,8 @@
  }
  window.BoardPreview={onRender:onRender,captureMove:captureMove,enteringCourt:enteringCourt};
  document.body.classList.add('preview-test');if(api.setupTestMode)document.body.classList.add('console-alpha');setupAdmin();snapRowEnd();
- var adminStyle=document.createElement('link');adminStyle.rel='stylesheet';adminStyle.href='./integrated-admin.css?v=2.1.1';document.head.appendChild(adminStyle);
- var adminScript=document.createElement('script');adminScript.src='./integrated-admin.js?v=2.1.1';document.body.appendChild(adminScript);
+ var adminStyle=document.createElement('link');adminStyle.rel='stylesheet';adminStyle.href='./integrated-admin.css?v=2.1.2';document.head.appendChild(adminStyle);
+ var adminScript=document.createElement('script');adminScript.src='./integrated-admin.js?v=2.1.2';document.body.appendChild(adminScript);
  mountHeads();setInterval(tick,250);
  new MutationObserver(function(){if(!legacy)requestAnimationFrame(mountHeads);}).observe(document.getElementById('courtRow'),{childList:true});
  document.addEventListener('visibilitychange',function(){if(document.hidden){clearMove();pending=[];}tick();});

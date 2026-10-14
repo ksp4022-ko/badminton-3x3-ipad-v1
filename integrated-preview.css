@@ -26,11 +26,11 @@ body.preview-test #courtRow>.zone-card{scroll-snap-align:start;}
 /* Courts are a little narrower than half the screen so the next court peeks in as a scroll hint; the last court snaps to the end edge. */
 html:not(.legacyIpad):not(.modernIpad):not(.modernDesktop) body.preview-test #courtRow.mode-4{grid-template-columns:repeat(4,calc((100% - 10px) / 2 - 28px));}
 body.preview-test #courtRow>.zone-card:last-child{scroll-snap-align:start end;}
-/* Test entry: one zone-header system. Solid fills, same shape; colour says which area (court > 預備區 > 休息區). */
-body.console-alpha .zone-head.warn{background:#0f766e;border-color:#0f766e;}
-body.console-alpha #nextRow .zone-card:not(.rest-board-card) .zone-head{background:#d7f0ec;border-color:#b6e3dc;}
-body.console-alpha #nextRow .zone-card:not(.rest-board-card) .zone-head .zone-title{color:#0f5f58;}
-body.console-alpha #nextRow .zone-card:not(.rest-board-card) .zone-head .zone-count{color:#3d7c74;}
-body.console-alpha .rest-board-card .zone-head{background:#e8edf3;border-color:#d7dee7;}
-body.console-alpha .rest-board-card .zone-head .zone-title{color:#3b4656;}
-body.console-alpha .rest-board-card .zone-head .zone-count{color:#657184;}
+/* One zone-header system (2.1.2). Solid fills, same shape; colour says which area (court > 預備區 > 休息區). */
+body.preview-test .zone-head.warn{background:#0f766e;border-color:#0f766e;}
+body.preview-test #nextRow .zone-card:not(.rest-board-card) .zone-head{background:#d7f0ec;border-color:#b6e3dc;}
+body.preview-test #nextRow .zone-card:not(.rest-board-card) .zone-head .zone-title{color:#0f5f58;}
+body.preview-test #nextRow .zone-card:not(.rest-board-card) .zone-head .zone-count{color:#3d7c74;}
+body.preview-test .rest-board-card .zone-head{background:#e8edf3;border-color:#d7dee7;}
+body.preview-test .rest-board-card .zone-head .zone-title{color:#3b4656;}
+body.preview-test .rest-board-card .zone-head .zone-count{color:#657184;}
