@@ -39,6 +39,7 @@ https://ksp4022-ko.github.io/badminton-3x3-ipad-v1/integrated-test.html
 - 2026-10-14 使用者正式網址實機驗收 2.1.1：PASS。
 
 2.1.2 區頭（新版控制台頁面）：純色、同形狀；場地深青綠白字、預備區淡青綠深青綠字、休息區淡灰深灰字；場地區頭邊框同底色（移除黃框）。翻牌顏色不變。
+- 2026-10-14 使用者正式網址實機驗收 2.1.2：PASS。
 
 排場狀態：
 - 正式 localStorage：`badminton3x3.ipad.v1.state`
