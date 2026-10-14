@@ -5485,9 +5485,9 @@
 
   init();
   if(NEW_CONSOLE && document.head && document.body){
-    const style = document.createElement('link');style.rel = 'stylesheet';style.href = './integrated-preview.css?v=2.1.0-snap6';document.head.appendChild(style);
+    const style = document.createElement('link');style.rel = 'stylesheet';style.href = './integrated-preview.css?v=2.1.0-snap7';document.head.appendChild(style);
     const motion = document.createElement('script');motion.src = './vendor/motion.js';
-    const loadPreview = function(){const script=document.createElement('script');script.src='./integrated-preview.js?v=2.1.0-snap6';document.body.appendChild(script);};
+    const loadPreview = function(){const script=document.createElement('script');script.src='./integrated-preview.js?v=2.1.0-snap7';document.body.appendChild(script);};
     motion.onload = loadPreview;motion.onerror = loadPreview;
     if(isLegacyIpadRuntime()) loadPreview();else document.body.appendChild(motion);
   }

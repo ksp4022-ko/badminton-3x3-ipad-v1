@@ -52,16 +52,28 @@
   var row=document.getElementById('nextRow');if(!row||!document.body.classList.contains('console-alpha'))return;
   if(!row.__snapApplied||row.style.gridTemplateColumns!==row.__snapApplied)row.__snapBase=row.style.gridTemplateColumns;
   row.style.gridTemplateColumns=row.__snapBase;row.__snapApplied=null;
-  Array.prototype.forEach.call(row.querySelectorAll('.snap-marker'),function(m){m.remove();});
+  function clearMarkers(){Array.prototype.forEach.call(row.querySelectorAll('.snap-marker'),function(m){m.remove();});}
+  function origin(){return row.getBoundingClientRect().left-row.scrollLeft-row.clientLeft;}
+  function placeMarkers(){clearMarkers();var o=origin(),seen={};Array.prototype.forEach.call(row.querySelectorAll('.rest-board-player,.rest-board-space'),function(el){var x=Math.floor(el.getBoundingClientRect().left-o);if(seen[x])return;seen[x]=1;var m=document.createElement('span');m.className='snap-marker';m.setAttribute('aria-hidden','true');m.style.left=x+'px';row.appendChild(m);});}
+  function firstStartAtOrAfter(sel,max){var o=origin(),best=null;Array.prototype.forEach.call(row.querySelectorAll(sel),function(el){var s=el.getBoundingClientRect().left-o;if(s>=max-1&&(best===null||s<best))best=s;});return best;}
+  function apply(template){row.__snapApplied=template;row.style.gridTemplateColumns=template;}
+  clearMarkers();
   if(!row.classList.contains('next-scroll')||!row.__snapBase)return;
-  var base=row.getBoundingClientRect().left-row.scrollLeft-row.clientLeft,seen={};
-  Array.prototype.forEach.call(row.querySelectorAll('.rest-board-player,.rest-board-space'),function(el){var x=Math.floor(el.getBoundingClientRect().left-base);if(seen[x])return;seen[x]=1;var m=document.createElement('span');m.className='snap-marker';m.setAttribute('aria-hidden','true');m.style.left=x+'px';row.appendChild(m);});
-  var max=row.scrollWidth-row.clientWidth;if(max<=1)return;
-  var origin=row.getBoundingClientRect().left-row.scrollLeft,best=null;
-  Array.prototype.forEach.call(row.querySelectorAll('.zone-card,.snap-marker'),function(el){var s=el.getBoundingClientRect().left-origin;if(s>=max-1&&(best===null||s<best))best=s;});
-  if(best===null||best-max<2)return;
-  var gap=parseFloat(getComputedStyle(row).columnGap)||0;
-  row.__snapApplied=row.__snapBase+' '+Math.max(0,Math.round(best-max-gap))+'px';row.style.gridTemplateColumns=row.__snapApplied;
+  var max=row.scrollWidth-row.clientWidth;
+  if(max>1){
+   // Prefer widening 休息區 (its columns stretch) over empty space, so the last stop fills the screen.
+   var card=firstStartAtOrAfter('#nextRow>.zone-card',max),last=/minmax\((\d+(?:\.\d+)?)px,\s*(\d+(?:\.\d+)?)px\)\s*$|(\d+(?:\.\d+)?)px\s*$/.exec(row.__snapBase);
+   if(card!==null&&card-max>=2&&last){
+    var width=Number(last[1]||last[3])+Math.round(card-max);
+    apply(row.__snapBase.slice(0,last.index)+(last[1]?'minmax('+width+'px, '+width+'px)':width+'px'));
+   }else{
+    // 休息區 wider than the screen: its own columns are the stops; pad at most one column.
+    placeMarkers();
+    var mark=firstStartAtOrAfter('.zone-card,.snap-marker',max);
+    if(mark!==null&&mark-max>=2){var gap=parseFloat(getComputedStyle(row).columnGap)||0;apply(row.__snapBase+' '+Math.max(0,Math.round(mark-max-gap))+'px');}
+   }
+  }
+  placeMarkers();
  }
  var snapTimer=null;window.addEventListener('resize',function(){clearTimeout(snapTimer);snapTimer=setTimeout(snapRowEnd,220);});
  function onRender(){mountHeads();runMove();snapRowEnd();}
