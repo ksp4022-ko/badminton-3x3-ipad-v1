@@ -14,3 +14,9 @@ html:not(.legacyIpad) .preview-flip-head{position:relative;perspective:700px;pad
 .preview-admin .preview-retired{display:none!important;}
 .preview-test #debugPanel{display:none!important;}
 .preview-admin .compact-state-row button[aria-pressed="true"]{background:#2563EB!important;color:#fff!important;}
+/* Test entry only (ALPHA): after a swipe the 預備區 / 休息區 row snaps to a card or rest-column start, so names are never cut. */
+body.console-alpha .zone-row.next-scroll{scroll-snap-type:x mandatory;}
+body.console-alpha .zone-row.next-scroll>.zone-card{scroll-snap-align:start;}
+/* Rest columns sit inside overflow:hidden boxes (their own scroll containers), so their snap stops are 1px markers placed directly in the row. */
+body.console-alpha #nextRow.next-scroll{position:relative;}
+.snap-marker{position:absolute;top:0;width:1px;height:1px;pointer-events:none;scroll-snap-align:start;}

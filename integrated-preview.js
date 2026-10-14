@@ -47,7 +47,24 @@
   if(legacy)return;heads.forEach(cancelHead);heads=[];
   document.querySelectorAll('#courtRow .zone-head').forEach(function(button){var zone=button.getAttribute('data-court');if(!zone)return;var height=button.getBoundingClientRect().height;var count=button.querySelector('.zone-count');button.style.height=height+'px';button.innerHTML='';var face=document.createElement('span');face.className='preview-flip-face';button.appendChild(face);if(count)button.appendChild(count);button.classList.add('preview-flip-head');var head={button:button,face:face,zone:zone,key:null,control:null};heads.push(head);setFace(head,entering[zone]>Date.now()?'entering':'identity',true);});tick();
  }
- function onRender(){mountHeads();runMove();}
+ // Test entry: give the 預備區/休息區 row just enough trailing space that its last scroll stop also lands on a card or rest-column start.
+ function snapRowEnd(){
+  var row=document.getElementById('nextRow');if(!row||!document.body.classList.contains('console-alpha'))return;
+  if(!row.__snapApplied||row.style.gridTemplateColumns!==row.__snapApplied)row.__snapBase=row.style.gridTemplateColumns;
+  row.style.gridTemplateColumns=row.__snapBase;row.__snapApplied=null;
+  Array.prototype.forEach.call(row.querySelectorAll('.snap-marker'),function(m){m.remove();});
+  if(!row.classList.contains('next-scroll')||!row.__snapBase)return;
+  var base=row.getBoundingClientRect().left-row.scrollLeft-row.clientLeft,seen={};
+  Array.prototype.forEach.call(row.querySelectorAll('.rest-board-player,.rest-board-space'),function(el){var x=Math.floor(el.getBoundingClientRect().left-base);if(seen[x])return;seen[x]=1;var m=document.createElement('span');m.className='snap-marker';m.setAttribute('aria-hidden','true');m.style.left=x+'px';row.appendChild(m);});
+  var max=row.scrollWidth-row.clientWidth;if(max<=1)return;
+  var origin=row.getBoundingClientRect().left-row.scrollLeft,best=null;
+  Array.prototype.forEach.call(row.querySelectorAll('.zone-card,.snap-marker'),function(el){var s=el.getBoundingClientRect().left-origin;if(s>=max-1&&(best===null||s<best))best=s;});
+  if(best===null||best-max<2)return;
+  var gap=parseFloat(getComputedStyle(row).columnGap)||0;
+  row.__snapApplied=row.__snapBase+' '+Math.max(0,Math.round(best-max-gap))+'px';row.style.gridTemplateColumns=row.__snapApplied;
+ }
+ var snapTimer=null;window.addEventListener('resize',function(){clearTimeout(snapTimer);snapTimer=setTimeout(snapRowEnd,220);});
+ function onRender(){mountHeads();runMove();snapRowEnd();}
  function enteringCourt(zone){if(legacy)return;entering[zone]=Date.now()+(Number(api.getState().settings.callEffectDuration)||5)*1000;}
  function addSetting(parent,label,key){var row=document.createElement('div');row.className='compact-state-row';var title=document.createElement('div');title.className='compact-row-label';title.textContent=label;row.appendChild(title);[false,true].forEach(function(value){var b=document.createElement('button');b.textContent=value?'開啟':'關閉';b.type='button';b.disabled=legacy;b.setAttribute('aria-pressed',String((api.getState().settings[key]!==false)===value));b.onclick=function(){var settings={};settings[key]=value;api.savePreviewSettings(settings);row.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',String(x===b));});if(!value)clearMove();};row.appendChild(b);});parent.appendChild(row);}
  function setupAdmin(){
@@ -61,7 +78,7 @@
   var observer=new MutationObserver(function(){if(display.parentNode===oldCard)oldCard.hidden=true;});observer.observe(display,{attributes:true,attributeFilter:['hidden','class']});
  }
  window.BoardPreview={onRender:onRender,captureMove:captureMove,enteringCourt:enteringCourt};
- document.body.classList.add('preview-test');if(api.setupTestMode)document.body.classList.add('console-alpha');setupAdmin();
+ document.body.classList.add('preview-test');if(api.setupTestMode)document.body.classList.add('console-alpha');setupAdmin();snapRowEnd();
  var adminStyle=document.createElement('link');adminStyle.rel='stylesheet';adminStyle.href='./integrated-admin.css?v=2.1.0';document.head.appendChild(adminStyle);
  var adminScript=document.createElement('script');adminScript.src='./integrated-admin.js?v=2.1.0';document.body.appendChild(adminScript);
  mountHeads();setInterval(tick,250);
