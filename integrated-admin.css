@@ -208,3 +208,15 @@
 .preview-tabbed-layout #adminTools .status-next-step.is-done:active{transform:none;}
 /* Preview console is alpha: tag beside the panel title (pseudo-element, since render resets the title text). */
 .preview-tabbed-layout #panelTitle::after{content:'ALPHA';display:inline-block;margin-left:8px;padding:2px 7px;border-radius:6px;background:#fb9b36;color:#18202d;font-size:11px;font-weight:800;letter-spacing:.08em;line-height:1.4;vertical-align:middle;}
+/* Session status as a 2x2 board: next-step card top-left, then roster / voice / courts tiles; tiles open their pages. */
+.preview-tabbed-layout .status-metrics{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(132px,auto);gap:10px;padding:0;margin:0 0 18px;border:0;}
+.preview-tabbed-layout #adminTools .status-metric{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:6px;width:100%;height:100%;min-height:132px;margin:0;padding:14px;background:#fff;border:1px solid #d7dee7;border-radius:16px;text-align:left;color:#18202d;}
+.preview-tabbed-layout .status-metric-label{font-size:14px;}
+.preview-tabbed-layout .status-metric strong{font-size:18px;}
+.preview-tabbed-layout .status-metric strong.status-court-value{justify-content:flex-start;}
+.status-metrics.helpers-off .status-metric-label{display:none;}
+.preview-tabbed-layout #adminTools .status-metrics .status-next-step{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr auto;gap:6px;height:100%;min-height:132px;margin:0;padding:14px;}
+.preview-tabbed-layout .status-metrics .status-next-meta{grid-column:auto;font-size:12px;}
+.preview-tabbed-layout .status-metrics .status-next-title{font-size:19px;}
+.preview-tabbed-layout .status-metrics .status-next-sub{font-size:13px;}
+.preview-tabbed-layout .status-metrics .status-next-arrow{justify-self:end;width:40px;height:40px;font-size:20px;}
