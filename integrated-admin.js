@@ -160,13 +160,13 @@
   if(manual)infoCard('手動操作',[manual.closest('.compact-state-row')]);
   infoCard('介面提示',[settingRow('helperTextOnBtn')]);
   var themeRow=element('div','status-theme-options'),themeButtons=[];
-  [['','預設','#ecfeff','#0f766e','#6d28d9'],['a','A 青綠＋行動橘','#f0fdfa','#0f766e','#ea580c'],['b','B 深藍高對比','#f8fafc','#0f172a','#0369a1'],['c','C 深色看板','#020617','#0f766e','#f97316']].forEach(function(item){
+  [['','預設','#ecfeff','#0f766e','#6d28d9'],['a','A 暖橘底＋青綠','#fff7ed','#0f766e','#ea580c'],['b','B 深藍高對比','#f8fafc','#0f172a','#0369a1'],['c','C 深色看板','#020617','#0f766e','#f97316'],['d','D 靛藍＋活力橘','#eef2ff','#4f46e5','#ea580c'],['e','E 皇家藍＋活動橘','#fff7ed','#1d4ed8','#ea580c'],['f','F 午夜藍＋琥珀','#fffbeb','#1e3a8a','#d97706']].forEach(function(item){
    var b=element('button','status-theme-option');b.type='button';b.setAttribute('data-theme',item[0]);
    var dots=element('span','status-theme-dots');dots.setAttribute('aria-hidden','true');item.slice(2).forEach(function(c){var d=element('span','status-theme-dot');d.style.background=c;dots.appendChild(d);});
    b.appendChild(dots);b.appendChild(element('span','status-theme-name',item[1]));
    b.onclick=function(){window.__badmintonIpadV1.savePreviewSettings({colorTheme:item[0]});applyColorTheme(item[0]);};themeRow.appendChild(b);themeButtons.push(b);
   });
-  function applyColorTheme(theme){var html=document.documentElement;['a','b','c'].forEach(function(t){html.classList.toggle('theme-'+t,t===theme);});themeButtons.forEach(function(b){b.setAttribute('aria-pressed',String(b.getAttribute('data-theme')===theme));});}
+  function applyColorTheme(theme){var html=document.documentElement;['a','b','c','d','e','f'].forEach(function(t){html.classList.toggle('theme-'+t,t===theme);});themeButtons.forEach(function(b){b.setAttribute('aria-pressed',String(b.getAttribute('data-theme')===theme));});}
   applyColorTheme(String(window.__badmintonIpadV1.getState().settings.colorTheme||''));
   infoCard('系統配色',[themeRow]);
   infoCard('畫面方向',[settingRow('portraitAdminModeOnBtn')]);

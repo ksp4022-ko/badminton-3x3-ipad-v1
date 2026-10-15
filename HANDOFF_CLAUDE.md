@@ -6,7 +6,7 @@
 - Git: `https://github.com/ksp4022-ko/badminton-3x3-ipad-v1.git`
 - Branch: `main`
 - 本次交接的功能基線：`be7b964`。
-- 目前 APP_VERSION / package version：`2.2.0`（2.1.0 新版控制台；2.1.1 看板磁吸；2.1.2 區頭樣式；2.2.0 系統配色）。
+- 目前 APP_VERSION / package version：`2.3.0`（2.1.0 新版控制台；2.1.1 看板磁吸；2.1.2 區頭樣式；2.2.0 系統配色；2.3.0 A 橘底＋無綠 D/E/F）。
 - 交接文件本身會有較新的提交；請讀最新 main，不要 checkout 回上述舊提交。
 - 先讀 `AGENTS.md`、`CLAUDE.md`，再依使用者下一個要求修改。
 - Windows 目前工作目錄：`C:\Users\kosp\Documents\Roate_sim\github-publish-badminton-3x3-ipad-v1`。
@@ -52,6 +52,11 @@ https://ksp4022-ko.github.io/badminton-3x3-ipad-v1/integrated-test.html
 - `themes.css` 由 `npm run build:themes`（tools/build-themes.js）從 index.html、integrated-preview.css、integrated-admin.css、setup-test.html 產生，勿手改；改了這些檔的顏色要重跑。
 - 不換色：球員卡 12 色、翻牌 / 光軌 / 呼叫效果、已選球員黃色橫幅。快速開場頁跟隨主題（A/B 淺色、C 深色）。
 - 2026-10-15 使用者正式網址實機驗收 2.2.0：PASS。
+
+2.3.0 配色調整（使用者要求「a 給我底橘色，剩下 d,e,f 都新增選項」）：
+- A 改為暖橘底＋青綠場地（A 暖橘底＋青綠）；新增無綠方案 D 靛藍＋活力橘、E 皇家藍＋活動橘、F 午夜藍＋琥珀。colorTheme 允許 '' / a–f。
+- D/E/F 預設決定（使用者未回覆，可再調）：場地標頭與翻牌身分面＝場地色；翻牌上場面 D 天藍、E/F 紫；綠色按鈕與勾勾改場地色。
+- 實機驗收：待使用者確認。
 
 排場狀態：
 - 正式 localStorage：`badminton3x3.ipad.v1.state`

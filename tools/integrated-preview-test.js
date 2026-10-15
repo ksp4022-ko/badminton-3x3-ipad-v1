@@ -98,9 +98,9 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
    await page.click('#statusTabsettings');assert.equal(await page.locator('#saveCourtLabelsBtn').isVisible(),true);
    await page.click('#statusSettingsettings');assert.equal(await page.locator('#callEffectDurationSelect').isVisible(),true);assert.equal(await page.locator('#exportBackupBtn').isVisible(),true);
    assert.equal(await page.locator('.status-info-card').count(),7);
-   assert.equal(await page.locator('.status-theme-option').count(),4);await page.click('.status-theme-option[data-theme="c"]');
+   assert.equal(await page.locator('.status-theme-option').count(),7);await page.click('.status-theme-option[data-theme="c"]');
    assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('theme-c')&&window.__badmintonIpadV1.getState().settings.colorTheme==='c'),true);
-   await page.click('.status-theme-option[data-theme=""]');assert.equal(await page.evaluate(()=>/theme-[abc]/.test(document.documentElement.className)),false);
+   await page.click('.status-theme-option[data-theme=""]');assert.equal(await page.evaluate(()=>/theme-[a-f]/.test(document.documentElement.className)),false);
    assert.equal(await page.locator('.status-info-card').evaluateAll(els=>els[0].getBoundingClientRect().top===els[1].getBoundingClientRect().top),true);
    assert.equal(await page.locator('#courtEntryAnimationModuleSelect').evaluate(el=>el.closest('.status-info-card').getAttribute('aria-label')),'上場特效');
    assert.equal(await page.locator('.status-toggle').evaluateAll(els=>els.every(el=>el.getBoundingClientRect().width<el.closest('.status-info-card').getBoundingClientRect().width-20&&el.getBoundingClientRect().height>=44)),true);
