@@ -56,7 +56,7 @@ https://ksp4022-ko.github.io/badminton-3x3-ipad-v1/integrated-test.html
 2.3.0 配色調整（使用者要求「a 給我底橘色，剩下 d,e,f 都新增選項」）：
 - A 改為暖橘底＋青綠場地（A 暖橘底＋青綠）；新增無綠方案 D 靛藍＋活力橘、E 皇家藍＋活動橘、F 午夜藍＋琥珀。colorTheme 允許 '' / a–f。
 - D/E/F 預設決定（使用者未回覆，可再調）：場地標頭與翻牌身分面＝場地色；翻牌上場面 D 天藍、E/F 紫；綠色按鈕與勾勾改場地色。
-- 實機驗收：待使用者確認。
+- 2026-10-15 使用者實機驗收 2.3.0：PASS。
 
 排場狀態：
 - 正式 localStorage：`badminton3x3.ipad.v1.state`
