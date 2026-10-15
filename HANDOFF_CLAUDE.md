@@ -51,6 +51,7 @@ https://ksp4022-ko.github.io/badminton-3x3-ipad-v1/integrated-test.html
 - 選項：預設 / A 青綠＋行動橘 / B 深藍高對比 / C 深色看板；存在 `settings.colorTheme`（'' / a / b / c），html 加 `theme-x` class。
 - `themes.css` 由 `npm run build:themes`（tools/build-themes.js）從 index.html、integrated-preview.css、integrated-admin.css、setup-test.html 產生，勿手改；改了這些檔的顏色要重跑。
 - 不換色：球員卡 12 色、翻牌 / 光軌 / 呼叫效果、已選球員黃色橫幅。快速開場頁跟隨主題（A/B 淺色、C 深色）。
+- 2026-10-15 使用者正式網址實機驗收 2.2.0：PASS。
 
 排場狀態：
 - 正式 localStorage：`badminton3x3.ipad.v1.state`
