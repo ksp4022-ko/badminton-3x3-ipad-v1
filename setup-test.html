@@ -105,6 +105,7 @@ function startTrial(){
 }
 q('gf-roster').value='';s.busy=true;
 var FORMAL=location.search.indexOf('formal=1')>=0;
+try{var themeState=JSON.parse(localStorage.getItem(FORMAL?'badminton3x3.ipad.v1.state':'badminton3x3.ipad.v1.setup-test')||localStorage.getItem('badminton3x3.ipad.v1.state')||'{}'),colorTheme=String((themeState.settings||{}).colorTheme||'');if(['a','b','c'].indexOf(colorTheme)>=0){document.documentElement.classList.add('theme-'+colorTheme);var themeLink=document.createElement('link');themeLink.rel='stylesheet';themeLink.href='./themes.css?v=2.2.0';document.head.appendChild(themeLink);}}catch(err){}
 try{if(!FORMAL&&!localStorage.getItem('badminton3x3.ipad.v1.setup-test')){var existing=localStorage.getItem('badminton3x3.ipad.v1.state');if(existing)localStorage.setItem('badminton3x3.ipad.v1.setup-test',existing);}}catch(err){}
 engine.onload=function(){
  api=engine.contentWindow.__badmintonIpadV1;

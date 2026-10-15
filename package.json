@@ -1,6 +1,6 @@
 {
   "name": "badminton-3x3-ipad-v1",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "private": true,
   "scripts": {
     "test": "node tools/ipad-compat-test.js && node tools/ipad-layout-test.js && node tools/ipad-behavior-test.js && node tools/voice-sync-test.js",
@@ -9,7 +9,8 @@
     "test:integrated-preview": "node tools/integrated-preview-test.js",
     "test:admin-compare": "node tools/admin-compare-test.js",
     "test:edge-rate": "node tools/edge-rate-test.js",
-    "test:tts-generator": "python -m unittest discover -s services/tts-generator/tests -t services/tts-generator"
+    "test:tts-generator": "python -m unittest discover -s services/tts-generator/tests -t services/tts-generator",
+    "build:themes": "node tools/build-themes.js"
   },
   "devDependencies": {
     "playwright": "^1.61.1"

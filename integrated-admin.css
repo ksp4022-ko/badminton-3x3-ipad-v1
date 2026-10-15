@@ -281,3 +281,11 @@ body.console-alpha .preview-tabbed-layout #panelTitle::after{content:'ALPHA';dis
 .preview-tabbed-layout #adminTools .status-metrics .status-next-step,.preview-tabbed-layout #adminTools .status-metrics .status-next-step.is-done{padding:10px;}
 @media(max-width:519px){.preview-tabbed-layout #adminTools .status-metrics .status-next-step,.preview-tabbed-layout #adminTools .status-metrics .status-next-step.is-done{padding:8px;}}
 .preview-tabbed-layout #adminTools .status-metrics .status-next-step.is-done{grid-template-rows:auto 1fr;}
+/* 系統配色: four theme choices; the dots preview background / court / accent. */
+.preview-tabbed-layout #adminTools .status-theme-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.preview-tabbed-layout #adminTools .status-theme-option{display:flex;align-items:center;gap:8px;min-height:48px;padding:8px 10px;text-align:left;font-size:15px;font-weight:700;}
+.preview-tabbed-layout #adminTools .status-theme-option[aria-pressed="true"]{outline:3px solid #0f766e;outline-offset:1px;}
+.status-theme-dots{display:inline-flex;flex:none;}
+.status-theme-dot{width:16px;height:16px;border-radius:999px;border:2px solid #ffffff;box-shadow:0 0 0 1px rgba(15,23,42,.25);margin-left:-4px;}
+.status-theme-dot:first-child{margin-left:0;}
+.status-theme-name{min-width:0;}

@@ -6,7 +6,7 @@
 - Git: `https://github.com/ksp4022-ko/badminton-3x3-ipad-v1.git`
 - Branch: `main`
 - 本次交接的功能基線：`be7b964`。
-- 目前 APP_VERSION / package version：`2.1.2`（2.1.0 新版控制台升為正式；2.1.1 看板橫向磁吸；2.1.2 區頭統一樣式）。
+- 目前 APP_VERSION / package version：`2.2.0`（2.1.0 新版控制台；2.1.1 看板磁吸；2.1.2 區頭樣式；2.2.0 系統配色）。
 - 交接文件本身會有較新的提交；請讀最新 main，不要 checkout 回上述舊提交。
 - 先讀 `AGENTS.md`、`CLAUDE.md`，再依使用者下一個要求修改。
 - Windows 目前工作目錄：`C:\Users\kosp\Documents\Roate_sim\github-publish-badminton-3x3-ipad-v1`。
@@ -46,6 +46,11 @@ https://ksp4022-ko.github.io/badminton-3x3-ipad-v1/integrated-test.html
 - 已有人的位置保留虛線框，除非之後有明顯更好的顯示方式。
 - 區頭人數字級、「點此放入」淡字不是重點，有提醒即可。
 - 排場以橫向使用為主；iPad 直向卡片偏細長不處理，維持現狀。
+
+2.2.0 系統配色（設定 > 系統與資料 > 系統配色，介面提示下方；使用者要求直接上正式版）：
+- 選項：預設 / A 青綠＋行動橘 / B 深藍高對比 / C 深色看板；存在 `settings.colorTheme`（'' / a / b / c），html 加 `theme-x` class。
+- `themes.css` 由 `npm run build:themes`（tools/build-themes.js）從 index.html、integrated-preview.css、integrated-admin.css、setup-test.html 產生，勿手改；改了這些檔的顏色要重跑。
+- 不換色：球員卡 12 色、翻牌 / 光軌 / 呼叫效果、已選球員黃色橫幅。快速開場頁跟隨主題（A/B 淺色、C 深色）。
 
 排場狀態：
 - 正式 localStorage：`badminton3x3.ipad.v1.state`
