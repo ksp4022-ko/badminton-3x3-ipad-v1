@@ -3,71 +3,88 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0f766e">
+<meta name="theme-color" content="#e7eeec">
 <title>排場遙控</title>
 <style>
-:root{--court:#0f766e;--accent:#ea580c;--bg:#f1f5f9;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;}
+:root{
+  --paper:#e7eeec;--tile:#ffffff;--rule:#d3dedb;--ink:#1b2a2f;--ink-soft:#56646a;
+  --court:#0d4d47;--court-tint:#e3efec;--action:#d9480f;--action-press:#b93c0c;
+  --ok:#2b7a3d;--warn:#b42318;--name:#eef3f1;
+}
 *{box-sizing:border-box;}
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif;-webkit-text-size-adjust:100%;}
-body{min-height:100vh;padding:max(16px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));}
-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 auto 14px;max-width:560px;}
-h1{margin:0;font-size:22px;}
-#status{font-size:14px;font-weight:700;color:var(--muted);white-space:nowrap;}
-#status[data-state="online"]{color:#15803d;}
-#status[data-state="offline"],#status[data-state="error"]{color:#b91c1c;}
-main{max-width:560px;margin:0 auto;display:grid;gap:12px;}
-.notice{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:12px 14px;font-size:15px;line-height:1.5;}
-.court{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
-.court-head{background:var(--court);color:#fff;font-weight:800;font-size:18px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;}
-.court-count{font-size:14px;opacity:.85;}
-.court-players{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:12px 14px 4px;min-height:40px;}
-.court-players span{background:#f1f5f9;border-radius:8px;padding:8px 10px;font-size:16px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.court-empty{grid-column:1 / -1;color:var(--muted);font-size:15px;padding:4px 0;}
-.court-down{display:block;width:calc(100% - 28px);margin:10px 14px 14px;min-height:56px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-size:20px;font-weight:800;}
-.court-down:disabled{background:#cbd5e1;color:#f8fafc;}
-#mask{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:flex-end;justify-content:center;padding:16px;z-index:10;}
-#mask.show{display:flex;}
-.sheet{background:#fff;border-radius:16px;width:100%;max-width:520px;padding:20px 18px max(18px,env(safe-area-inset-bottom));}
-.sheet h2{margin:0 0 6px;font-size:22px;}
-.sheet p{margin:0 0 14px;color:var(--muted);font-size:15px;line-height:1.5;}
+::selection{background:#fbd5c2;color:var(--ink);}
+html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;}
+body{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;padding:max(10px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom));}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 4px 10px;}
+h1{margin:0;font-size:19px;font-weight:800;letter-spacing:.02em;}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--ink-soft);background:var(--tile);border:1px solid var(--rule);border-radius:999px;padding:5px 10px 5px 9px;white-space:nowrap;}
+.status::before{content:"";width:8px;height:8px;border-radius:50%;background:#a8a29e;}
+.status[data-state="online"]{color:var(--ok);}
+.status[data-state="online"]::before{background:var(--ok);box-shadow:0 0 0 3px rgba(43,122,61,.18);}
+.status[data-state="offline"],.status[data-state="error"]{color:var(--warn);}
+.status[data-state="offline"]::before,.status[data-state="error"]::before{background:var(--warn);}
+.banner{margin:0 0 10px;padding:10px 12px;border-radius:10px;background:#fdecdf;color:#8a2c07;font-size:14px;line-height:1.45;}
+#grid{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:10px;min-height:0;}
+#grid[data-count="1"],#grid[data-count="2"]{grid-template-columns:1fr;}
+.court{display:flex;flex-direction:column;min-height:0;background:var(--tile);border:1px solid var(--rule);border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(27,42,47,.06),0 6px 16px -10px rgba(27,42,47,.25);}
+#grid[data-count="3"] .court:last-child{grid-column:1 / -1;}
+.court-top{display:flex;align-items:baseline;justify-content:space-between;padding:10px 12px 6px;}
+.court-no{font-size:40px;line-height:1;font-weight:800;color:var(--court);font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
+.court-no small{font-size:14px;font-weight:700;margin-left:3px;letter-spacing:0;color:var(--ink-soft);}
+.court-count{font-size:13px;font-weight:700;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
+.names{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:min-content;align-content:center;gap:6px;padding:2px 10px 12px;min-height:0;}
+#grid[data-count="3"] .court:last-child .names,#grid[data-count="1"] .names,#grid[data-count="2"] .names{grid-template-columns:repeat(4,1fr);}
+.names span{background:var(--name);border-radius:8px;padding:9px 8px;font-size:17px;font-weight:700;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.names .empty{grid-column:1 / -1;background:none;padding:6px 2px;color:var(--ink-soft);font-weight:600;}
+.down{margin:0;border:0;min-height:52px;background:var(--action);color:#fff;font:inherit;font-size:18px;font-weight:800;letter-spacing:.06em;transition:background-color .15s ease-out;}
+.down:active{background:var(--action-press);}
+.down:disabled{background:#dfe6e3;color:#8a9a95;}
+.down:focus-visible,.sheet button:focus-visible{outline:3px solid var(--court);outline-offset:-3px;}
+.empty-page{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--ink-soft);font-size:16px;line-height:1.6;}
+#mask{position:fixed;inset:0;background:rgba(27,42,47,.5);display:flex;align-items:flex-end;justify-content:center;padding:12px;z-index:10;opacity:0;pointer-events:none;transition:opacity .18s ease-out;}
+#mask.show{opacity:1;pointer-events:auto;}
+.sheet{width:100%;max-width:520px;background:var(--tile);border-radius:18px;padding:20px 16px max(16px,env(safe-area-inset-bottom));transform:translateY(24px);transition:transform .24s cubic-bezier(.16,1,.3,1);box-shadow:0 -8px 30px -12px rgba(27,42,47,.4);}
+#mask.show .sheet{transform:none;}
+.sheet h2{margin:0 0 4px;font-size:22px;font-weight:800;}
+.sheet p{margin:0 0 12px;color:var(--ink-soft);font-size:15px;line-height:1.5;}
+.sheet-label{margin:2px 0 6px;font-size:13px;font-weight:800;color:var(--court);letter-spacing:.04em;}
 .sheet-names{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px;}
-.sheet-names span{background:#f1f5f9;border-radius:8px;padding:8px 10px;font-weight:700;}
-.sheet-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;}
-.sheet-actions button{min-height:54px;border:0;border-radius:10px;font-size:18px;font-weight:800;}
-#cancelBtn{background:#e2e8f0;color:var(--text);}
-#okBtn{background:var(--accent);color:#fff;}
-#toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);background:#0f172a;color:#fff;padding:12px 18px;border-radius:999px;font-size:16px;font-weight:700;display:none;z-index:20;max-width:calc(100% - 32px);text-align:center;}
-#toast.show{display:block;}
+.sheet-names span{background:var(--name);border-radius:8px;padding:9px 10px;font-weight:700;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sheet-names.up span{background:var(--court-tint);color:var(--court);}
+.sheet-actions{display:grid;grid-template-columns:1fr 1.5fr;gap:10px;}
+.sheet-actions.single{grid-template-columns:1fr;}
+.sheet button{min-height:54px;border:0;border-radius:12px;font:inherit;font-size:18px;font-weight:800;}
+.btn-quiet{background:#e3eae7;color:var(--ink);}
+.btn-go{background:var(--action);color:#fff;}
+.btn-done{background:var(--court);color:#fff;}
+.waiting{display:flex;align-items:center;gap:10px;color:var(--ink-soft);font-size:16px;font-weight:700;padding:8px 0 4px;}
+.waiting::before{content:"";width:18px;height:18px;border-radius:50%;border:3px solid var(--court-tint);border-top-color:var(--court);animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+@media (prefers-reduced-motion:reduce){#mask,.sheet,.down{transition:none;}.waiting::before{animation:none;}}
 </style>
 </head>
 <body>
-<header><h1>排場遙控</h1><span id="status" data-state="loading">連線中…</span></header>
-<main id="main"></main>
-<div id="mask" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
-  <div class="sheet">
-    <h2 id="sheetTitle"></h2>
-    <p>確認後 iPad 會直接下場，場上球員場次 +1。</p>
-    <div class="sheet-names" id="sheetNames"></div>
-    <div class="sheet-actions"><button type="button" id="cancelBtn">取消</button><button type="button" id="okBtn">確認下場</button></div>
-  </div>
-</div>
-<div id="toast" role="status" aria-live="polite"></div>
+<header><h1>排場遙控</h1><span class="status" id="status" data-state="loading">連線中</span></header>
+<div id="banner" class="banner" hidden></div>
+<div id="grid"></div>
+<div id="mask" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="sheet" id="sheet"></div></div>
 <script>
 (function(){
   var API = window.__COURT_REMOTE_API || 'https://badminton-signup-v6-alpha.badminton-signup-v6-worker.workers.dev/api/court-remote';
   var STORE = 'badminton3x3.remote.code';
-  var params = new URLSearchParams(location.search);
-  var code = params.get('c') || '';
+  var code = new URLSearchParams(location.search).get('c') || '';
   try{ if(code) localStorage.setItem(STORE, code); else code = localStorage.getItem(STORE) || ''; }catch(e){}
-  var main = document.getElementById('main'), statusEl = document.getElementById('status');
-  var mask = document.getElementById('mask'), toastEl = document.getElementById('toast');
-  var view = null, pendingCourt = '', sending = false, toastTimer = null;
+  var grid = document.getElementById('grid'), statusEl = document.getElementById('status');
+  var banner = document.getElementById('banner'), mask = document.getElementById('mask'), sheet = document.getElementById('sheet');
+  var view = null, sending = false, sheetMode = '';
 
-  function el(tag, cls, text){ var n = document.createElement(tag); if(cls) n.className = cls; if(text) n.textContent = text; return n; }
-  function toast(msg){ toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 3500); }
+  function el(tag, cls, text){ var n = document.createElement(tag); if(cls) n.className = cls; if(text != null) n.textContent = text; return n; }
   function setStatus(state, text){ statusEl.setAttribute('data-state', state); statusEl.textContent = text; }
-  function courtLabel(court){ return court.label || (String(court.zone || '').replace('court', '') + ' 號場'); }
-  function notice(text){ main.innerHTML = ''; main.appendChild(el('div', 'notice', text)); }
+  function showBanner(text){ banner.textContent = text || ''; banner.hidden = !text; }
+  function courtNo(court){ return String(court.zone || '').replace('court', ''); }
+  function courtName(court){ return courtNo(court) + ' 號場'; }
+  function findCourt(zone){ var list = (view && view.state && view.state.courts) || []; for(var i = 0; i < list.length; i++){ if(list[i].zone === zone) return list[i]; } return null; }
+  function emptyPage(text){ grid.innerHTML = ''; grid.removeAttribute('data-count'); var d = el('div', 'empty-page', text); d.style.gridColumn = '1 / -1'; grid.appendChild(d); }
 
   function request(method, path, body){
     var opts = { method: method, cache: 'no-store' };
@@ -83,76 +100,104 @@ main{max-width:560px;margin:0 auto;display:grid;gap:12px;}
   function render(){
     if(!view) return;
     var courts = (view.state && view.state.courts) || [];
-    main.innerHTML = '';
-    if(!view.online) main.appendChild(el('div', 'notice', 'iPad 目前沒有連線。請確認 iPad 開著排場頁面且有網路。'));
-    if(!courts.length){ main.appendChild(el('div', 'notice', '還沒有收到 iPad 的場地資料。')); return; }
+    showBanner(view.online ? '' : 'iPad 沒有連線。請確認 iPad 開著排場頁面並連上網路。');
+    if(!courts.length){ emptyPage('還沒收到 iPad 的場地資料'); return; }
+    grid.innerHTML = ''; grid.setAttribute('data-count', courts.length);
     courts.forEach(function(court){
-      var card = el('section', 'court');
-      var head = el('div', 'court-head'); head.appendChild(el('span', '', courtLabel(court)));
-      head.appendChild(el('span', 'court-count', (court.players || []).length + ' 人')); card.appendChild(head);
-      var list = el('div', 'court-players');
-      if((court.players || []).length){ court.players.forEach(function(name){ list.appendChild(el('span', '', name)); }); }
-      else list.appendChild(el('div', 'court-empty', '目前沒有人'));
-      card.appendChild(list);
-      var btn = el('button', 'court-down', courtLabel(court) + ' 下場'); btn.type = 'button';
-      btn.setAttribute('data-court', court.zone);
-      btn.disabled = !view.online || sending || !(court.players || []).length;
-      btn.onclick = function(){ openSheet(court); };
-      card.appendChild(btn); main.appendChild(card);
+      var players = court.players || [];
+      var card = el('section', 'court'); card.setAttribute('aria-label', courtName(court));
+      var top = el('div', 'court-top'), no = el('div', 'court-no', courtNo(court));
+      no.appendChild(el('small', '', '號場')); top.appendChild(no);
+      top.appendChild(el('span', 'court-count', players.length + ' 人')); card.appendChild(top);
+      var names = el('div', 'names');
+      if(players.length) players.forEach(function(name){ names.appendChild(el('span', '', name)); });
+      else names.appendChild(el('span', 'empty', '目前沒有人'));
+      card.appendChild(names);
+      var btn = el('button', 'down', '下場'); btn.type = 'button';
+      btn.setAttribute('data-court', court.zone); btn.setAttribute('aria-label', courtName(court) + '下場');
+      btn.disabled = !view.online || sending || !players.length;
+      btn.onclick = function(){ openConfirm(court); };
+      card.appendChild(btn); grid.appendChild(card);
     });
   }
 
-  function openSheet(court){
-    pendingCourt = court.zone;
-    document.getElementById('sheetTitle').textContent = courtLabel(court) + ' 下場？';
-    var names = document.getElementById('sheetNames'); names.innerHTML = '';
-    (court.players || []).forEach(function(name){ names.appendChild(el('span', '', name)); });
-    mask.classList.add('show');
+  function nameGrid(list, cls){ var g = el('div', 'sheet-names' + (cls ? ' ' + cls : '')); list.forEach(function(n){ g.appendChild(el('span', '', n)); }); return g; }
+  function openSheet(mode, build){ sheetMode = mode; sheet.innerHTML = ''; build(sheet); mask.classList.add('show'); var b = sheet.querySelector('button'); if(b) b.focus({ preventScroll: true }); }
+  function closeSheet(){ mask.classList.remove('show'); sheetMode = ''; }
+  mask.addEventListener('click', function(e){ if(e.target === mask && sheetMode !== 'waiting') closeSheet(); });
+
+  function openConfirm(court){
+    openSheet('confirm', function(s){
+      s.appendChild(el('h2', '', courtName(court) + '下場？')); s.querySelector('h2').id = 'sheetTitle';
+      s.appendChild(el('p', '', '確認後 iPad 直接下場，這 ' + (court.players || []).length + ' 位場次 +1。'));
+      s.appendChild(nameGrid(court.players || []));
+      var actions = el('div', 'sheet-actions');
+      var cancel = el('button', 'btn-quiet', '取消'); cancel.type = 'button'; cancel.id = 'cancelBtn'; cancel.onclick = closeSheet;
+      var ok = el('button', 'btn-go', '確認下場'); ok.type = 'button'; ok.id = 'okBtn'; ok.onclick = function(){ send(court); };
+      actions.appendChild(cancel); actions.appendChild(ok); s.appendChild(actions);
+    });
   }
-  function closeSheet(){ mask.classList.remove('show'); pendingCourt = ''; }
-  document.getElementById('cancelBtn').onclick = closeSheet;
-  mask.addEventListener('click', function(e){ if(e.target === mask) closeSheet(); });
-  document.getElementById('okBtn').onclick = function(){ var court = pendingCourt; closeSheet(); if(court) send(court); };
+  function showResult(title, text, upNames){
+    openSheet('result', function(s){
+      s.appendChild(el('h2', '', title)); s.querySelector('h2').id = 'sheetTitle';
+      if(text) s.appendChild(el('p', '', text));
+      if(upNames && upNames.length){ s.appendChild(el('div', 'sheet-label', '接著上場')); s.appendChild(nameGrid(upNames, 'up')); }
+      var actions = el('div', 'sheet-actions single'), done = el('button', 'btn-done', '知道了');
+      done.type = 'button'; done.id = 'doneBtn'; done.onclick = closeSheet; actions.appendChild(done); s.appendChild(actions);
+    });
+  }
 
   function send(court){
-    var label = court.replace('court', '') + ' 號場';
-    sending = true; render(); toast('已送出，等待 iPad…');
-    request('POST', '/command', { code: code, court: court }).then(function(data){ return waitResult(data.id, label); })
-      .catch(function(){ toast('送出失敗，請再試一次'); })
-      .then(function(){ sending = false; refresh(); });
+    var zone = court.zone, name = courtName(court);
+    sending = true; render();
+    openSheet('waiting', function(s){ s.appendChild(el('h2', '', name + '下場中')); s.querySelector('h2').id = 'sheetTitle'; s.appendChild(el('div', 'waiting', '等待 iPad 執行…')); });
+    request('POST', '/command', { code: code, court: zone })
+      .then(function(data){ return waitResult(data.id); })
+      .then(function(result){
+        if(result === 'done'){
+          return loadView().then(function(){
+            var now = findCourt(zone), up = now ? (now.players || []) : [];
+            if(up.length) showResult(name + '已下場', '', up);
+            else showResult(name + '已下場', '這一場已空出，請在 iPad 安排上場。');
+          });
+        }
+        if(result === 'empty') return showResult(name + '目前沒有人', '不需要下場。');
+        if(result === 'busy') return showResult('請稍後再按', 'iPad 正在顯示視窗或動畫，等它結束再按一次。');
+        if(result === 'timeout') return showResult('iPad 沒有回應', '請確認 iPad 開著排場頁面並連上網路。');
+        return showResult('無法執行', 'iPad 沒有這個場地，請重新整理。');
+      })
+      .catch(function(){ showResult('送出失敗', '請檢查手機網路，再按一次。'); })
+      .then(function(){ sending = false; render(); });
   }
-  function waitResult(id, label){
+  function waitResult(id){
     var started = Date.now();
     return new Promise(function(resolve){
       (function poll(){
         request('GET', '/command?code=' + encodeURIComponent(code) + '&id=' + id).then(function(data){
-          if(data.status === 'done'){
-            if(data.result === 'done') toast(label + '已下場');
-            else if(data.result === 'empty') toast(label + '目前沒有人');
-            else if(data.result === 'busy') toast('iPad 正在顯示視窗或動畫，請稍後再按一次');
-            else toast('iPad 無法執行這個指令');
-            return resolve();
-          }
-          if(data.status === 'expired' || Date.now() - started > 70000){ toast('iPad 沒有回應，請確認 iPad 開著排場頁面'); return resolve(); }
-          setTimeout(poll, 1000);
-        }).catch(function(){ if(Date.now() - started > 70000){ toast('無法確認結果，請看 iPad 畫面'); return resolve(); } setTimeout(poll, 1500); });
+          if(data.status === 'done') return resolve(data.result);
+          if(data.status === 'expired' || Date.now() - started > 70000) return resolve('timeout');
+          setTimeout(poll, 800);
+        }).catch(function(){ if(Date.now() - started > 70000) return resolve('timeout'); setTimeout(poll, 1500); });
       })();
     });
   }
 
+  function loadView(){
+    return request('GET', '/view?code=' + encodeURIComponent(code)).then(function(data){
+      view = data;
+      setStatus(data.online ? 'online' : 'offline', data.online ? 'iPad 已連線' : 'iPad 未連線');
+      render();
+    });
+  }
   function refresh(){
     if(document.hidden) return;
-    request('GET', '/view?code=' + encodeURIComponent(code)).then(function(data){
-      view = data;
-      setStatus(data.online ? 'online' : 'offline', data.online ? '● iPad 已連線' : '● iPad 未連線');
-      render();
-    }).catch(function(err){
-      if(err && err.code === 'NOT_PAIRED'){ setStatus('error', '● 未配對'); notice('這個配對碼已失效，請重新掃描 iPad 上的 QR code。'); return; }
-      setStatus('error', '● 無法連線'); if(!view) notice('無法連線，請檢查手機網路。');
+    loadView().catch(function(err){
+      if(err && err.code === 'NOT_PAIRED'){ view = null; setStatus('error', '未配對'); showBanner(''); emptyPage('配對碼已失效，請重新掃描 iPad 上的 QR code。'); return; }
+      setStatus('error', '無法連線'); if(!view) emptyPage('無法連線，請檢查手機網路。');
     });
   }
 
-  if(!code){ setStatus('error', '● 未配對'); notice('請用手機掃描 iPad「設定 → 系統與資料 → 手機遙控」上的 QR code。'); return; }
+  if(!code){ setStatus('error', '未配對'); emptyPage('請掃描 iPad「設定 → 系統與資料 → 手機遙控」的 QR code。'); return; }
   refresh();
   setInterval(refresh, 3000);
   document.addEventListener('visibilitychange', refresh);

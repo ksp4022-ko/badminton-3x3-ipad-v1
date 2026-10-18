@@ -6,7 +6,7 @@
 - Git: `https://github.com/ksp4022-ko/badminton-3x3-ipad-v1.git`
 - Branch: `main`
 - 本次交接的功能基線：`be7b964`。
-- 目前 APP_VERSION / package version：`2.5.0`（2.1.0 新版控制台；2.1.1 看板磁吸；2.1.2 區頭樣式；2.2.0 系統配色；2.3.0 A 橘底＋無綠 D/E/F；2.4.0 藍牙鍵盤下場；2.4.1 舊 iPad 鍵盤相容；2.5.0 手機遙控下場）。
+- 目前 APP_VERSION / package version：`2.5.1`（2.1.0 新版控制台；2.1.1 看板磁吸；2.1.2 區頭樣式；2.2.0 系統配色；2.3.0 A 橘底＋無綠 D/E/F；2.4.0 藍牙鍵盤下場；2.4.1 舊 iPad 鍵盤相容；2.5.0 手機遙控下場；2.5.1 遙控頁重排）。
 - 交接文件本身會有較新的提交；請讀最新 main，不要 checkout 回上述舊提交。
 - 先讀 `AGENTS.md`、`CLAUDE.md`，再依使用者下一個要求修改。
 - Windows 目前工作目錄：`C:\Users\kosp\Documents\Roate_sim\github-publish-badminton-3x3-ipad-v1`。
@@ -124,6 +124,8 @@ https://ksp4022-ko.github.io/badminton-3x3-ipad-v1/integrated-test.html
 - sw.js 不攔截 `/api/court-remote/`。
 - 測試：tools/court-remote-test.js（用假 API，modern 與 legacy 都測）。另外已用本機 wrangler dev 加本機 D1 做過端對端測試。
 - 自動排場遇到 Next 空位不足時，iPad 會跳原本的提示框，要等有人點掉後手機才會收到結果。
+- 2026-10-18 使用者實機驗收 2.5.0：PASS。
+- 2.5.1 遙控頁重排（impeccable skill）：iPhone 一頁看得到 4 面場（2×2 磚，3 面場時最後一面佔整列）；底色改冷色、場號大字；下場後結果卡列出「接著上場」的球員（iPad 下場後先上傳新場地狀態再回報 ack）。待實機驗收。
 
 Pending：
 - 最新資訊卡布局待使用者手機 / iPad 實機驗收。

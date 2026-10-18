@@ -42,28 +42,38 @@ const LEGACY_UA='Mozilla/5.0 (iPad; CPU OS 12_5_7 like Mac OS X) AppleWebKit/605
    await phone.addInitScript(api=>{window.__COURT_REMOTE_API=api;},API);await phone.route('https://remote.test/**',handler);
    const ph=await phone.newPage(),phErrors=[];ph.on('pageerror',e=>phErrors.push(e.message));
    await ph.goto(url);
-   await ph.locator('.court-down[data-court="court2"]:not([disabled])').waitFor();
+   await ph.locator('.down[data-court="court2"]:not([disabled])').waitFor();
    assert.equal(await ph.locator('.court').count(),3);
-   assert.deepEqual(await ph.locator('.court').nth(1).locator('.court-players span').allInnerTexts(),['P4','P5','P6','P7']);
+   const fits=await ph.evaluate(()=>document.documentElement.scrollHeight<=window.innerHeight+1);assert.equal(fits,true);
+   assert.deepEqual(await ph.locator('.court').nth(1).locator('.names span').allInnerTexts(),['P4','P5','P6','P7']);
    assert.match(await ph.locator('#status').innerText(),/已連線/);
    // cancel does nothing
-   await ph.click('.court-down[data-court="court2"]');await ph.locator('#mask.show').waitFor();await ph.click('#cancelBtn');
+   await ph.click('.down[data-court="court2"]');await ph.locator('#mask.show').waitFor();await ph.click('#cancelBtn');
    await page.waitForTimeout(3500);assert.equal(await page.evaluate(()=>window.__badmintonIpadV1.getState().players.find(p=>p.id==='p4').games),0);
    // confirm on phone -> iPad downs court 2 without its own confirm card
-   await ph.click('.court-down[data-court="court2"]');await ph.locator('#mask.show').waitFor();await ph.click('#okBtn');
-   await ph.waitForFunction(()=>/2 號場已下場/.test(document.getElementById('toast').textContent),null,{timeout:12000});
+   await ph.click('.down[data-court="court2"]');await ph.locator('#mask.show').waitFor();await ph.click('#okBtn');
+   await ph.waitForFunction(()=>/2 號場已下場/.test(document.getElementById('sheet').textContent),null,{timeout:12000});
+   assert.match(await ph.locator('#sheet').innerText(),/已空出/);await ph.click('#doneBtn');
    const st=await page.evaluate(()=>window.__badmintonIpadV1.getState().players);
    assert.deepEqual(st.filter(p=>['p4','p5','p6','p7'].includes(p.id)).map(p=>[p.games,p.zone]),[[1,'rest'],[1,'rest'],[1,'rest'],[1,'rest']]);
    assert.equal(st.find(p=>p.id==='p0').games,0);
    assert.equal(await page.locator('#modalMask.show').count(),0);
    // phone view refreshes: court 2 empty, its button disabled
-   await ph.waitForFunction(()=>document.querySelector('.court-down[data-court="court2"]').disabled,null,{timeout:10000});
+   await ph.waitForFunction(()=>document.querySelector('.down[data-court="court2"]').disabled,null,{timeout:10000});
    // busy: a dialog open on the iPad -> command reported busy, nothing changes
    await page.evaluate(()=>{document.getElementById('modalMask').classList.add('show');});
-   await ph.click('.court-down[data-court="court1"]');await ph.click('#okBtn');
-   await ph.waitForFunction(()=>/稍後再按/.test(document.getElementById('toast').textContent),null,{timeout:12000});
+   await ph.click('.down[data-court="court1"]');await ph.click('#okBtn');
+   await ph.waitForFunction(()=>/稍後再按/.test(document.getElementById('sheet').textContent),null,{timeout:12000});await ph.click('#doneBtn');
    assert.equal(await page.evaluate(()=>window.__badmintonIpadV1.getState().players.find(p=>p.id==='p0').games),0);
    await page.evaluate(()=>{document.getElementById('modalMask').classList.remove('show');});
+   // auto-arrange on: the next group moves up and the phone lists who goes on
+   await page.evaluate(()=>{const api=window.__badmintonIpadV1,st=api.getState();st.settings.autoArrangeMode=true;['n0','n1','n2','n3'].forEach((id,i)=>st.players.push({id,name:'N'+i,games:0,color:'#bfdbfe',isActive:true,zone:'next1',slot:i+1}));api.setState(st);api.render();});
+   await ph.waitForTimeout(3500);
+   await ph.click('.down[data-court="court3"]');await ph.click('#okBtn');
+   await ph.waitForFunction(()=>/3 號場已下場/.test(document.getElementById('sheet').textContent),null,{timeout:15000});
+   assert.deepEqual(await ph.locator('#sheet .sheet-names.up span').allInnerTexts(),['N0','N1','N2','N3']);
+   assert.equal(await page.evaluate(()=>window.__badmintonIpadV1.getState().players.filter(p=>p.zone==='court3').map(p=>p.name).sort().join()),'N0,N1,N2,N3');
+   await ph.click('#doneBtn');
    // renewing the code invalidates the phone
    await page.evaluate(()=>window.__badmintonIpadV1.courtRemote.renew());
    await ph.waitForFunction(()=>/未配對/.test(document.getElementById('status').textContent),null,{timeout:12000});
@@ -73,6 +83,6 @@ const LEGACY_UA='Mozilla/5.0 (iPad; CPU OS 12_5_7 like Mac OS X) AppleWebKit/605
   }
   // phone without a code
   const ctx=await browser.newContext();const p2=await ctx.newPage();await p2.goto(base+'/remote.html');
-  assert.match(await p2.locator('.notice').innerText(),/掃描/);console.log('PASS remote page without code');await ctx.close();
+  assert.match(await p2.locator('.empty-page').innerText(),/掃描/);console.log('PASS remote page without code');await ctx.close();
  }finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});
