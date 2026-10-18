@@ -97,7 +97,7 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
    await page.click('#statusTabplayers');assert.equal(await page.locator('#previewAdminHome').isVisible(),false);assert.equal(await page.locator('#plusGameBtn').isVisible(),true);assert.equal(await page.locator('#addPlayerBtn').isVisible(),true);assert.equal(await page.locator('#showGamesDetailBtn').isVisible(),false);
    await page.click('#statusTabsettings');assert.equal(await page.locator('#saveCourtLabelsBtn').isVisible(),true);
    await page.click('#statusSettingsettings');assert.equal(await page.locator('#callEffectDurationSelect').isVisible(),true);assert.equal(await page.locator('#exportBackupBtn').isVisible(),true);
-   assert.equal(await page.locator('.status-info-card').count(),7);
+   assert.equal(await page.locator('.status-info-card').count(),8);assert.equal(await page.locator('.status-info-card[aria-label="手機遙控"] .status-remote-btn').innerText(),'啟用手機遙控');
    assert.equal(await page.locator('.status-theme-option').count(),7);await page.click('.status-theme-option[data-theme="c"]');
    assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('theme-c')&&window.__badmintonIpadV1.getState().settings.colorTheme==='c'),true);
    await page.click('.status-theme-option[data-theme=""]');assert.equal(await page.evaluate(()=>/theme-[a-f]/.test(document.documentElement.className)),false);

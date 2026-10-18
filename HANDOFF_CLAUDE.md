@@ -6,7 +6,7 @@
 - Git: `https://github.com/ksp4022-ko/badminton-3x3-ipad-v1.git`
 - Branch: `main`
 - 本次交接的功能基線：`be7b964`。
-- 目前 APP_VERSION / package version：`2.4.1`（2.1.0 新版控制台；2.1.1 看板磁吸；2.1.2 區頭樣式；2.2.0 系統配色；2.3.0 A 橘底＋無綠 D/E/F；2.4.0 藍牙鍵盤下場；2.4.1 舊 iPad 鍵盤相容）。
+- 目前 APP_VERSION / package version：`2.5.0`（2.1.0 新版控制台；2.1.1 看板磁吸；2.1.2 區頭樣式；2.2.0 系統配色；2.3.0 A 橘底＋無綠 D/E/F；2.4.0 藍牙鍵盤下場；2.4.1 舊 iPad 鍵盤相容；2.5.0 手機遙控下場）。
 - 交接文件本身會有較新的提交；請讀最新 main，不要 checkout 回上述舊提交。
 - 先讀 `AGENTS.md`、`CLAUDE.md`，再依使用者下一個要求修改。
 - Windows 目前工作目錄：`C:\Users\kosp\Documents\Roate_sim\github-publish-badminton-3x3-ipad-v1`。
@@ -116,14 +116,21 @@ https://ksp4022-ko.github.io/badminton-3x3-ipad-v1/integrated-test.html
 - 測試：tools/keyboard-court-down-test.js（舊版主控台、新版主控台、legacy iPad UA 都測，已加入 npm test）。
 - 2.4.1：iOS 13.4 以前的 Safari，Esc 鍵名稱是 `UIKeyInputEscape`，已一併支援。legacy 只做過 Playwright UA 模擬，需要舊 iPad 實機驗收。
 
+2.5.0 手機遙控下場（方案 A；使用者決定：盡量簡化、確認在手機、配對碼永久、顯示場上球員）：
+- Worker（badminton-signup a3238a5）：`/api/court-remote` sync / ack / view / command，D1 migration `0027_court_remote.sql`。輪詢請求不寫 api_perf_logs。指令 60 秒未被 iPad 取走就過期；同一場 60 秒內重複按下會共用同一筆指令。
+- iPad（index.html）：`state.settings.remoteCode`（16 碼）。每 3 秒呼叫 sync，場地狀態有變才上傳。收到指令後呼叫 `performCourtDown()`（原 `courtDown` 拆出確認卡之後的部分），不跳確認卡。iPad 有對話框或上場動畫時回報 busy。
+- 主控台「設定 > 系統與資料 > 手機遙控」：啟用、QR code（vendor/qrcode-generator.js，MIT）、連線狀態、更換配對碼（舊碼刪除，舊手機失效）。
+- 手機頁 `remote.html?c=配對碼`：顯示各場球員與 iPad 連線狀態；按下場後在手機確認，等待 iPad 回報結果。
+- sw.js 不攔截 `/api/court-remote/`。
+- 測試：tools/court-remote-test.js（用假 API，modern 與 legacy 都測）。另外已用本機 wrangler dev 加本機 D1 做過端對端測試。
+- 自動排場遇到 Next 空位不足時，iPad 會跳原本的提示框，要等有人點掉後手機才會收到結果。
+
 Pending：
 - 最新資訊卡布局待使用者手機 / iPad 實機驗收。
 - 橘色語音膠囊的最新修正尚無使用者明確 PASS 回覆。
 - 尚未將新版 Admin 搬回正式入口，需使用者授權。
 - 不要自行增加其他功能、升版或重做已通過的排場 / 動畫修正。
-- 遠端下場（2026-10-18 記錄，使用者選方案 A，尚未開工）：使用者決定盡量簡化、確認步驟放在手機。手機遙控頁按「1～4 號場下場」→ Worker `badminton-signup` 新增指令接口（D1 存場地＋時間＋指令編號）→ iPad 排場每 2～3 秒輪詢並呼叫既有 `courtDown()`。待討論：配對碼、指令只執行一次、（確認放手機 → iPad 收到指令時需略過自己的確認卡）、遙控頁回報 iPad 是否在線。改 Worker 需使用者明確同意；開工前不改任何程式。
-  - 決定（2026-10-18）：配對方式是 iPad 管理面板顯示 QR code（帶配對碼），手機掃描後自動綁定，iPad 可以「更換配對碼」讓舊手機失效。配對碼先做成永久有效。遙控頁要顯示每面場目前的球員（iPad 需要上傳場地狀態）。手機上確認後，iPad 直接下場、不跳確認卡。仍待使用者說「開工」並同意修改 Worker。
-  - 補充（2026-10-18）：同一個 Worker 接口也可接收場邊實體按鈕（Wi‑Fi 按鈕，或藍牙按鈕＋網關）的指令，每顆按鈕對應一面場；需防誤觸（雙擊或長按）和成功回饋。硬體未實測。
+- 手機遙控下場：已在 2.5.0 實作（見上方），待 Worker 部署與實機驗收。之後可加場邊實體按鈕（Wi‑Fi 按鈕，或藍牙按鈕＋網關）呼叫同一個 command 接口，硬體未實測。
 - 藍牙數字鍵盤下場：已在 2.4.0 實作（見上方），待實機驗收。
 
 ## 已確認的滑桿根因

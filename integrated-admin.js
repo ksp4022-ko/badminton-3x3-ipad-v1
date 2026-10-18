@@ -169,6 +169,24 @@
   function applyColorTheme(theme){var html=document.documentElement;['a','b','c','d','e','f'].forEach(function(t){html.classList.toggle('theme-'+t,t===theme);});themeButtons.forEach(function(b){b.setAttribute('aria-pressed',String(b.getAttribute('data-theme')===theme));});}
   applyColorTheme(String(window.__badmintonIpadV1.getState().settings.colorTheme||''));
   infoCard('系統配色',[themeRow]);
+  // 手機遙控下場：顯示配對 QR code；配對碼永久有效，可更換讓舊手機失效。
+  var remoteApi=window.__badmintonIpadV1.courtRemote,remoteBox=element('div','status-remote');
+  function drawRemote(){
+   remoteBox.innerHTML='';var url=remoteApi.url();drawRemote.url=url;
+   if(!url){remoteBox.appendChild(element('p','status-remote-note','球友用手機掃描 QR code，就能遠端讓 1～4 號場下場。'));var on=element('button','status-remote-btn','啟用手機遙控');on.type='button';on.onclick=function(){remoteApi.enable();drawRemote();};remoteBox.appendChild(on);return;}
+   var qr=element('div','status-remote-qr');qr.setAttribute('aria-label','手機遙控 QR code');remoteBox.appendChild(qr);
+   function paint(){if(!window.qrcode)return;var q=window.qrcode(0,'M');q.addData(url);q.make();var img=document.createElement('img');img.alt='手機遙控 QR code';img.src=q.createDataURL(5,2);qr.innerHTML='';qr.appendChild(img);}
+   if(window.qrcode)paint();else{var sc=document.createElement('script');sc.src='./vendor/qrcode-generator.js?v=2.5.0';sc.onload=paint;document.body.appendChild(sc);}
+   var side=element('div','status-remote-side');side.appendChild(element('p','status-remote-note','手機掃描後即可遙控下場，掃一次可一直使用。'));
+   var status=element('p','status-remote-status');side.appendChild(status);
+   function showStatus(){var st=remoteApi.status();status.textContent=st==='online'?'● 已連線':st==='error'?'● 無法連線，請檢查網路':'● 連線中…';status.setAttribute('data-status',st);}
+   showStatus();drawRemote.showStatus=showStatus;
+   var renew=element('button','status-remote-btn secondary','更換配對碼');renew.type='button';renew.onclick=function(){if(window.confirm('更換配對碼後，已配對的手機會失效，需要重新掃描。確定更換？')){remoteApi.renew();drawRemote();}};side.appendChild(renew);
+   remoteBox.appendChild(side);
+  }
+  drawRemote();
+  setInterval(function(){if(remoteApi.url()!==drawRemote.url)drawRemote();else if(drawRemote.url&&drawRemote.showStatus)drawRemote.showStatus();},2000);
+  infoCard('手機遙控',[remoteBox]);
   infoCard('畫面方向',[settingRow('portraitAdminModeOnBtn')]);
   var dataCard=element('section','status-data-card');dataCard.setAttribute('aria-label','資料工具');dataCard.appendChild(dataTitle);dataCard.appendChild(data.querySelector('.data-grid'));var dangerRow=data.querySelector('.danger-row');if(dangerRow)dataCard.appendChild(dangerRow);data.appendChild(dataCard);
   new MutationObserver(function(){settingToggles.forEach(function(refresh){refresh();});}).observe(document.body,{attributes:true,attributeFilter:['class']});

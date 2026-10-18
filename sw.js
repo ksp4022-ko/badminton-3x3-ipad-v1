@@ -1,4 +1,4 @@
-const CACHE_NAME = 'badminton-3x3-ipad-v1-v2.4.1-cache-20261018';
+const CACHE_NAME = 'badminton-3x3-ipad-v1-v2.5.0-cache-20261018';
 const CACHE_PREFIX = 'badminton-3x3-ipad-v1-';
 const ASSETS = [
   './',
@@ -22,6 +22,8 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  // Remote court-down status must always come from the network.
+  if (event.request.url.indexOf('/api/court-remote/') >= 0) return;
   const accept = event.request.headers.get('accept') || '';
   const isHtml = event.request.mode === 'navigate' || accept.indexOf('text/html') >= 0;
   if (isHtml) {

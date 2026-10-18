@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<title>排場遙控</title>
+<style>
+:root{--court:#0f766e;--accent:#ea580c;--bg:#f1f5f9;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;}
+*{box-sizing:border-box;}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif;-webkit-text-size-adjust:100%;}
+body{min-height:100vh;padding:max(16px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 auto 14px;max-width:560px;}
+h1{margin:0;font-size:22px;}
+#status{font-size:14px;font-weight:700;color:var(--muted);white-space:nowrap;}
+#status[data-state="online"]{color:#15803d;}
+#status[data-state="offline"],#status[data-state="error"]{color:#b91c1c;}
+main{max-width:560px;margin:0 auto;display:grid;gap:12px;}
+.notice{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:12px 14px;font-size:15px;line-height:1.5;}
+.court{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+.court-head{background:var(--court);color:#fff;font-weight:800;font-size:18px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;}
+.court-count{font-size:14px;opacity:.85;}
+.court-players{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:12px 14px 4px;min-height:40px;}
+.court-players span{background:#f1f5f9;border-radius:8px;padding:8px 10px;font-size:16px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.court-empty{grid-column:1 / -1;color:var(--muted);font-size:15px;padding:4px 0;}
+.court-down{display:block;width:calc(100% - 28px);margin:10px 14px 14px;min-height:56px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-size:20px;font-weight:800;}
+.court-down:disabled{background:#cbd5e1;color:#f8fafc;}
+#mask{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:flex-end;justify-content:center;padding:16px;z-index:10;}
+#mask.show{display:flex;}
+.sheet{background:#fff;border-radius:16px;width:100%;max-width:520px;padding:20px 18px max(18px,env(safe-area-inset-bottom));}
+.sheet h2{margin:0 0 6px;font-size:22px;}
+.sheet p{margin:0 0 14px;color:var(--muted);font-size:15px;line-height:1.5;}
+.sheet-names{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px;}
+.sheet-names span{background:#f1f5f9;border-radius:8px;padding:8px 10px;font-weight:700;}
+.sheet-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;}
+.sheet-actions button{min-height:54px;border:0;border-radius:10px;font-size:18px;font-weight:800;}
+#cancelBtn{background:#e2e8f0;color:var(--text);}
+#okBtn{background:var(--accent);color:#fff;}
+#toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);background:#0f172a;color:#fff;padding:12px 18px;border-radius:999px;font-size:16px;font-weight:700;display:none;z-index:20;max-width:calc(100% - 32px);text-align:center;}
+#toast.show{display:block;}
+</style>
+</head>
+<body>
+<header><h1>排場遙控</h1><span id="status" data-state="loading">連線中…</span></header>
+<main id="main"></main>
+<div id="mask" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="sheet">
+    <h2 id="sheetTitle"></h2>
+    <p>確認後 iPad 會直接下場，場上球員場次 +1。</p>
+    <div class="sheet-names" id="sheetNames"></div>
+    <div class="sheet-actions"><button type="button" id="cancelBtn">取消</button><button type="button" id="okBtn">確認下場</button></div>
+  </div>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+(function(){
+  var API = window.__COURT_REMOTE_API || 'https://badminton-signup-v6-alpha.badminton-signup-v6-worker.workers.dev/api/court-remote';
+  var STORE = 'badminton3x3.remote.code';
+  var params = new URLSearchParams(location.search);
+  var code = params.get('c') || '';
+  try{ if(code) localStorage.setItem(STORE, code); else code = localStorage.getItem(STORE) || ''; }catch(e){}
+  var main = document.getElementById('main'), statusEl = document.getElementById('status');
+  var mask = document.getElementById('mask'), toastEl = document.getElementById('toast');
+  var view = null, pendingCourt = '', sending = false, toastTimer = null;
+
+  function el(tag, cls, text){ var n = document.createElement(tag); if(cls) n.className = cls; if(text) n.textContent = text; return n; }
+  function toast(msg){ toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 3500); }
+  function setStatus(state, text){ statusEl.setAttribute('data-state', state); statusEl.textContent = text; }
+  function courtLabel(court){ return court.label || (String(court.zone || '').replace('court', '') + ' 號場'); }
+  function notice(text){ main.innerHTML = ''; main.appendChild(el('div', 'notice', text)); }
+
+  function request(method, path, body){
+    var opts = { method: method, cache: 'no-store' };
+    if(body){ opts.headers = { 'content-type': 'application/json' }; opts.body = JSON.stringify(body); }
+    return fetch(API + path, opts).then(function(res){
+      return res.json().then(function(json){
+        if(!res.ok || !json.ok){ var err = new Error('request failed'); err.code = json && json.error ? json.error.code : 'HTTP_' + res.status; throw err; }
+        return json.data;
+      });
+    });
+  }
+
+  function render(){
+    if(!view) return;
+    var courts = (view.state && view.state.courts) || [];
+    main.innerHTML = '';
+    if(!view.online) main.appendChild(el('div', 'notice', 'iPad 目前沒有連線。請確認 iPad 開著排場頁面且有網路。'));
+    if(!courts.length){ main.appendChild(el('div', 'notice', '還沒有收到 iPad 的場地資料。')); return; }
+    courts.forEach(function(court){
+      var card = el('section', 'court');
+      var head = el('div', 'court-head'); head.appendChild(el('span', '', courtLabel(court)));
+      head.appendChild(el('span', 'court-count', (court.players || []).length + ' 人')); card.appendChild(head);
+      var list = el('div', 'court-players');
+      if((court.players || []).length){ court.players.forEach(function(name){ list.appendChild(el('span', '', name)); }); }
+      else list.appendChild(el('div', 'court-empty', '目前沒有人'));
+      card.appendChild(list);
+      var btn = el('button', 'court-down', courtLabel(court) + ' 下場'); btn.type = 'button';
+      btn.setAttribute('data-court', court.zone);
+      btn.disabled = !view.online || sending || !(court.players || []).length;
+      btn.onclick = function(){ openSheet(court); };
+      card.appendChild(btn); main.appendChild(card);
+    });
+  }
+
+  function openSheet(court){
+    pendingCourt = court.zone;
+    document.getElementById('sheetTitle').textContent = courtLabel(court) + ' 下場？';
+    var names = document.getElementById('sheetNames'); names.innerHTML = '';
+    (court.players || []).forEach(function(name){ names.appendChild(el('span', '', name)); });
+    mask.classList.add('show');
+  }
+  function closeSheet(){ mask.classList.remove('show'); pendingCourt = ''; }
+  document.getElementById('cancelBtn').onclick = closeSheet;
+  mask.addEventListener('click', function(e){ if(e.target === mask) closeSheet(); });
+  document.getElementById('okBtn').onclick = function(){ var court = pendingCourt; closeSheet(); if(court) send(court); };
+
+  function send(court){
+    var label = court.replace('court', '') + ' 號場';
+    sending = true; render(); toast('已送出，等待 iPad…');
+    request('POST', '/command', { code: code, court: court }).then(function(data){ return waitResult(data.id, label); })
+      .catch(function(){ toast('送出失敗，請再試一次'); })
+      .then(function(){ sending = false; refresh(); });
+  }
+  function waitResult(id, label){
+    var started = Date.now();
+    return new Promise(function(resolve){
+      (function poll(){
+        request('GET', '/command?code=' + encodeURIComponent(code) + '&id=' + id).then(function(data){
+          if(data.status === 'done'){
+            if(data.result === 'done') toast(label + '已下場');
+            else if(data.result === 'empty') toast(label + '目前沒有人');
+            else if(data.result === 'busy') toast('iPad 正在顯示視窗或動畫，請稍後再按一次');
+            else toast('iPad 無法執行這個指令');
+            return resolve();
+          }
+          if(data.status === 'expired' || Date.now() - started > 70000){ toast('iPad 沒有回應，請確認 iPad 開著排場頁面'); return resolve(); }
+          setTimeout(poll, 1000);
+        }).catch(function(){ if(Date.now() - started > 70000){ toast('無法確認結果，請看 iPad 畫面'); return resolve(); } setTimeout(poll, 1500); });
+      })();
+    });
+  }
+
+  function refresh(){
+    if(document.hidden) return;
+    request('GET', '/view?code=' + encodeURIComponent(code)).then(function(data){
+      view = data;
+      setStatus(data.online ? 'online' : 'offline', data.online ? '● iPad 已連線' : '● iPad 未連線');
+      render();
+    }).catch(function(err){
+      if(err && err.code === 'NOT_PAIRED'){ setStatus('error', '● 未配對'); notice('這個配對碼已失效，請重新掃描 iPad 上的 QR code。'); return; }
+      setStatus('error', '● 無法連線'); if(!view) notice('無法連線，請檢查手機網路。');
+    });
+  }
+
+  if(!code){ setStatus('error', '● 未配對'); notice('請用手機掃描 iPad「設定 → 系統與資料 → 手機遙控」上的 QR code。'); return; }
+  refresh();
+  setInterval(refresh, 3000);
+  document.addEventListener('visibilitychange', refresh);
+})();
+</script>
+</body>
+</html>

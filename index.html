@@ -995,7 +995,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.4.1';
+  const APP_VERSION = '2.5.0';
   const SETUP_TEST_MODE = location.search.indexOf('setup-test=1') >= 0;
   const UI_PREVIEW_MODE = location.search.indexOf('ui-preview=1') >= 0;
   const CLASSIC_UI = location.search.indexOf('classic=1') >= 0;
@@ -2314,9 +2314,15 @@
     if(players.length === 0){ showToast('這個球場目前沒有人'); return; }
     const ok = await confirmDialog(`${zoneLabel(courtZone)} 下場`, '', courtDownConfirmHtml(players), '下場', 'court-down-ok');
     if(!ok) return;
-    if(courtEntryAnimationLocked && (courtEntryAnimationShouldRun() || legacyCourtEntryAnimationShouldRun())){
+    await performCourtDown(courtZone, players);
+  }
+  function courtEntryAnimationBusy(){
+    return courtEntryAnimationLocked && (courtEntryAnimationShouldRun() || legacyCourtEntryAnimationShouldRun());
+  }
+  async function performCourtDown(courtZone, players){
+    if(courtEntryAnimationBusy()){
       showToast('上場動畫進行中');
-      return;
+      return false;
     }
     players.forEach(p => { p.games = (Number(p.games)||0)+1; p.updatedAt=nowIso(); });
     if(state.settings.autoArrangeMode){
@@ -2329,6 +2335,92 @@
     saveState();
     showToast(`${zoneLabel(courtZone)} 已下場`);
     render();
+    return true;
+  }
+
+  // 手機遙控下場：iPad 以永久配對碼輪詢 Worker，上傳場地狀態並執行手機送來的下場指令。
+  // 手機端已確認過，所以這裡不跳確認卡；有對話框或上場動畫時回報 busy，由手機重送。
+  const COURT_REMOTE_API = window.__COURT_REMOTE_API || 'https://badminton-signup-v6-alpha.badminton-signup-v6-worker.workers.dev/api/court-remote';
+  const COURT_REMOTE_POLL_MS = 3000;
+  let courtRemoteTimer = null;
+  let courtRemoteBusy = false;
+  let courtRemoteLastState = '';
+  let courtRemoteLastStateAt = 0;
+  let courtRemoteRetire = '';
+  let courtRemoteStatus = 'off';
+  const courtRemoteHandled = {};
+  function newCourtRemoteCode(){
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    const bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    let code = '';
+    for(let i = 0; i < bytes.length; i++) code += chars[bytes[i] % chars.length];
+    return code;
+  }
+  function courtRemoteCode(){ return String(state.settings.remoteCode || ''); }
+  function courtRemoteUrl(){
+    const code = courtRemoteCode();
+    return code ? new URL('remote.html?c=' + encodeURIComponent(code), location.href).href : '';
+  }
+  function setCourtRemoteCode(code){
+    const old = courtRemoteCode();
+    if(old && old !== code) courtRemoteRetire = old;
+    state.settings.remoteCode = code;
+    saveState();
+    courtRemoteLastState = '';
+    startCourtRemote();
+  }
+  function courtRemoteSnapshot(){
+    return {
+      courtCount: activeCourts().length,
+      courts: activeCourts().map(zone => ({ zone, label: zoneLabel(zone), players: zonePlayers(zone).map(p => String(p.name || '')) }))
+    };
+  }
+  async function courtRemotePost(path, body){
+    const res = await fetch(COURT_REMOTE_API + path, { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(body), cache:'no-store' });
+    const json = await res.json();
+    if(!res.ok || !json.ok) throw new Error(json && json.error ? json.error.code : 'HTTP_' + res.status);
+    return json.data;
+  }
+  async function runCourtRemoteCommand(command){
+    const zone = String(command.court || '');
+    if(!activeCourts().includes(zone)) return 'invalid';
+    if($('modalMask').classList.contains('show') || courtEntryAnimationBusy()) return 'busy';
+    const players = zonePlayers(zone);
+    if(players.length === 0) return 'empty';
+    return await performCourtDown(zone, players) ? 'done' : 'busy';
+  }
+  async function courtRemoteTick(){
+    const code = courtRemoteCode();
+    if(!code || courtRemoteBusy || document.hidden) return;
+    courtRemoteBusy = true;
+    try{
+      const snapshot = JSON.stringify(courtRemoteSnapshot());
+      const body = { code };
+      if(snapshot !== courtRemoteLastState || Date.now() - courtRemoteLastStateAt > 60000) body.state = JSON.parse(snapshot);
+      if(courtRemoteRetire) body.retire = courtRemoteRetire;
+      const data = await courtRemotePost('/sync', body);
+      courtRemoteRetire = '';
+      if(body.state){ courtRemoteLastState = snapshot; courtRemoteLastStateAt = Date.now(); }
+      courtRemoteStatus = 'online';
+      for(const command of (data.commands || [])){
+        const id = Number(command.id);
+        const result = courtRemoteHandled[id] || await runCourtRemoteCommand(command);
+        if(result !== 'busy') courtRemoteHandled[id] = result;
+        await courtRemotePost('/ack', { code, id, result });
+        if(result === 'done') courtRemoteLastState = '';
+      }
+    }catch(error){
+      courtRemoteStatus = 'error';
+    }finally{
+      courtRemoteBusy = false;
+    }
+  }
+  function startCourtRemote(){
+    if(courtRemoteTimer){ clearInterval(courtRemoteTimer); courtRemoteTimer = null; }
+    if(!courtRemoteCode() || !window.fetch){ courtRemoteStatus = 'off'; return; }
+    courtRemoteTimer = setInterval(courtRemoteTick, COURT_REMOTE_POLL_MS);
+    courtRemoteTick();
   }
 
   async function autoArrangeCourtDown(courtZone, players){
@@ -5394,6 +5486,13 @@
       isLegacyIpadRuntime:isLegacyIpadRuntime,
       movePlayer:movePlayer,
       savePreviewSettings:function(values){ Object.assign(state.settings,values); saveState(); },
+      courtRemote:{
+        url:courtRemoteUrl,
+        status:function(){ return courtRemoteCode() ? courtRemoteStatus : 'off'; },
+        enable:function(){ if(!courtRemoteCode()) setCourtRemoteCode(newCourtRemoteCode()); return courtRemoteUrl(); },
+        renew:function(){ setCourtRemoteCode(newCourtRemoteCode()); return courtRemoteUrl(); },
+        tick:courtRemoteTick
+      },
       getState:function(){ return clone(state); },
       setState:function(nextState){
         state = normalizeState(nextState || {});
@@ -5503,6 +5602,7 @@
     showOrientationStartupHint();
     exposeDebugApi();
     registerServiceWorker();
+    startCourtRemote();
   }
 
   init();
@@ -5510,10 +5610,10 @@
     // 系統配色: theme class before the console loads, colours from the generated themes.css.
     const colorTheme = String(state.settings.colorTheme || '');
     if(['a','b','c','d','e','f'].includes(colorTheme)) document.documentElement.classList.add('theme-' + colorTheme);
-    const themeStyle = document.createElement('link');themeStyle.rel = 'stylesheet';themeStyle.href = './themes.css?v=2.4.1';
-    const style = document.createElement('link');style.rel = 'stylesheet';style.href = './integrated-preview.css?v=2.4.1';document.head.appendChild(style);document.head.appendChild(themeStyle);
+    const themeStyle = document.createElement('link');themeStyle.rel = 'stylesheet';themeStyle.href = './themes.css?v=2.5.0';
+    const style = document.createElement('link');style.rel = 'stylesheet';style.href = './integrated-preview.css?v=2.5.0';document.head.appendChild(style);document.head.appendChild(themeStyle);
     const motion = document.createElement('script');motion.src = './vendor/motion.js';
-    const loadPreview = function(){const script=document.createElement('script');script.src='./integrated-preview.js?v=2.4.1';document.body.appendChild(script);};
+    const loadPreview = function(){const script=document.createElement('script');script.src='./integrated-preview.js?v=2.5.0';document.body.appendChild(script);};
     motion.onload = loadPreview;motion.onerror = loadPreview;
     if(isLegacyIpadRuntime()) loadPreview();else document.body.appendChild(motion);
   }

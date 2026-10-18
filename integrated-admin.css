@@ -289,3 +289,13 @@ body.console-alpha .preview-tabbed-layout #panelTitle::after{content:'ALPHA';dis
 .status-theme-dot{width:16px;height:16px;border-radius:999px;border:2px solid #ffffff;box-shadow:0 0 0 1px rgba(15,23,42,.25);margin-left:-4px;}
 .status-theme-dot:first-child{margin-left:0;}
 .status-theme-name{min-width:0;}
+.status-remote{display:flex;flex-wrap:wrap;align-items:center;gap:14px;}
+.status-remote-qr{width:150px;height:150px;background:#fff;border:1px solid #e2e7ed;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.status-remote-qr img{width:140px;height:140px;image-rendering:pixelated;}
+.status-remote-side{flex:1 1 160px;min-width:0;display:flex;flex-direction:column;gap:8px;align-items:flex-start;}
+.status-remote-note{margin:0;font-size:14px;line-height:1.5;color:#475569;}
+.status-remote-status{margin:0;font-size:14px;font-weight:700;color:#64748b;}
+.status-remote-status[data-status="online"]{color:#15803d;}
+.status-remote-status[data-status="error"]{color:#b91c1c;}
+.preview-tabbed-layout #adminTools .status-remote-btn{min-height:44px;padding:8px 16px;border-radius:8px;border:0;background:#0f766e;color:#fff;font-size:15px;font-weight:700;}
+.preview-tabbed-layout #adminTools .status-remote-btn.secondary{background:#e2e8f0;color:#0f172a;}
