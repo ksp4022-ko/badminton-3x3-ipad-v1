@@ -995,7 +995,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.3.0';
+  const APP_VERSION = '2.4.0';
   const SETUP_TEST_MODE = location.search.indexOf('setup-test=1') >= 0;
   const UI_PREVIEW_MODE = location.search.indexOf('ui-preview=1') >= 0;
   const CLASSIC_UI = location.search.indexOf('classic=1') >= 0;
@@ -2291,6 +2291,24 @@
     return true;
   }
 
+  // 藍牙數字鍵盤：1～4 開啟該場下場確認，Enter 下場，Esc 取消。
+  function handleCourtDownKey(e){
+    if(e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    const target = e.target;
+    if(target && (/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) || target.isContentEditable)) return;
+    const modalOpen = $('modalMask').classList.contains('show');
+    if(modalOpen){
+      if(!$('modalOkBtn').classList.contains('court-down-ok')) return;
+      const btn = e.key === 'Enter' ? $('modalOkBtn') : e.key === 'Escape' ? $('modalCancelBtn') : null;
+      if(btn && btn.__tapHandler){ e.preventDefault(); btn.__tapHandler(e); }
+      return;
+    }
+    if(panelOpen) return;
+    const n = /^[1-4]$/.test(e.key) ? Number(e.key) : 0;
+    if(!n || n > activeCourts().length) return;
+    e.preventDefault();
+    courtDown(COURTS[n - 1]);
+  }
   async function courtDown(courtZone){
     const players = zonePlayers(courtZone);
     if(players.length === 0){ showToast('這個球場目前沒有人'); return; }
@@ -5286,6 +5304,7 @@
     if($('playerNameFontSelect')) $('playerNameFontSelect').addEventListener('change', savePlayerNameDisplaySettings);
     tap('addPlayerBtn', () => addPlayer($('newPlayerInput').value));
     $('newPlayerInput').addEventListener('keydown', e => { if(e.key==='Enter') addPlayer($('newPlayerInput').value); });
+    document.addEventListener('keydown', handleCourtDownKey);
     tap('renamePlayerBtn', renameSelected);
     tap('deletePlayerBtn', deleteSelected);
     tap('plusGameBtn', () => adjustSelectedGames(1));
@@ -5491,10 +5510,10 @@
     // 系統配色: theme class before the console loads, colours from the generated themes.css.
     const colorTheme = String(state.settings.colorTheme || '');
     if(['a','b','c','d','e','f'].includes(colorTheme)) document.documentElement.classList.add('theme-' + colorTheme);
-    const themeStyle = document.createElement('link');themeStyle.rel = 'stylesheet';themeStyle.href = './themes.css?v=2.3.0';
-    const style = document.createElement('link');style.rel = 'stylesheet';style.href = './integrated-preview.css?v=2.3.0';document.head.appendChild(style);document.head.appendChild(themeStyle);
+    const themeStyle = document.createElement('link');themeStyle.rel = 'stylesheet';themeStyle.href = './themes.css?v=2.4.0';
+    const style = document.createElement('link');style.rel = 'stylesheet';style.href = './integrated-preview.css?v=2.4.0';document.head.appendChild(style);document.head.appendChild(themeStyle);
     const motion = document.createElement('script');motion.src = './vendor/motion.js';
-    const loadPreview = function(){const script=document.createElement('script');script.src='./integrated-preview.js?v=2.3.0';document.body.appendChild(script);};
+    const loadPreview = function(){const script=document.createElement('script');script.src='./integrated-preview.js?v=2.4.0';document.body.appendChild(script);};
     motion.onload = loadPreview;motion.onerror = loadPreview;
     if(isLegacyIpadRuntime()) loadPreview();else document.body.appendChild(motion);
   }
