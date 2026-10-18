@@ -6,7 +6,7 @@
 - Git: `https://github.com/ksp4022-ko/badminton-3x3-ipad-v1.git`
 - Branch: `main`
 - 本次交接的功能基線：`be7b964`。
-- 目前 APP_VERSION / package version：`2.4.0`（2.1.0 新版控制台；2.1.1 看板磁吸；2.1.2 區頭樣式；2.2.0 系統配色；2.3.0 A 橘底＋無綠 D/E/F；2.4.0 藍牙鍵盤下場）。
+- 目前 APP_VERSION / package version：`2.4.1`（2.1.0 新版控制台；2.1.1 看板磁吸；2.1.2 區頭樣式；2.2.0 系統配色；2.3.0 A 橘底＋無綠 D/E/F；2.4.0 藍牙鍵盤下場；2.4.1 舊 iPad 鍵盤相容）。
 - 交接文件本身會有較新的提交；請讀最新 main，不要 checkout 回上述舊提交。
 - 先讀 `AGENTS.md`、`CLAUDE.md`，再依使用者下一個要求修改。
 - Windows 目前工作目錄：`C:\Users\kosp\Documents\Roate_sim\github-publish-badminton-3x3-ipad-v1`。
@@ -113,7 +113,8 @@ https://ksp4022-ko.github.io/badminton-3x3-ipad-v1/integrated-test.html
 - index.html `handleCourtDownKey`：數字鍵 1～4（不超過目前場數）→ 呼叫既有 `courtDown()` 的確認卡；Enter 等於按「下場」，Esc 等於取消。
 - 不會觸發的情況：焦點在輸入框、管理面板開著、有其他對話框、按住重複、加 Ctrl/Cmd/Alt。確認卡開著時按其他數字不動作。
 - 自動排場遇到 Next 空位不足時，會跳原本的提示框，需要用手點。
-- 測試：tools/keyboard-court-down-test.js（舊版與新版主控台都測，已加入 npm test）。
+- 測試：tools/keyboard-court-down-test.js（舊版主控台、新版主控台、legacy iPad UA 都測，已加入 npm test）。
+- 2.4.1：iOS 13.4 以前的 Safari，Esc 鍵名稱是 `UIKeyInputEscape`，已一併支援。legacy 只做過 Playwright UA 模擬，需要舊 iPad 實機驗收。
 
 Pending：
 - 最新資訊卡布局待使用者手機 / iPad 實機驗收。
