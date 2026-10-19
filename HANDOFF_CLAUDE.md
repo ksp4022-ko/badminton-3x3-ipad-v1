@@ -6,7 +6,7 @@
 - Git: `https://github.com/ksp4022-ko/badminton-3x3-ipad-v1.git`
 - Branch: `main`
 - 本次交接的功能基線：`be7b964`。
-- 目前 APP_VERSION / package version：`2.5.1`（2.1.0 新版控制台；2.1.1 看板磁吸；2.1.2 區頭樣式；2.2.0 系統配色；2.3.0 A 橘底＋無綠 D/E/F；2.4.0 藍牙鍵盤下場；2.4.1 舊 iPad 鍵盤相容；2.5.0 手機遙控下場；2.5.1 遙控頁重排）。
+- 目前 APP_VERSION / package version：`2.5.2`（2.1.0 新版控制台；2.1.1 看板磁吸；2.1.2 區頭樣式；2.2.0 系統配色；2.3.0 A 橘底＋無綠 D/E/F；2.4.0 藍牙鍵盤下場；2.4.1 舊 iPad 鍵盤相容；2.5.0 手機遙控下場；2.5.1 遙控頁重排；2.5.2 legacy 預備區數量）。
 - 交接文件本身會有較新的提交；請讀最新 main，不要 checkout 回上述舊提交。
 - 先讀 `AGENTS.md`、`CLAUDE.md`，再依使用者下一個要求修改。
 - Windows 目前工作目錄：`C:\Users\kosp\Documents\Roate_sim\github-publish-badminton-3x3-ipad-v1`。
@@ -126,6 +126,12 @@ https://ksp4022-ko.github.io/badminton-3x3-ipad-v1/integrated-test.html
 - 自動排場遇到 Next 空位不足時，iPad 會跳原本的提示框，要等有人點掉後手機才會收到結果。
 - 2026-10-18 使用者實機驗收 2.5.0：PASS。
 - 2.5.1 遙控頁重排（impeccable skill）：iPhone 一頁看得到 4 面場（2×2 磚，3 面場時最後一面佔整列）；底色改冷色、場號大字；下場後結果卡列出「接著上場」的球員（iPad 下場後先上傳新場地狀態再回報 ack）。待實機驗收。
+
+2.5.2 legacy 開放預備區數量（使用者要求）：
+- 舊 iPad 原本固定 2 組（2 面場）／3 組（3、4 面場），從 2026-09-02 起隱藏設定。現在和新 iPad 一樣可以選。
+- legacy 預備區格寬等於場地欄寬（`min(預備區數, 場數)` 等分），多出的預備區和休息區一起往右滑。scroll-snap 沿用既有設定（Safari 11 以上支援）。
+- 已移除 legacy 的特殊處理：`activeNextCount`、`setNextCount` 的「暫不支援」提示、`setCourtMode` 的固定數量、`renderNextCountControls` 的隱藏、integrated-admin 的指標。
+- 測試：ipad-visual-test 的 `runLegacyFiveNextCase`（classic 與新版主控台，iOS 12 UA）。只做過 UA 模擬，需要舊 iPad 實機驗收。
 
 Pending：
 - 最新資訊卡布局待使用者手機 / iPad 實機驗收。

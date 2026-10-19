@@ -107,7 +107,7 @@
    if(rosterValue.getAttribute('aria-label')!==(count?'已載入 '+count+' 人':'尚無名單'))rosterValue.setAttribute('aria-label',count?'已載入 '+count+' 人':'尚無名單');rosterValue.firstChild.setAttribute('aria-hidden','true');
    var source=assets.querySelector('#localVoiceSummary').textContent;
    textIfChanged(metricValues.voice.firstChild,/Missing/.test(source)?'缺少音源':/Ready/.test(source)?'Ready':'檢查中');
-   var courtCount=Number(state.settings.courtCount),nextCount=window.__legacyIpad?(courtCount===2?2:3):Number(state.settings.nextCount);
+   var courtCount=Number(state.settings.courtCount),nextCount=Number(state.settings.nextCount);
    textIfChanged(metricValues.courts.firstChild,String(courtCount));textIfChanged(metricValues.courts.lastChild,'x'+nextCount);
    if(metricValues.courts.getAttribute('aria-label')!==courtCount+' 面場，預備 '+nextCount+' 組')metricValues.courts.setAttribute('aria-label',courtCount+' 面場，預備 '+nextCount+' 組');
    var pending=[];
@@ -176,7 +176,7 @@
    if(!url){remoteBox.appendChild(element('p','status-remote-note','球友用手機掃描 QR code，就能遠端讓 1～4 號場下場。'));var on=element('button','status-remote-btn','啟用手機遙控');on.type='button';on.onclick=function(){remoteApi.enable();drawRemote();};remoteBox.appendChild(on);return;}
    var qr=element('div','status-remote-qr');qr.setAttribute('aria-label','手機遙控 QR code');remoteBox.appendChild(qr);
    function paint(){if(!window.qrcode)return;var q=window.qrcode(0,'M');q.addData(url);q.make();var img=document.createElement('img');img.alt='手機遙控 QR code';img.src=q.createDataURL(5,2);qr.innerHTML='';qr.appendChild(img);}
-   if(window.qrcode)paint();else{var sc=document.createElement('script');sc.src='./vendor/qrcode-generator.js?v=2.5.1';sc.onload=paint;document.body.appendChild(sc);}
+   if(window.qrcode)paint();else{var sc=document.createElement('script');sc.src='./vendor/qrcode-generator.js?v=2.5.2';sc.onload=paint;document.body.appendChild(sc);}
    var side=element('div','status-remote-side');side.appendChild(element('p','status-remote-note','手機掃描後即可遙控下場，掃一次可一直使用。'));
    var status=element('p','status-remote-status');side.appendChild(status);
    function showStatus(){var st=remoteApi.status();status.textContent=st==='online'?'● 已連線':st==='error'?'● 無法連線，請檢查網路':'● 連線中…';status.setAttribute('data-status',st);}

@@ -489,7 +489,7 @@ async function run() {
   legacyNextContext.document.documentElement.classList.add('legacyIpad');
   const legacyNextApi = legacyNextContext.window.__badmintonIpadV1;
   legacyNextApi.setState(baseState([], { nextCount3x3: 5 }));
-  assert('legacy iPad keeps fixed next count for now', (legacyNextContext.document.getElementById('nextRow').innerHTML.match(/data-zone-card="next/g) || []).length === 3);
+  assert('legacy iPad shows the chosen next count', (legacyNextContext.document.getElementById('nextRow').innerHTML.match(/data-zone-card="next/g) || []).length === 5);
   assert('legacy rest area is available with empty drop spaces',legacyNextContext.document.getElementById('nextRow').innerHTML.includes('data-zone-card="rest"') && (legacyNextContext.document.getElementById('nextRow').innerHTML.match(/rest-board-space/g)||[]).length===2);
 
   context.__voices = [

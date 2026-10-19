@@ -995,7 +995,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = '2.5.1';
+  const APP_VERSION = '2.5.2';
   const SETUP_TEST_MODE = location.search.indexOf('setup-test=1') >= 0;
   const UI_PREVIEW_MODE = location.search.indexOf('ui-preview=1') >= 0;
   const CLASSIC_UI = location.search.indexOf('classic=1') >= 0;
@@ -1581,7 +1581,6 @@
     return window.innerHeight > window.innerWidth;
   }
   function activeNextCount(){
-    if(isLegacyIpadRuntime()) return Number(state.settings.courtCount) === 2 ? 2 : 3;
     return activeNextCountForSettings(state.settings);
   }
   function activeNexts(){ return NEXTS.slice(0, activeNextCount()); }
@@ -1898,7 +1897,9 @@
     $('nextRow').classList.toggle('mode-2', nextCount === 2);
     $('nextRow').classList.toggle('next-scroll', showBoardRest || (!isLegacyIpadRuntime() && nextCount > activeCourts().length));
     if(isLegacyIpadRuntime()){
-      const nextWidth = 'calc((100% - ' + ((nextCount - 1) * 3) + 'px) / ' + nextCount + ')';
+      // Legacy: 預備區 keeps the court-column width; extra groups scroll right like 休息區.
+      const columns = Math.min(nextCount, activeCourts().length);
+      const nextWidth = 'calc((100% - ' + ((columns - 1) * 3) + 'px) / ' + columns + ')';
       $('nextRow').style.gridTemplateColumns = 'repeat(' + nextCount + ', ' + nextWidth + ') ' + restMinWidth + 'px';
     }else if(showBoardRest){
       const minWidth = currentMode() === '2x2' ? 310 : 300;
@@ -2147,9 +2148,6 @@
   function renderNextCountControls(){
     const box = $('nextCountControls');
     if(!box) return;
-    const legacy = isLegacyIpadRuntime();
-    box.style.display = legacy ? 'none' : '';
-    if(legacy) return;
     const options = nextCountOptionsForMode();
     const buttons = [$('nextCountMinBtn'), $('nextCountMidBtn'), $('nextCountMaxBtn')];
     const current = activeNextCountForSettings(state.settings);
@@ -2905,8 +2903,7 @@
     }
     const increasing = count > Number(state.settings.courtCount);
     const nextKey = 'nextCount' + count + 'x' + count;
-    const targetNextCount = isLegacyIpadRuntime() ? (count === 2 ? 2 : 3)
-      : (increasing ? normalizeNextCount(count, activeNextCount()) : normalizeNextCount(count, state.settings[nextKey]));
+    const targetNextCount = increasing ? normalizeNextCount(count, activeNextCount()) : normalizeNextCount(count, state.settings[nextKey]);
     const removedCourts = COURTS.slice(count).filter(zone => zonePlayers(zone).length > 0);
     const removedNexts = NEXTS.slice(targetNextCount).filter(zone => zonePlayers(zone).length > 0);
     if(removedCourts.length || removedNexts.length){
@@ -2915,7 +2912,7 @@
       return;
     }
     state.settings.courtCount = count;
-    if(increasing && !isLegacyIpadRuntime()) state.settings[nextKey] = targetNextCount;
+    if(increasing) state.settings[nextKey] = targetNextCount;
     state.settings.nextCount = activeNextCountForSettings(state.settings);
     logAction('changeCourtMode','system',[],`切換為 ${mode}`);
     saveState();
@@ -2925,10 +2922,6 @@
   }
 
   async function setNextCount(count){
-    if(isLegacyIpadRuntime()){
-      await alertDialog('暫不支援', '舊 iPad 版預備區數量稍後另外調整，目前維持固定數量。');
-      return;
-    }
     const modeCount = Number(state.settings.courtCount);
     const nextCount = normalizeNextCount(modeCount, count);
     if(activeNextCountForSettings(state.settings) === nextCount){
@@ -5615,10 +5608,10 @@
     // 系統配色: theme class before the console loads, colours from the generated themes.css.
     const colorTheme = String(state.settings.colorTheme || '');
     if(['a','b','c','d','e','f'].includes(colorTheme)) document.documentElement.classList.add('theme-' + colorTheme);
-    const themeStyle = document.createElement('link');themeStyle.rel = 'stylesheet';themeStyle.href = './themes.css?v=2.5.1';
-    const style = document.createElement('link');style.rel = 'stylesheet';style.href = './integrated-preview.css?v=2.5.1';document.head.appendChild(style);document.head.appendChild(themeStyle);
+    const themeStyle = document.createElement('link');themeStyle.rel = 'stylesheet';themeStyle.href = './themes.css?v=2.5.2';
+    const style = document.createElement('link');style.rel = 'stylesheet';style.href = './integrated-preview.css?v=2.5.2';document.head.appendChild(style);document.head.appendChild(themeStyle);
     const motion = document.createElement('script');motion.src = './vendor/motion.js';
-    const loadPreview = function(){const script=document.createElement('script');script.src='./integrated-preview.js?v=2.5.1';document.body.appendChild(script);};
+    const loadPreview = function(){const script=document.createElement('script');script.src='./integrated-preview.js?v=2.5.2';document.body.appendChild(script);};
     motion.onload = loadPreview;motion.onerror = loadPreview;
     if(isLegacyIpadRuntime()) loadPreview();else document.body.appendChild(motion);
   }

@@ -619,6 +619,28 @@ async function runPortraitAdminModeCase(browser) {
   await quietContext.close();
 }
 
+// Legacy iPad with more 預備區 than courts: each group keeps the court-column width and the row scrolls.
+async function runLegacyFiveNextCase(browser){
+  for(const url of [appUrl+'&debug=1','file:///' + path.resolve(__dirname, '..', 'index.html').replace(/\\/g, '/')]){
+    const context=await browser.newContext({viewport:{width:1024,height:638},isMobile:true,hasTouch:true,userAgent:iPadAirIos12Ua});
+    const page=await context.newPage();
+    const state=stateForMode('3x3');state.settings.nextCount3x3=5;state.settings.nextCount=5;
+    ['next4','next5'].forEach((zone,z)=>{for(let slot=1;slot<=4;slot++)state.players.push(player(zone+'p'+slot,['Chris 哥','雅雯','Kevin','國泰 哥'][slot-1],zone,slot));});
+    await page.addInitScript(state=>localStorage.setItem('badminton3x3.ipad.v1.state',JSON.stringify(state)),state);
+    await page.goto(url);
+    await page.addStyleTag({content:'#debugPanel{display:none!important}'});
+    await page.waitForTimeout(500);
+    const info=await page.evaluate(()=>{
+      const row=document.getElementById('nextRow'),cards=row.querySelectorAll('.zone-card[data-zone-card^="next"]');
+      const court=document.querySelector('#courtRow .zone-card').getBoundingClientRect().width;
+      const fits=Array.from(row.querySelectorAll('.zone-card[data-zone-card^="next"] .name')).every(n=>n.scrollWidth<=n.parentNode.clientWidth-6);
+      return {legacy:document.documentElement.classList.contains('legacyIpad'),nexts:cards.length,width:cards[0].getBoundingClientRect().width,court,overflow:row.scrollWidth>row.clientWidth,fits,next5:!!row.querySelector('[data-zone-card="next5"] .player-chip')};
+    });
+    assert('legacy shows five next groups at court width and scrolls ('+(url.includes('classic')?'classic':'new console')+')',info.legacy && info.nexts===5 && Math.abs(info.width-info.court)<3 && info.overflow && info.fits && info.next5,JSON.stringify(info));
+    await context.close();
+  }
+}
+
 async function runLegacyRestCase(browser){
   const context=await browser.newContext({viewport:{width:1024,height:638},isMobile:true,hasTouch:true,userAgent:iPadAirIos12Ua});
   const page=await context.newPage();
@@ -750,6 +772,7 @@ async function main() {
     await runNextScrollTouchCase(browser);
     await runPortraitAdminModeCase(browser);
     await runLegacyRestCase(browser);
+    await runLegacyFiveNextCase(browser);
     await runFourCourtCase(browser, modernIpadUa, 1024, 638, false);
     await runFourCourtCase(browser, iPadAirIos12Ua, 1024, 638, false);
     await runFourCourtCase(browser, 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15', 844, 390, true);
